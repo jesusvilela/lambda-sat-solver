@@ -8,8 +8,15 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Toaster } from '@/components/ui/sonner'
-import { Play, FastForward, ArrowCounterClockwise, Book, CheckCircle, XCircle, Info } from '@phosphor-icons/react'
+import { Play, FastForward, ArrowCounterClockwise, Book, CheckCircle, XCircle, Info, Function } from '@phosphor-icons/react'
 import { toast } from 'sonner'
+import { 
+  createSolverPipeline, 
+  DEFAULT_HEURISTICS, 
+  DEFAULT_BUDGETS,
+  type Heuristic,
+  type Budget 
+} from '@/lib/lambda-middleware'
 
 // Example CNF formulas for learning
 const examples = {
@@ -154,6 +161,9 @@ function App() {
   const [solverResult, setSolverResult] = useState<ReturnType<typeof solveDPLL> | null>(null)
   const [currentStep, setCurrentStep] = useState(0)
   const [isAutoSolving, setIsAutoSolving] = useState(false)
+  const [selectedHeuristic, setSelectedHeuristic] = useKV("selected-heuristic", "conservative")
+  const [selectedBudget, setSelectedBudget] = useKV("selected-budget", "standard")
+  const [useLambdaMiddleware, setUseLambdaMiddleware] = useKV<boolean>("use-lambda-middleware", false)
 
   const handleParseCNF = () => {
     const parsed = parseCNF(cnfText || "")
@@ -167,18 +177,53 @@ function App() {
     }
   }
 
-  const handleSolve = () => {
+  const handleSolve = async () => {
     if (!formula) return
     
     setIsAutoSolving(true)
-    const result = solveDPLL(formula)
-    setSolverResult(result)
-    setCurrentStep(result.steps.length - 1)
     
-    setTimeout(() => {
+    try {
+      if (useLambdaMiddleware) {
+        // Use lambda middleware wrapper
+        const heuristic = DEFAULT_HEURISTICS[selectedHeuristic as keyof typeof DEFAULT_HEURISTICS]
+        const budget = DEFAULT_BUDGETS[selectedBudget as keyof typeof DEFAULT_BUDGETS]
+        
+        const pipeline = createSolverPipeline(heuristic, budget)
+        const result = await pipeline.execute(formula)
+        
+        // Convert middleware result to UI format
+        const uiResult = {
+          satisfiable: result.status === 'SAT',
+          model: result.status === 'SAT' ? result.model : undefined,
+          steps: [{ 
+            assignments: result.status === 'SAT' ? result.model || {} : {},
+            step: 0,
+            satisfied: formula.clauses.map(() => result.status === 'SAT'),
+            conflicts: result.status === 'UNSAT' ? [0] : []
+          }]
+        }
+        
+        setSolverResult(uiResult)
+        setCurrentStep(0)
+        
+        toast.success(`Lambda middleware: ${result.status}`, {
+          description: result.status === 'ERROR' ? result.message : undefined
+        })
+      } else {
+        // Use original DPLL solver
+        const result = solveDPLL(formula)
+        setSolverResult(result)
+        setCurrentStep(result.steps.length - 1)
+        
+        toast.success(result.satisfiable ? "Formula is satisfiable!" : "Formula is unsatisfiable!")
+      }
+    } catch (error) {
+      toast.error("Solver failed", {
+        description: error instanceof Error ? error.message : "Unknown error"
+      })
+    } finally {
       setIsAutoSolving(false)
-      toast.success(result.satisfiable ? "Formula is satisfiable!" : "Formula is unsatisfiable!")
-    }, 500)
+    }
   }
 
   const handleStepSolve = () => {
@@ -219,8 +264,9 @@ function App() {
         </header>
 
         <Tabs defaultValue="input" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="input">Input & Examples</TabsTrigger>
+            <TabsTrigger value="lambda">Lambda Config</TabsTrigger>
             <TabsTrigger value="visualization">Visualization</TabsTrigger>
             <TabsTrigger value="solving">Solving</TabsTrigger>
             <TabsTrigger value="results">Results</TabsTrigger>
@@ -289,6 +335,136 @@ function App() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="lambda" className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Function className="h-5 w-5" />
+                    Lambda Middleware Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    Configure the functional abstraction layer for SAT solver operations
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between p-4 border rounded">
+                    <div>
+                      <h4 className="font-medium">Use Lambda Middleware</h4>
+                      <p className="text-sm text-muted-foreground">
+                        Enable functional composition and effect management
+                      </p>
+                    </div>
+                    <Button
+                      variant={useLambdaMiddleware ? "default" : "outline"}
+                      onClick={() => setUseLambdaMiddleware(!useLambdaMiddleware)}
+                    >
+                      {useLambdaMiddleware ? "Enabled" : "Disabled"}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Heuristic Strategy</label>
+                    <Select value={selectedHeuristic} onValueChange={setSelectedHeuristic}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="conservative">Conservative (VSIDS, Geometric restarts)</SelectItem>
+                        <SelectItem value="aggressive">Aggressive (LRB, Luby restarts, Vivify)</SelectItem>
+                        <SelectItem value="random">Random (Random branching)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Resource Budget</label>
+                    <Select value={selectedBudget} onValueChange={setSelectedBudget}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="quick">Quick (1s, 64MB)</SelectItem>
+                        <SelectItem value="standard">Standard (30s, 256MB)</SelectItem>
+                        <SelectItem value="thorough">Thorough (300s, 1GB)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {useLambdaMiddleware && (
+                    <Alert>
+                      <Function className="h-4 w-4" />
+                      <AlertDescription>
+                        Lambda middleware will wrap solver operations in a functional abstraction with type checking and effect management.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pipeline Architecture</CardTitle>
+                  <CardDescription>
+                    Overview of the lambda function composition
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 text-sm font-mono">
+                    <div className="p-3 bg-muted rounded">
+                      <span className="text-muted-foreground">λ cnf.</span>
+                      <span className="text-foreground">solve(cnf, heuristic, budget)</span>
+                    </div>
+                    <div className="text-center text-muted-foreground">↓</div>
+                    <div className="p-3 bg-muted rounded">
+                      <span className="text-muted-foreground">Type Check:</span>
+                      <span className="text-foreground"> CNF → Result</span>
+                    </div>
+                    <div className="text-center text-muted-foreground">↓</div>
+                    <div className="p-3 bg-muted rounded">
+                      <span className="text-muted-foreground">Effects:</span>
+                      <span className="text-foreground"> {useLambdaMiddleware ? 'ENABLED' : 'DISABLED'}</span>
+                    </div>
+                    <div className="text-center text-muted-foreground">↓</div>
+                    <div className="p-3 bg-muted rounded">
+                      <span className="text-muted-foreground">Result:</span>
+                      <span className="text-foreground"> SAT | UNSAT | TIMEOUT</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Middleware Features</CardTitle>
+                <CardDescription>Functional programming benefits for SAT solving</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="p-4 border rounded">
+                    <h4 className="font-medium mb-2">Type Safety</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Lambda expressions are type-checked before execution to prevent runtime errors
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded">
+                    <h4 className="font-medium mb-2">Effect Management</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Pure functional core with controlled side effects for solver operations
+                    </p>
+                  </div>
+                  <div className="p-4 border rounded">
+                    <h4 className="font-medium mb-2">Composability</h4>
+                    <p className="text-sm text-muted-foreground">
+                      Pipeline stages can be composed and reused across different solving strategies
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="visualization" className="space-y-6">
@@ -366,12 +542,12 @@ function App() {
                         className="flex-1"
                       >
                         <Play className="h-4 w-4 mr-2" />
-                        Solve
+                        {useLambdaMiddleware ? 'Solve (λ)' : 'Solve'}
                       </Button>
                       <Button 
                         onClick={handleStepSolve} 
                         variant="outline"
-                        disabled={currentStep >= (solverResult?.steps.length || 0) - 1}
+                        disabled={currentStep >= (solverResult?.steps.length || 0) - 1 || useLambdaMiddleware}
                       >
                         <FastForward className="h-4 w-4 mr-2" />
                         Step
@@ -380,6 +556,14 @@ function App() {
                         <ArrowCounterClockwise className="h-4 w-4" />
                       </Button>
                     </div>
+                    {useLambdaMiddleware && (
+                      <Alert>
+                        <Function className="h-4 w-4" />
+                        <AlertDescription>
+                          Using lambda middleware with {selectedHeuristic} heuristic and {selectedBudget} budget.
+                        </AlertDescription>
+                      </Alert>
+                    )}
                     {solverResult && (
                       <div className="text-sm space-y-2">
                         <div>Step: {currentStep + 1} / {solverResult.steps.length}</div>
