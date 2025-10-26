@@ -15,7 +15,7 @@ A math-aligned λ-logic middleware that transforms formulas into CNF, solves wit
 2. **CNF Utilities** (`cnf_utils.py`)
    - DIMACS CNF parser and writer
    - Model verification against formulas
-   - Tseitin transformation (placeholder for full implementation)
+   - **Full Tseitin transformation** supporting AND, OR, NOT, IMPLIES, IFF, XOR
 
 3. **Kissat Wrapper** (`kissat_wrapper.py`)
    - Subprocess wrapper for Kissat SAT solver
@@ -39,6 +39,19 @@ A math-aligned λ-logic middleware that transforms formulas into CNF, solves wit
    - CORS enabled for cross-origin requests
    - Async route handlers
    - Health check endpoint
+
+7. **Portfolio Solver** (`portfolio.py`)
+   - Parallel execution of multiple solver configurations
+   - Sequential fallback mode
+   - Configurable heuristic portfolios
+   - First-result or exhaustive solving modes
+
+8. **Benchmarking Harness** (`benchmark.py`)
+   - Comprehensive benchmarking suite
+   - PAR-2 (Penalized Average Runtime) scoring
+   - Head-to-head configuration comparison
+   - CSV and JSON export
+   - Detailed statistical analysis
 
 ## Installation
 
@@ -241,9 +254,38 @@ For any λ-formula Φ:
 ### Running Tests
 
 ```bash
-# TODO: Add test suite
-python -m pytest backend/tests/
+# Run all tests
+python -m pytest backend/tests/ -v
+
+# Run specific test files
+python -m pytest backend/tests/test_tseitin.py -v
+python -m pytest backend/tests/test_cnf_utils.py -v
+python -m pytest backend/tests/test_integration.py -v
+
+# Run with coverage
+python -m pytest backend/tests/ --cov=backend --cov-report=html
 ```
+
+### Test Suite
+
+The project includes comprehensive tests covering:
+- **Tseitin Transformation** (20 tests)
+  - All logical operators (AND, OR, NOT, IMPLIES, IFF, XOR)
+  - Complex nested formulas
+  - Edge cases and error handling
+  - Correctness properties
+
+- **CNF Utilities** (27 tests)
+  - DIMACS parsing and writing
+  - Model verification
+  - Edge cases (large variables, empty formulas, etc.)
+  - Format validation
+
+- **Integration Tests** (15 tests)
+  - End-to-end solving workflows
+  - Tseitin + solving integration
+  - Heuristic configurations
+  - Frontend-backend API compatibility
 
 ### Code Structure
 
@@ -251,13 +293,22 @@ python -m pytest backend/tests/
 backend/
 ├── __init__.py           # Package initialization
 ├── lambda_dsl.py         # Lambda calculus DSL
-├── cnf_utils.py          # CNF parsing and utilities
+├── cnf_utils.py          # CNF parsing and Tseitin transformation
 ├── kissat_wrapper.py     # Kissat solver wrapper
 ├── proof_checking.py     # DRAT/LRAT proof checkers
 ├── middleware.py         # Main middleware kernel
 ├── api_server.py         # Flask API server
-├── cli.py               # Command-line interface
-└── requirements.txt      # Python dependencies
+├── cli.py                # Command-line interface
+├── portfolio.py          # Portfolio solver
+├── portfolio_cli.py      # Portfolio CLI
+├── benchmark.py          # Benchmarking harness
+├── benchmark_cli.py      # Benchmarking CLI
+├── requirements.txt      # Python dependencies
+└── tests/
+    ├── __init__.py
+    ├── test_tseitin.py   # Tseitin transformation tests
+    ├── test_cnf_utils.py # CNF utilities tests
+    └── test_integration.py # Integration tests
 ```
 
 ## Docker Deployment
@@ -273,24 +324,103 @@ docker run -p 5001:5001 lambda-sat-middleware
 docker-compose up
 ```
 
-## Known Limitations (MVP)
+## New Features (v2.0)
 
-1. **Tseitin transformation** - Currently only accepts CNF input; full formula transformation is a placeholder
-2. **Heuristic flags** - Some Kissat flags are examples and may need adjustment for actual Kissat version
-3. **LRAT support** - Kissat doesn't natively produce LRAT; requires conversion from DRAT
-4. **Distributed execution** - No support for distributed solving yet
-5. **LCF-style certification** - Future work for formal proof generation
+### Tseitin Transformation
+Full implementation supporting arbitrary propositional formulas:
+- **Operators**: AND, OR, NOT, IMPLIES, IFF, XOR
+- **Optimization**: Subformula sharing via memoization
+- **Correctness**: Equisatisfiable CNF with minimal variables
+
+Example usage:
+```python
+from backend.cnf_utils import tseitin_transform
+
+# (x1 AND x2) OR (x3 IMPLIES x4)
+formula = {
+    'type': 'OR',
+    'children': [
+        {
+            'type': 'AND',
+            'children': [
+                {'type': 'LITERAL', 'value': 1},
+                {'type': 'LITERAL', 'value': 2}
+            ]
+        },
+        {
+            'type': 'IMPLIES',
+            'left': {'type': 'LITERAL', 'value': 3},
+            'right': {'type': 'LITERAL', 'value': 4}
+        }
+    ]
+}
+
+cnf = tseitin_transform(formula)
+```
+
+### Portfolio Solving
+Run multiple heuristic configurations in parallel:
+
+```bash
+# Parallel portfolio solving
+python -m backend.portfolio_cli examples/hard_problem.cnf \
+  --mode parallel \
+  --configs 4 \
+  --timeout 300 \
+  --return-first
+
+# Sequential portfolio solving
+python -m backend.portfolio_cli examples/hard_problem.cnf \
+  --mode sequential \
+  --configs 4
+```
+
+### Benchmarking Harness
+Comprehensive benchmarking with PAR-2 scoring:
+
+```bash
+# Run benchmark suite
+python -m backend.benchmark_cli benchmarks/ \
+  --timeout 300 \
+  --configs 4 \
+  --parallel \
+  --output-csv results.csv \
+  --output-json results.json
+
+# Compare two configurations
+python -m backend.benchmark_cli benchmarks/ \
+  --configs 4 \
+  --compare vsids_0 lrb_0
+```
+
+Features:
+- PAR-2 (Penalized Average Runtime) scoring
+- Head-to-head configuration comparison
+- Detailed statistics (mean, median, std dev)
+- CSV and JSON export
+- Parallel and sequential modes
+
+## Known Limitations
+
+1. **Heuristic flags** - Some Kissat flags are examples and may need adjustment for actual Kissat version
+2. **LRAT support** - Kissat doesn't natively produce LRAT; requires conversion from DRAT
+3. **Distributed execution** - No support for distributed solving yet
+4. **LCF-style certification** - Future work for formal proof generation
 
 ## Future Enhancements
 
-1. Full Tseitin transformation for arbitrary propositional formulas
-2. Quantifier expansion for ∀/∃ over finite domains
-3. Higher-order λ-term erasure (β-reduction to first-order)
-4. Portfolio solving with parallel execution
-5. Incremental solving support
-6. Memory profiling and slicing
-7. Extended solver flags (vivify, eliminate, simplify)
-8. LCF certificate path for clausification
+1. ✅ ~~Full Tseitin transformation for arbitrary propositional formulas~~ **DONE**
+2. ✅ ~~Portfolio solving with parallel execution~~ **DONE**
+3. ✅ ~~Benchmarking harness with PAR-2 scoring~~ **DONE**
+4. ✅ ~~Comprehensive test suite~~ **DONE**
+5. Quantifier expansion for ∀/∃ over finite domains
+6. Higher-order λ-term erasure (β-reduction to first-order)
+7. Incremental solving support
+8. Memory profiling and slicing
+9. Extended solver flags (vivify, eliminate, simplify)
+10. LCF certificate path for clausification
+11. Distributed solving with work-stealing
+12. CDCL learning clause analysis
 
 ## License
 
