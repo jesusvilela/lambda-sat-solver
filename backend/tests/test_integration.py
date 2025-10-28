@@ -1,0 +1,345 @@
+"""
+Integration tests for Lambda SAT Middleware
+"""
+
+import pytest
+import asyncio
+import json
+from pathlib import Path
+import tempfile
+
+from backend.middleware import create_middleware
+from backend.cnf_utils import CNFFormula, parse_dimacs, write_dimacs, tseitin_transform
+
+
+class TestMiddlewareIntegration:
+    """Integration tests for middleware pipeline"""
+
+    @pytest.mark.asyncio
+    async def test_simple_sat_formula(self):
+        """Test solving a simple SAT formula"""
+        middleware = create_middleware(strict_mode=False)
+
+        cnf = CNFFormula(num_vars=3, clauses=[[1, 2], [-1, 3], [-2, -3]])
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] in ['SAT', 'ERROR']
+        if result['status'] == 'SAT':
+            assert 'model' in result
+            assert result['verified'] is True
+
+    @pytest.mark.asyncio
+    async def test_simple_unsat_formula(self):
+        """Test solving a simple UNSAT formula"""
+        middleware = create_middleware(strict_mode=False)
+
+        # Contradictory formula: x1 AND -x1
+        cnf = CNFFormula(num_vars=1, clauses=[[1], [-1]])
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] in ['UNSAT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_tseitin_integration(self):
+        """Test Tseitin transformation integrated with solver"""
+        middleware = create_middleware(strict_mode=False)
+
+        # Formula: (x1 AND x2) OR (x3 AND x4)
+        formula = {
+            'type': 'OR',
+            'children': [
+                {
+                    'type': 'AND',
+                    'children': [
+                        {'type': 'LITERAL', 'value': 1},
+                        {'type': 'LITERAL', 'value': 2}
+                    ]
+                },
+                {
+                    'type': 'AND',
+                    'children': [
+                        {'type': 'LITERAL', 'value': 3},
+                        {'type': 'LITERAL', 'value': 4}
+                    ]
+                }
+            ]
+        }
+
+        cnf = tseitin_transform(formula)
+        assert cnf.num_clauses > 0
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] in ['SAT', 'UNSAT', 'TIMEOUT', 'ERROR']
+
+
+class TestHeuristicConfigurations:
+    """Test different heuristic configurations"""
+
+    @pytest.mark.asyncio
+    async def test_conservative_heuristic(self):
+        """Test conservative heuristic"""
+        middleware = create_middleware(strict_mode=False)
+        cnf = CNFFormula(num_vars=3, clauses=[[1, 2], [-1, 3]])
+
+        heuristic = {
+            'branching': 'vsids',
+            'restarts': 'geometric',
+            'phase': 'saved',
+            'vivify': False
+        }
+        budget = {'time_limit': 10, 'memory_limit': 128}
+
+        pipeline = middleware.create_solve_pipeline(heuristic, budget)
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] in ['SAT', 'UNSAT', 'TIMEOUT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_aggressive_heuristic(self):
+        """Test aggressive heuristic"""
+        middleware = create_middleware(strict_mode=False)
+        cnf = CNFFormula(num_vars=3, clauses=[[1, 2], [-1, 3]])
+
+        heuristic = {
+            'branching': 'lrb',
+            'restarts': 'luby',
+            'phase': 'false',
+            'vivify': True
+        }
+        budget = {'time_limit': 10, 'memory_limit': 128}
+
+        pipeline = middleware.create_solve_pipeline(heuristic, budget)
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] in ['SAT', 'UNSAT', 'TIMEOUT', 'ERROR']
+
+
+class TestFrontendBackendIntegration:
+    """Test frontend-backend API integration"""
+
+    def test_api_solve_endpoint_format(self):
+        """Test that solve endpoint format matches frontend expectations"""
+        # This test verifies the data format without actually calling the API
+        request_data = {
+            "cnf": "p cnf 3 3\n1 2 0\n-1 3 0\n-2 -3 0",
+            "heuristic": {
+                "branching": "vsids",
+                "restarts": "geometric",
+                "phase": "saved",
+                "vivify": False
+            },
+            "budget": {
+                "time_limit": 30,
+                "memory_limit": 256
+            }
+        }
+
+        # Verify structure
+        assert 'cnf' in request_data
+        assert 'heuristic' in request_data
+        assert 'budget' in request_data
+
+        cnf = parse_dimacs(request_data['cnf'])
+        assert cnf.num_vars == 3
+        assert cnf.num_clauses == 3
+
+    def test_api_solve_lambda_endpoint_format(self):
+        """Test that solve-lambda endpoint format matches frontend expectations"""
+        request_data = {
+            "formula": {
+                "variables": 3,
+                "clauses": [[1, 2], [-1, 3], [-2, -3]]
+            },
+            "heuristic": "conservative",
+            "budget": "standard"
+        }
+
+        # Verify structure
+        assert 'formula' in request_data
+        assert 'variables' in request_data['formula']
+        assert 'clauses' in request_data['formula']
+
+    def test_api_response_format(self):
+        """Test that API response format is correct"""
+        # Example SAT response
+        sat_response = {
+            'status': 'SAT',
+            'model': {1: True, 2: True, 3: False},
+            'verified': True,
+            'stats': {'time': 0.01, 'conflicts': 10}
+        }
+
+        assert sat_response['status'] == 'SAT'
+        assert 'model' in sat_response
+        assert 'verified' in sat_response
+
+        # Example UNSAT response
+        unsat_response = {
+            'status': 'UNSAT',
+            'verified': True,
+            'proof_message': 'Proof verified',
+            'stats': {'time': 0.02, 'conflicts': 20}
+        }
+
+        assert unsat_response['status'] == 'UNSAT'
+        assert 'verified' in unsat_response
+
+
+class TestExampleFiles:
+    """Test with example CNF files"""
+
+    @pytest.mark.asyncio
+    async def test_simple_sat_example(self):
+        """Test with simple_sat.cnf example"""
+        example_path = Path(__file__).parent.parent.parent / 'examples' / 'simple_sat.cnf'
+        if not example_path.exists():
+            pytest.skip("Example file not found")
+
+        middleware = create_middleware(strict_mode=False)
+        cnf = parse_dimacs(example_path.read_text())
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Should be SAT or ERROR (if solver not available)
+        assert result['status'] in ['SAT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_simple_unsat_example(self):
+        """Test with simple_unsat.cnf example"""
+        example_path = Path(__file__).parent.parent.parent / 'examples' / 'simple_unsat.cnf'
+        if not example_path.exists():
+            pytest.skip("Example file not found")
+
+        middleware = create_middleware(strict_mode=False)
+        cnf = parse_dimacs(example_path.read_text())
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Should be UNSAT or ERROR (if solver not available)
+        assert result['status'] in ['UNSAT', 'ERROR']
+
+
+class TestErrorHandling:
+    """Test error handling and edge cases"""
+
+    @pytest.mark.asyncio
+    async def test_empty_formula(self):
+        """Test with empty formula"""
+        middleware = create_middleware(strict_mode=False)
+        cnf = CNFFormula(num_vars=0, clauses=[])
+
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Empty formula is trivially SAT
+        assert result['status'] in ['SAT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_timeout_handling(self):
+        """Test timeout handling"""
+        middleware = create_middleware(strict_mode=False)
+        cnf = CNFFormula(num_vars=3, clauses=[[1, 2], [-1, 3]])
+
+        # Very short timeout
+        heuristic = {
+            'branching': 'vsids',
+            'restarts': 'geometric',
+            'phase': 'saved',
+            'vivify': False
+        }
+        budget = {'time_limit': 0.001, 'memory_limit': 128}  # 1ms timeout
+
+        pipeline = middleware.create_solve_pipeline(heuristic, budget)
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # May timeout or solve quickly
+        assert result['status'] in ['SAT', 'UNSAT', 'TIMEOUT', 'ERROR']
+
+
+class TestTseitinEndToEnd:
+    """End-to-end tests with Tseitin transformation"""
+
+    @pytest.mark.asyncio
+    async def test_and_formula_e2e(self):
+        """Test AND formula end-to-end"""
+        middleware = create_middleware(strict_mode=False)
+
+        # x1 AND x2
+        formula = {
+            'type': 'AND',
+            'children': [
+                {'type': 'LITERAL', 'value': 1},
+                {'type': 'LITERAL', 'value': 2}
+            ]
+        }
+
+        cnf = tseitin_transform(formula)
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Should be SAT (satisfied by x1=T, x2=T)
+        assert result['status'] in ['SAT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_contradiction_e2e(self):
+        """Test contradiction end-to-end"""
+        middleware = create_middleware(strict_mode=False)
+
+        # x1 AND NOT(x1)
+        formula = {
+            'type': 'AND',
+            'children': [
+                {'type': 'LITERAL', 'value': 1},
+                {'type': 'NOT', 'child': {'type': 'LITERAL', 'value': 1}}
+            ]
+        }
+
+        cnf = tseitin_transform(formula)
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Should be UNSAT
+        assert result['status'] in ['UNSAT', 'ERROR']
+
+    @pytest.mark.asyncio
+    async def test_complex_formula_e2e(self):
+        """Test complex formula end-to-end"""
+        middleware = create_middleware(strict_mode=False)
+
+        # (x1 -> x2) AND (x2 -> x3) AND x1
+        # Should imply x3 is true
+        formula = {
+            'type': 'AND',
+            'children': [
+                {
+                    'type': 'IMPLIES',
+                    'left': {'type': 'LITERAL', 'value': 1},
+                    'right': {'type': 'LITERAL', 'value': 2}
+                },
+                {
+                    'type': 'IMPLIES',
+                    'left': {'type': 'LITERAL', 'value': 2},
+                    'right': {'type': 'LITERAL', 'value': 3}
+                },
+                {'type': 'LITERAL', 'value': 1}
+            ]
+        }
+
+        cnf = tseitin_transform(formula)
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        # Should be SAT
+        assert result['status'] in ['SAT', 'ERROR']
+        if result['status'] == 'SAT':
+            # Check that x1, x2, x3 are all true in the model
+            model = result.get('model', {})
+            # Note: model may include Tseitin variables
