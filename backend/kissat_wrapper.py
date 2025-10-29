@@ -4,6 +4,7 @@ Kissat SAT solver wrapper with DRAT proof support
 
 import subprocess
 import tempfile
+import shutil
 from pathlib import Path
 from typing import Optional, Dict, Tuple
 from dataclasses import dataclass
@@ -126,7 +127,15 @@ class KissatWrapper:
                     timeout=budget.time_limit
                 )
 
-                return self._parse_output(result, proof_path)
+                output = self._parse_output(result, proof_path)
+
+                # Copy proof file to a persistent location if it exists
+                if output.proof_path and output.proof_path.exists():
+                    persistent_proof = Path(tempfile.mktemp(suffix='.drat', prefix='kissat_proof_'))
+                    shutil.copy2(output.proof_path, persistent_proof)
+                    output.proof_path = persistent_proof
+
+                return output
 
             except subprocess.TimeoutExpired:
                 return SolverOutput(
