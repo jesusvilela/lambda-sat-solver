@@ -1,0 +1,7 @@
+c Simple unsatisfiable formula
+c Each variable must be both true and false
+p cnf 2 4
+1 0
+-1 0
+2 0
+-2 0
