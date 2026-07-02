@@ -153,7 +153,8 @@ class TestTypeCheckerAbsAndApp:
 
     def test_abs_readcnf(self):
         # λpath. readCNF(path)  →  CNF -> CNF
-        # (param is bound as CNF by convention; body returns CNF)
+        # The TypeChecker binds all abs parameters as CNF (simplified assumption),
+        # so the parameter name does not affect type inference.
         expr = abs_('path', effect('readCNF', var('path')))
         assert self.tc.check(expr) == 'CNF -> CNF'
 
@@ -310,7 +311,7 @@ class TestCreateSolvePipelineStructure:
     """
     create_solve_pipeline() must return a LambdaExpr that:
       1. Type-checks as CNF -> Result.
-      2. Is built via pipeline() so that compose/pipeline are not dead code.
+      2. Is a single-stage abstraction wrapping one solve effect.
     """
 
     def test_pipeline_typechecks_as_cnf_to_result(self):
@@ -333,3 +334,35 @@ class TestCreateSolvePipelineStructure:
         p = mw.create_solve_pipeline()
         assert isinstance(p.body, Effect)
         assert p.body.name == 'solve'
+
+
+class TestCreatePathPipelineStructure:
+    """
+    create_path_pipeline() must return a two-stage pipeline that:
+      1. Type-checks as CNF -> Result (simplified typing; input is a path string).
+      2. Is built via pipeline() composing readCNF and solve stages.
+      3. The outer structure is an Abs (from compose(solve_stage, read_stage)).
+    """
+
+    def test_path_pipeline_typechecks_as_cnf_to_result(self):
+        from backend.middleware import create_middleware
+        mw = create_middleware(strict_mode=False)
+        p = mw.create_path_pipeline()
+        tc = TypeChecker()
+        assert tc.check(p) == 'CNF -> Result'
+
+    def test_path_pipeline_is_abs(self):
+        from backend.middleware import create_middleware
+        mw = create_middleware(strict_mode=False)
+        p = mw.create_path_pipeline()
+        assert isinstance(p, Abs)
+
+    def test_path_pipeline_is_different_from_solve_pipeline(self):
+        from backend.middleware import create_middleware
+        mw = create_middleware(strict_mode=False)
+        solve = mw.create_solve_pipeline()
+        path = mw.create_path_pipeline()
+        # path pipeline is a composed pipeline (body is App), not a bare Effect
+        assert not isinstance(path.body, Effect)
+        # solve pipeline has a bare Effect as its body
+        assert isinstance(solve.body, Effect)

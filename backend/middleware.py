@@ -299,12 +299,50 @@ class SolverMiddleware:
             }
 
         # λ cnf. solve(cnf, heuristic, budget)
-        return pipeline(
-            abs_(
-                'cnf',
-                effect('solve', var('cnf'), literal(heuristic), literal(budget))
-            )
+        return abs_(
+            'cnf',
+            effect('solve', var('cnf'), literal(heuristic), literal(budget))
         )
+
+    def create_path_pipeline(
+        self,
+        heuristic: Optional[Dict[str, Any]] = None,
+        budget: Optional[Dict[str, Any]] = None
+    ) -> LambdaExpr:
+        """
+        Create a two-stage pipeline: path -> readCNF -> solve -> Result
+
+        Unlike create_solve_pipeline(), this pipeline accepts a file path and
+        composes readCNF and solve as explicit DSL stages via pipeline().
+
+        Args:
+            heuristic: Heuristic configuration
+            budget: Budget configuration
+
+        Returns:
+            Lambda expression for the two-stage pipeline
+        """
+        if heuristic is None:
+            heuristic = {
+                'branching': 'vsids',
+                'restarts': 'geometric',
+                'phase': 'saved',
+                'vivify': False
+            }
+
+        if budget is None:
+            budget = {
+                'time_limit': 30,
+                'memory_limit': 256
+            }
+
+        read_stage = abs_('path', effect('readCNF', var('path')))
+        solve_stage = abs_(
+            'cnf',
+            effect('solve', var('cnf'), literal(heuristic), literal(budget))
+        )
+        # pipeline(read_stage, solve_stage) == λx. solve_stage(read_stage(x))
+        return pipeline(read_stage, solve_stage)
 
 
 def create_middleware(
