@@ -15,16 +15,20 @@ The first MVP of the Lambda SAT Middleware has been successfully implemented and
    - ✅ Functional composition helpers
 
 2. **CNF Utilities** (`backend/cnf_utils.py`)
-   - ✅ DIMACS CNF parser and writer
+   - ✅ DIMACS CNF parser and writer (with strict TCB-grade validation mode)
    - ✅ Model verification function
    - ✅ CNFFormula data structure
-   - ⚠️ Tseitin transformation (placeholder - accepts CNF only)
+   - ✅ Full Tseitin transformation (AND, OR, NOT, IMPLIES, IFF, XOR, literals)
 
 3. **Kissat Wrapper** (`backend/kissat_wrapper.py`)
    - ✅ Subprocess wrapper for Kissat
-   - ✅ Heuristic configuration (VSIDS, LRB, CHB, random)
-   - ✅ Budget management (time, memory, conflicts)
-   - ✅ DRAT proof generation for UNSAT
+   - ✅ Kissat version detection at startup
+   - ✅ Empirical flag validation at startup (option names differ across
+     Kissat versions); unsupported heuristic requests fail fast
+   - ✅ Heuristic configuration (branching, restarts, phase, vivification)
+   - ✅ Budget management (time via subprocess timeout, memory via
+     OS-level RLIMIT_AS on POSIX, conflicts via --conflicts)
+   - ✅ DRAT proof generation for UNSAT (persisted outside the temp dir)
 
 4. **Proof Checking** (`backend/proof_checking.py`)
    - ✅ DRAT checker wrapper (drat-trim)
@@ -35,11 +39,16 @@ The first MVP of the Lambda SAT Middleware has been successfully implemented and
    - ✅ Integrates all components
    - ✅ Effect handlers (solve, readCNF, checkModel, checkDRAT, checkLRAT)
    - ✅ Type-checked pipeline execution
-   - ✅ Strict and non-strict modes
+   - ✅ Explicit certification modes:
+     - `dev` — solve even if proof tools are missing (results may be unverified)
+     - `strict` — SAT must model-check, UNSAT must proof-check, otherwise ERROR;
+       all tools required at startup
+     - `research` — dev behavior plus raw Kissat output in responses
 
 6. **API Server** (`backend/api_server.py`)
    - ✅ Flask REST API with CORS
-   - ✅ /health endpoint
+   - ✅ Certification mode selected via `LAMBDA_SAT_MODE` env var (default: dev)
+   - ✅ /health endpoint (reports mode and tool availability)
    - ✅ /api/solve endpoint
    - ✅ /api/solve-lambda endpoint (frontend compatible)
    - ✅ /api/verify-model endpoint
@@ -112,6 +121,9 @@ npm run dev
 ### Testing the Backend
 
 ```bash
+# Run the test suite (solver-dependent tests skip when Kissat is absent)
+python -m pytest backend/tests/
+
 # Test with curl
 curl -X POST http://localhost:5001/api/solve \
   -H "Content-Type: application/json" \
@@ -125,25 +137,26 @@ curl -X POST http://localhost:5001/api/solve \
 ## What Works
 
 ✅ **Lambda DSL**: Type-checked lambda expressions with effect tracking
-✅ **Kissat Integration**: Solver wrapper with heuristic configuration
+✅ **Tseitin Transformation**: Arbitrary propositional formulas (AND, OR, NOT, IMPLIES, IFF, XOR) converted to equisatisfiable CNF
+✅ **Kissat Integration**: Version-aware solver wrapper with startup flag validation
 ✅ **Model Verification**: SAT results are verified by checking assignments
 ✅ **Proof Checking**: UNSAT results can be verified with DRAT/LRAT
+✅ **Certification Modes**: Explicit dev / strict / research behavior
 ✅ **API Server**: RESTful API for frontend integration
 ✅ **CLI Interface**: Command-line solver with full configuration
 ✅ **Docker Deployment**: One-command deployment with docker-compose
+✅ **Test Suite**: Parser, Tseitin, model verifier, DSL, wrapper, API and end-to-end tests (`backend/tests/`); solver-dependent tests gated by `KISSAT_BIN`/`DRAT_TRIM_BIN`
 ✅ **Documentation**: Comprehensive docs and examples
 
 ## Known Limitations (MVP)
 
-⚠️ **Tseitin Transformation**: Only accepts CNF input currently. Full formula transformation is a placeholder for future implementation.
-
-⚠️ **Kissat Flags**: Some heuristic flags are examples and may need adjustment based on actual Kissat version.
+⚠️ **Type Checker Granularity**: The lambda type checker uses coarse types (CNF, Result, Bool); effect arguments are not yet checked effect-by-effect.
 
 ⚠️ **LRAT Support**: Kissat doesn't natively produce LRAT; requires DRAT→LRAT conversion.
 
-⚠️ **No Tests**: Test suite not yet implemented.
+⚠️ **Memory Enforcement Scope**: OS-level memory limits (RLIMIT_AS) apply on POSIX platforms only; on other platforms only the budget value is recorded.
 
-⚠️ **Frontend Integration**: Frontend can call backend API but integration not fully tested end-to-end.
+⚠️ **Frontend Integration**: Frontend can call backend API but integration not fully tested end-to-end in the browser.
 
 ## Trusted Computing Base (TCB)
 
@@ -166,10 +179,10 @@ The system implements the correctness theorem from the conversation:
 ## Next Steps (Beyond MVP)
 
 ### High Priority
-- [ ] Implement full Tseitin transformation for arbitrary formulas
-- [ ] Add comprehensive test suite
+- [x] Implement full Tseitin transformation for arbitrary formulas
+- [x] Add comprehensive test suite
+- [x] Handle Kissat not being installed gracefully
 - [ ] Test frontend-backend integration end-to-end
-- [ ] Handle Kissat not being installed gracefully
 
 ### Medium Priority
 - [ ] Quantifier expansion for ∀/∃ over finite domains

@@ -100,7 +100,7 @@ python -m backend.cli examples/simple_sat.cnf
 python -m backend.cli examples/pigeonhole_3_2.cnf \
   --heuristic aggressive \
   --budget thorough \
-  --strict
+  --mode strict
 
 # Save results to JSON
 python -m backend.cli examples/simple_unsat.cnf \
@@ -112,6 +112,12 @@ python -m backend.cli examples/simple_unsat.cnf \
 ```bash
 # Start the API server
 python -m backend.api_server
+
+# Certification mode is configurable (dev | strict | research):
+#   dev      - solve even if proof tools are missing (default)
+#   strict   - SAT must model-check, UNSAT must proof-check
+#   research - dev behavior plus raw Kissat output in responses
+LAMBDA_SAT_MODE=strict python -m backend.api_server
 
 # Server will run on http://localhost:5001
 ```
@@ -176,8 +182,8 @@ import asyncio
 from backend.middleware import create_middleware
 from backend.cnf_utils import parse_dimacs
 
-# Create middleware
-middleware = create_middleware(strict_mode=False)
+# Create middleware ('dev', 'strict' or 'research' certification mode)
+middleware = create_middleware(mode='dev')
 
 # Parse CNF
 cnf = parse_dimacs("p cnf 3 3\n1 2 0\n-1 3 0\n-2 -3 0")
