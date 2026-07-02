@@ -16,6 +16,7 @@ from .lambda_dsl import (
     app,
     effect,
     literal,
+    pipeline,
     var
 )
 from .cnf_utils import (
@@ -298,9 +299,11 @@ class SolverMiddleware:
             }
 
         # λ cnf. solve(cnf, heuristic, budget)
-        return abs_(
-            'cnf',
-            effect('solve', var('cnf'), literal(heuristic), literal(budget))
+        return pipeline(
+            abs_(
+                'cnf',
+                effect('solve', var('cnf'), literal(heuristic), literal(budget))
+            )
         )
 
 
