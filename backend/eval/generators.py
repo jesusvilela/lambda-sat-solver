@@ -305,7 +305,7 @@ def mutilated_chessboard(n: int = 4) -> Tuple[CNFFormula, str]:
     Variables are numbered 1..N in row-major order.
 
     Args:
-        n: Board dimension (n×n).
+        n: Board dimension (n×n). Default: 4.
 
     Returns:
         (formula, 'UNSAT')

@@ -51,13 +51,10 @@ class TestUnitPropagation:
         assert sum(1 for c in result if c is not None) == 2
 
     def test_empty_clause_raises(self):
-        # Directly an empty clause
+        # Directly an empty clause — must always raise UNSATException
         clauses = [set()]
-        with pytest.raises((UNSATException, StopIteration, Exception)):
-            # Empty clause should trigger UNSAT
-            result, assigns = _unit_propagation(clauses)
-            # If not raised, the result should still mark UNSAT somehow
-            # — accept either behaviour
+        with pytest.raises(UNSATException):
+            _unit_propagation(clauses)
 
 
 # ---------------------------------------------------------------------------
