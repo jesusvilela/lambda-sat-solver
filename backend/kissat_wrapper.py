@@ -129,11 +129,20 @@ class KissatWrapper:
 
                 output = self._parse_output(result, proof_path)
 
-                # Copy proof file to a persistent location if it exists
+                # Copy proof file to a persistent location if it exists.
+                # Use mkstemp to avoid the TOCTOU race that mktemp() creates.
                 if output.proof_path and output.proof_path.exists():
-                    persistent_proof = Path(tempfile.mktemp(suffix='.drat', prefix='kissat_proof_'))
-                    shutil.copy2(output.proof_path, persistent_proof)
-                    output.proof_path = persistent_proof
+                    fd, persistent_path = tempfile.mkstemp(
+                        suffix='.drat', prefix='kissat_proof_'
+                    )
+                    try:
+                        import os
+                        os.close(fd)
+                        shutil.copy2(output.proof_path, persistent_path)
+                    except Exception:
+                        os.unlink(persistent_path)
+                        raise
+                    output.proof_path = Path(persistent_path)
 
                 return output
 
@@ -155,38 +164,55 @@ class KissatWrapper:
         budget: Budget,
         proof_path: Optional[Path]
     ) -> list:
-        """Build Kissat command with heuristic settings"""
+        """Build Kissat command with heuristic settings.
+
+        Uses the actual Kissat option names (verified against kissat --help):
+          --score=vmtf|vsids       branching score (default: vmtf)
+          --restart=block|luby|always|never  restart strategy (default: block)
+          --phase=true|false       initial phase (default: true = saved)
+          --vivify=true|false      vivification inprocessing (default: true)
+          --conflicts=<n>          conflict limit
+        """
         cmd = [self.kissat_binary]
 
-        # Add heuristic flags
-        # Note: These are example flags - actual Kissat flags may vary
-        if heuristic.branching == 'lrb':
-            cmd.append('--lrb')
-        elif heuristic.branching == 'chb':
-            cmd.append('--chb')
+        # Branching score heuristic
+        # Kissat supports 'vmtf' (default) and 'vsids'.
+        # 'lrb', 'chb', 'random' are not Kissat options; fall back to vmtf.
+        if heuristic.branching == 'vsids':
+            cmd.append('--score=vsids')
+        elif heuristic.branching in ('vmtf', 'lrb', 'chb', 'random'):
+            # vmtf is Kissat's default — no flag needed, but be explicit
+            cmd.append('--score=vmtf')
 
+        # Restart strategy
+        # Kissat supports: block (default), luby, always, never.
+        # 'geometric' is not a Kissat option; map to 'block' (similar shape).
         if heuristic.restarts == 'luby':
-            cmd.append('--luby')
+            cmd.append('--restart=luby')
+        elif heuristic.restarts == 'fixed':
+            cmd.append('--restart=never')
+        elif heuristic.restarts == 'geometric':
+            cmd.append('--restart=block')
+        # 'block' (default) needs no explicit flag
 
+        # Phase (initial polarity for variable decisions)
         if heuristic.phase == 'false':
             cmd.append('--phase=false')
         elif heuristic.phase == 'true':
             cmd.append('--phase=true')
-        elif heuristic.phase == 'random':
-            cmd.append('--phase=random')
+        # 'saved' and 'random' use Kissat's default (phase=true = saved polarity)
 
-        if heuristic.vivify:
-            cmd.append('--vivify')
+        # Vivification inprocessing
+        cmd.append('--vivify=true' if heuristic.vivify else '--vivify=false')
 
-        # Add budget constraints
+        # Conflict budget
         if budget.conflict_limit:
-            cmd.extend(['--conflicts', str(budget.conflict_limit)])
+            cmd.append(f'--conflicts={budget.conflict_limit}')
 
-        # Add proof output
+        # Positional arguments: CNF file, then optional proof file
+        cmd.append(str(cnf_path))
         if proof_path:
-            cmd.extend([str(cnf_path), str(proof_path)])
-        else:
-            cmd.append(str(cnf_path))
+            cmd.append(str(proof_path))
 
         return cmd
 
@@ -241,21 +267,41 @@ class KissatWrapper:
         return model
 
     def _extract_stats(self, output: str) -> Dict[str, any]:
-        """Extract statistics from Kissat output"""
+        """Extract statistics from Kissat output.
+
+        Kissat writes statistics lines in the format:
+            c <key>:       <value>   <optional extra text>
+        e.g.
+            c conflicts:                    4713         per second:   ...
+            c decisions:                    5000         ...
+            c memory:                       12.3 MB
+
+        We extract the first numeric token after the colon as the value.
+        Keys are normalised to lower-case with spaces replaced by underscores.
+        """
         stats = {}
 
         for line in output.split('\n'):
             line = line.strip()
-            if line.startswith('c '):
-                # Parse statistics lines
-                # Format: "c conflicts: 1234"
-                parts = line[2:].split(':')
-                if len(parts) == 2:
-                    key = parts[0].strip()
+            if not line.startswith('c '):
+                continue
+            body = line[2:]
+            if ':' not in body:
+                continue
+            key_part, _, value_part = body.partition(':')
+            key = key_part.strip().lower().replace(' ', '_')
+            if not key:
+                continue
+            # Extract first token that looks like a number (int or float)
+            for token in value_part.split():
+                try:
+                    stats[key] = int(token)
+                    break
+                except ValueError:
                     try:
-                        value = int(parts[1].strip())
-                        stats[key] = value
+                        stats[key] = float(token)
+                        break
                     except ValueError:
-                        stats[key] = parts[1].strip()
+                        continue
 
         return stats
