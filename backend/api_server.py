@@ -7,11 +7,12 @@ Provides REST API endpoints for the frontend to interact with the backend
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from pathlib import Path
+import os
 import tempfile
 import asyncio
 from functools import wraps
 
-from .middleware import create_middleware
+from .middleware import create_middleware, CERTIFICATION_MODES
 from .cnf_utils import parse_dimacs, CNFFormula
 from .kissat_wrapper import Heuristic, Budget
 
@@ -19,8 +20,19 @@ from .kissat_wrapper import Heuristic, Budget
 app = Flask(__name__)
 CORS(app)  # Enable CORS for frontend integration
 
-# Create middleware instance (non-strict mode for development)
-middleware = create_middleware(strict_mode=False)
+# Certification mode is configurable via environment:
+#   dev      - solve even if proof tools are missing (default, development)
+#   strict   - refuse to start without Kissat/drat-trim; refuse uncertified
+#              UNSAT results (production / "proof certification" promise)
+#   research - dev behavior plus raw Kissat output in responses
+CERTIFICATION_MODE = os.environ.get('LAMBDA_SAT_MODE', 'dev').lower()
+if CERTIFICATION_MODE not in CERTIFICATION_MODES:
+    raise ValueError(
+        f"Invalid LAMBDA_SAT_MODE={CERTIFICATION_MODE!r}. "
+        f"Expected one of {CERTIFICATION_MODES}"
+    )
+
+middleware = create_middleware(mode=CERTIFICATION_MODE)
 
 
 def async_route(f):
@@ -37,6 +49,7 @@ def health_check():
     return jsonify({
         'status': 'healthy',
         'version': '0.1.0',
+        'mode': middleware.mode,
         'kissat_available': middleware.kissat is not None,
         'drat_available': middleware.drat_checker is not None,
         'lrat_available': middleware.lrat_checker is not None
@@ -263,6 +276,7 @@ def run_server(host='127.0.0.1', port=5001, debug=True):
 ║   Server running at: http://{host}:{port}             ║
 ║   Health check: http://{host}:{port}/health          ║
 ║                                                           ║
+║   Certification mode: {middleware.mode:>8}                          ║
 ║   Kissat available: {str(middleware.kissat is not None):>5}                           ║
 ║   DRAT checker available: {str(middleware.drat_checker is not None):>5}               ║
 ║   LRAT checker available: {str(middleware.lrat_checker is not None):>5}               ║

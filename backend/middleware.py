@@ -35,6 +35,15 @@ from .kissat_wrapper import (
 from .proof_checking import DRATChecker, LRATChecker
 
 
+#: Explicit certification modes
+#:   dev      - solve even if proof tools are missing; results may be unverified
+#:   strict   - SAT must model-check and UNSAT must proof-check, otherwise ERROR;
+#:              all tools must be available at startup
+#:   research - like dev, but responses additionally carry raw Kissat output
+#:              alongside the verification status
+CERTIFICATION_MODES = ('dev', 'strict', 'research')
+
+
 class SolverMiddleware:
     """
     Lambda SAT Middleware
@@ -48,7 +57,8 @@ class SolverMiddleware:
         kissat_binary: str = "kissat",
         drat_trim_binary: str = "drat-trim",
         lrat_check_binary: str = "lrat-check",
-        strict_mode: bool = True
+        strict_mode: Optional[bool] = None,
+        mode: Optional[str] = None
     ):
         """
         Initialize middleware
@@ -57,15 +67,29 @@ class SolverMiddleware:
             kissat_binary: Path to Kissat binary
             drat_trim_binary: Path to drat-trim binary
             lrat_check_binary: Path to lrat-check binary
-            strict_mode: If True, require proof verification for UNSAT
+            strict_mode: Deprecated boolean alias; True maps to mode='strict',
+                False maps to mode='dev'
+            mode: Certification mode: 'dev', 'strict' or 'research'
+                (default 'strict' to preserve prior behavior)
         """
-        self.strict_mode = strict_mode
+        if mode is None:
+            if strict_mode is None:
+                mode = 'strict'
+            else:
+                mode = 'strict' if strict_mode else 'dev'
+        if mode not in CERTIFICATION_MODES:
+            raise ValueError(
+                f"Unknown certification mode: {mode!r}. "
+                f"Expected one of {CERTIFICATION_MODES}"
+            )
+        self.mode = mode
+        self.strict_mode = (mode == 'strict')
 
         # Initialize solvers and checkers
         try:
             self.kissat = KissatWrapper(kissat_binary)
         except RuntimeError as e:
-            if strict_mode:
+            if self.strict_mode:
                 raise
             print(f"Warning: Kissat not available: {e}")
             self.kissat = None
@@ -73,7 +97,7 @@ class SolverMiddleware:
         try:
             self.drat_checker = DRATChecker(drat_trim_binary)
         except RuntimeError as e:
-            if strict_mode:
+            if self.strict_mode:
                 raise
             print(f"Warning: DRAT checker not available: {e}")
             self.drat_checker = None
@@ -130,14 +154,14 @@ class SolverMiddleware:
         if result.result == KissatResult.SAT:
             # Verify model before returning
             if result.model and verify_model(cnf, result.model):
-                return {
+                response = {
                     'status': 'SAT',
                     'model': result.model,
                     'verified': True,
                     'stats': result.stats
                 }
             else:
-                return {
+                response = {
                     'status': 'ERROR',
                     'message': 'Model verification failed',
                     'verified': False
@@ -155,32 +179,39 @@ class SolverMiddleware:
                 proof_message = proof_check.message
 
             if self.strict_mode and not verified:
-                return {
+                response = {
                     'status': 'ERROR',
                     'message': f'UNSAT proof verification required but failed: {proof_message}',
                     'verified': False
                 }
-
-            return {
-                'status': 'UNSAT',
-                'verified': verified,
-                'proof_message': proof_message,
-                'stats': result.stats
-            }
+            else:
+                response = {
+                    'status': 'UNSAT',
+                    'verified': verified,
+                    'proof_message': proof_message,
+                    'stats': result.stats
+                }
 
         # Handle timeout
         elif result.result == KissatResult.TIMEOUT:
-            return {
+            response = {
                 'status': 'TIMEOUT',
                 'message': result.error_message
             }
 
         # Handle error
         else:
-            return {
+            response = {
                 'status': 'ERROR',
                 'message': result.error_message
             }
+
+        # Research mode: expose raw solver output alongside verification
+        if self.mode == 'research':
+            response['raw_output'] = result.raw_output
+            response['mode'] = 'research'
+
+        return response
 
     async def _handle_check_model(
         self,
@@ -346,17 +377,24 @@ class SolverMiddleware:
 
 
 def create_middleware(
-    strict_mode: bool = False,
+    strict_mode: Optional[bool] = None,
+    mode: Optional[str] = None,
     **kwargs
 ) -> SolverMiddleware:
     """
     Factory function to create middleware instance
 
     Args:
-        strict_mode: If True, require all tools (Kissat, drat-trim) to be available
+        strict_mode: Deprecated boolean alias; True maps to mode='strict',
+            False maps to mode='dev'
+        mode: Certification mode: 'dev' (tolerate missing tools),
+            'strict' (require tools; SAT must model-check, UNSAT must
+            proof-check) or 'research' (dev behavior plus raw solver output)
         **kwargs: Additional arguments passed to SolverMiddleware
 
     Returns:
         Configured SolverMiddleware instance
     """
-    return SolverMiddleware(strict_mode=strict_mode, **kwargs)
+    if mode is None and strict_mode is None:
+        mode = 'dev'
+    return SolverMiddleware(strict_mode=strict_mode, mode=mode, **kwargs)
