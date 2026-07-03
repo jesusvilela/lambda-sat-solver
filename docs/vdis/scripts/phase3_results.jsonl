@@ -1406,3 +1406,12 @@
 {"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,CTRL", "seed": 0, "result": "UNSAT", "decisions": 1638, "conflicts": 1202, "wall_s": 1.984}
 {"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,CTRL", "seed": 1, "result": "UNSAT", "decisions": 1479, "conflicts": 1094, "wall_s": 1.808}
 {"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,CTRL", "seed": 2, "result": "UNSAT", "decisions": 1697, "conflicts": 1259, "wall_s": 2.175}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,CTRL", "seed": 3, "result": "UNSAT", "decisions": 2098, "conflicts": 1523, "wall_s": 2.802}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,CTRL", "seed": 4, "result": "UNSAT", "decisions": 1663, "conflicts": 1197, "wall_s": 2.099}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF1", "seed": 0, "result": "UNSAT", "decisions": 1638, "conflicts": 1202, "wall_s": 3.924}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF1", "seed": 1, "result": "UNSAT", "decisions": 1654, "conflicts": 1247, "wall_s": 4.044}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF1", "seed": 2, "result": "UNSAT", "decisions": 1697, "conflicts": 1259, "wall_s": 4.176}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF1", "seed": 3, "result": "UNSAT", "decisions": 2376, "conflicts": 1766, "wall_s": 6.044}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF1", "seed": 4, "result": "UNSAT", "decisions": 1663, "conflicts": 1197, "wall_s": 3.935}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF2", "seed": 0, "result": "UNSAT", "decisions": 1638, "conflicts": 1202, "wall_s": 3.721}
+{"stage": "b13v4", "instance": "php_7_6", "family": "pigeonhole", "config": "VDIS4-H,MF2", "seed": 1, "result": "UNSAT", "decisions": 1507, "conflicts": 1112, "wall_s": 3.302}
