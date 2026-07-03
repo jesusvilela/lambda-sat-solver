@@ -362,6 +362,33 @@ class TestTseitinEndToEnd:
             # Note: model may include Tseitin variables
 
 
+class TestBinaryClauseFastPath:
+    """The binary-clause pre-check runs even without Kissat installed,
+    since it's an independent proof that doesn't invoke the solver."""
+
+    @pytest.mark.asyncio
+    async def test_fast_path_does_not_require_kissat(self):
+        middleware = create_middleware(strict_mode=False, kissat_binary="/nonexistent/kissat")
+        assert middleware.kissat is None
+
+        # Classic 2-SAT UNSAT gadget: consistent to catch via binary clauses alone
+        cnf = CNFFormula(num_vars=2, clauses=[[1, 2], [-1, 2], [1, -2], [-1, -2]])
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+
+        assert result['status'] == 'UNSAT'
+        assert result['certificate'] == 'UNSAT_CERTIFIED'
+        assert 'Kissat not invoked' in result['proof_message']
+
+    @pytest.mark.asyncio
+    async def test_no_kissat_and_no_binary_contradiction_raises(self):
+        middleware = create_middleware(strict_mode=False, kissat_binary="/nonexistent/kissat")
+        cnf = CNFFormula(num_vars=2, clauses=[[1, 2]])
+        pipeline = middleware.create_solve_pipeline()
+        with pytest.raises(RuntimeError):
+            await middleware.execute_pipeline(pipeline, cnf)
+
+
 class TestCertificateStatus:
     """Unit tests for the certificate-status mapping (no Kissat required)"""
 

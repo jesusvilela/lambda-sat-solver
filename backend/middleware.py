@@ -33,6 +33,7 @@ from .kissat_wrapper import (
     SolverResult as KissatResult
 )
 from .proof_checking import DRATChecker, LRATChecker
+from .binary_clause_check import check_binary_clauses
 
 
 #: Explicit certification modes
@@ -154,6 +155,31 @@ class SolverMiddleware:
         budget: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Effect handler: Solve CNF formula"""
+        # Fast independent pre-check: a binary-clause (2-SAT) contradiction
+        # proves the whole formula UNSAT without invoking Kissat or waiting
+        # on DRAT verification - the SCC argument is self-verifying, and
+        # runs even if Kissat isn't installed. This only fires when such a
+        # contradiction exists in the 2-literal clauses; otherwise it's a
+        # no-op and Kissat runs as usual.
+        binary_check = check_binary_clauses(cnf)
+        if not binary_check.consistent:
+            response = {
+                'status': 'UNSAT',
+                'verified': True,
+                'proof_message': (
+                    f'Proved UNSAT from binary clauses alone (2-SAT contradiction '
+                    f'on variable {binary_check.conflicting_variable}); Kissat not invoked.'
+                ),
+                'stats': None,
+            }
+            if self.mode == 'research':
+                response['raw_output'] = None
+                response['mode'] = 'research'
+            response['certificate'] = _certificate_status(
+                response['status'], response.get('verified')
+            )
+            return response
+
         if self.kissat is None:
             raise RuntimeError("Kissat solver not available")
 
