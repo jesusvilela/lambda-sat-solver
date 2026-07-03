@@ -23,7 +23,7 @@ probe disposition, before the benchmark).
 | Config | beats EVSIDS | php wins | r3sat wins | Σ median decisions |
 |---|---|---|---|---|
 | v1 winner (VDIS-H, λχ=0.1, β=0.1) | 6/13 | 1/4 | 5/9 | 24 599 |
-| **VDIS3 PA (tie-break only)** | 5/13 | 1/4 | 4/9 | **23 586 — best in Track B1** |
+| **VDIS3 PA (tie-break only)** | 5/13 | 1/4 | 4/9 | **23 586 — best in the H lineage** (CORRECTED: Phase 3's VDIS-C sits at 20 043; see the correction note in VDIS4_REPORT.md) |
 | VDIS3 P, λp=0.3 | 4/13 | 1/4 | 3/9 | 26 043 |
 | VDIS3 P@0.1+PA | 3/13 | 1/4 | 2/9 | 25 645 |
 | VDIS3 P, λp=0.1 | 2/13 | 1/4 | 1/9 | 25 213 |

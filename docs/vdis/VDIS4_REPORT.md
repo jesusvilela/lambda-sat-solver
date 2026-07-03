@@ -1,5 +1,28 @@
 # VDIS v4 report — moving-frame rotor on the v3 PA setup
 
+> **CORRECTION (self-review, post-publication).** This report and
+> VDIS3_REPORT.md claimed track-level superlatives ("best aggregate
+> total in Track B1", "best-ever VDIS php medians") that are FALSE.
+> Phase 3's original **VDIS-C** configs (never revisited after the
+> pinned win-count rule selected H) hold the true track bests: total
+> **20 043** (vs MF3's 23 383) and php_8_7 = **14 623** / php_7_6 =
+> **1 371** (vs MF3's 17 647 / 1 654) — with no tie-break, no rotor,
+> nothing but algebra C and κ=−2 from the family table. How the error
+> happened: after the winner rule eliminated C at 5-vs-6 wins, every
+> subsequent generation's comparison tables carried only the H lineage
+> forward, and "track best" was asserted against that filtered view —
+> a self-inflicted streetlight effect. Consequences for this report's
+> narrative: (a) all "best in track" claims below should read "best in
+> the H lineage"; (b) the MF3-on-php identity-code story survives only
+> as a −7% within-H effect — the dominant php lever measured in this
+> track is the algebra/curvature choice (C at κ=−2: −23% vs the H
+> baseline), which no tie-break comes close to; (c) C wins 5/13
+> (php_5_4, n100_s2, n100_s3, n50_s1, n75_s3) — same count as PA/MF3,
+> different instances, 14% lower total. The C branch never received
+> the v3/v4 tie-break machinery; that is now the obvious open
+> experiment. Numbers in the tables below are correct as measured;
+> only the superlative framings were wrong.
+
 **Verdict: W2 FAIL (best 5/13 vs 7/13), W4 FAIL on the pinned win-count
 (5 = 5, not >). Fourth consecutive miss of the primary bar; no-rescue
 closes v4. But this generation settled the attribution question with a
