@@ -360,3 +360,54 @@ class TestTseitinEndToEnd:
             # Check that x1, x2, x3 are all true in the model
             model = result.get('model', {})
             # Note: model may include Tseitin variables
+
+
+class TestCertificateStatus:
+    """Unit tests for the certificate-status mapping (no Kissat required)"""
+
+    def test_sat_verified(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('SAT', True) == 'SAT_CERTIFIED'
+
+    def test_sat_unverified(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('SAT', False) == 'UNVERIFIED_SOLVER_CLAIM'
+
+    def test_unsat_verified(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('UNSAT', True) == 'UNSAT_CERTIFIED'
+
+    def test_unsat_unverified(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('UNSAT', False) == 'UNVERIFIED_SOLVER_CLAIM'
+
+    def test_timeout(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('TIMEOUT', None) == 'TIMEOUT'
+
+    def test_error(self):
+        from backend.middleware import _certificate_status
+        assert _certificate_status('ERROR', None) == 'ERROR'
+
+
+@requires_kissat
+class TestCertificateStatusIntegration:
+    """End-to-end: the certificate field appears on real solve results"""
+
+    @pytest.mark.asyncio
+    async def test_unsat_result_carries_certificate(self):
+        middleware = create_middleware(strict_mode=False, kissat_binary=KISSAT_BIN)
+        cnf = CNFFormula(num_vars=1, clauses=[[1], [-1]])
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+        assert result['status'] == 'UNSAT'
+        assert result['certificate'] == 'UNSAT_CERTIFIED'
+
+    @pytest.mark.asyncio
+    async def test_sat_result_carries_certificate(self):
+        middleware = create_middleware(strict_mode=False, kissat_binary=KISSAT_BIN)
+        cnf = CNFFormula(num_vars=2, clauses=[[1, 2]])
+        pipeline = middleware.create_solve_pipeline()
+        result = await middleware.execute_pipeline(pipeline, cnf)
+        assert result['status'] == 'SAT'
+        assert result['certificate'] == 'SAT_CERTIFIED'

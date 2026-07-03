@@ -44,6 +44,25 @@ from .proof_checking import DRATChecker, LRATChecker
 CERTIFICATION_MODES = ('dev', 'strict', 'research')
 
 
+def _certificate_status(status: str, verified: Optional[bool]) -> str:
+    """Map a raw (status, verified) pair to an explicit certificate status.
+
+    This is a read of existing response fields, not a new correctness
+    guarantee: SAT_CERTIFIED/UNSAT_CERTIFIED mean the model/proof check
+    already in `_handle_solve` passed. UNVERIFIED_SOLVER_CLAIM marks a
+    solver-reported SAT/UNSAT that wasn't independently verified (only
+    reachable outside strict mode, since strict mode already turns an
+    unverified result into ERROR).
+    """
+    if status == 'SAT':
+        return 'SAT_CERTIFIED' if verified else 'UNVERIFIED_SOLVER_CLAIM'
+    if status == 'UNSAT':
+        return 'UNSAT_CERTIFIED' if verified else 'UNVERIFIED_SOLVER_CLAIM'
+    if status == 'TIMEOUT':
+        return 'TIMEOUT'
+    return 'ERROR'
+
+
 class SolverMiddleware:
     """
     Lambda SAT Middleware
@@ -216,6 +235,10 @@ class SolverMiddleware:
             response['raw_output'] = result.raw_output
             response['mode'] = 'research'
 
+        response['certificate'] = _certificate_status(
+            response['status'], response.get('verified')
+        )
+
         return response
 
     async def _handle_check_model(
@@ -335,9 +358,11 @@ class SolverMiddleware:
             }
 
         # λ cnf. solve(cnf, heuristic, budget)
-        return abs_(
-            'cnf',
-            effect('solve', var('cnf'), literal(heuristic), literal(budget))
+        # Wrapped in pipeline() (a no-op for a single stage) so this stays
+        # consistent with create_path_pipeline() and any future multi-stage
+        # composition, rather than returning the raw abs_(...) directly.
+        return pipeline(
+            abs_('cnf', effect('solve', var('cnf'), literal(heuristic), literal(budget)))
         )
 
     def create_path_pipeline(
