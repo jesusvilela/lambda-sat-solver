@@ -5,6 +5,7 @@ Runs multiple solver configurations in parallel and returns the first successful
 """
 
 import asyncio
+import os
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
@@ -38,7 +39,7 @@ class PortfolioSolver:
         self,
         kissat_binary: str = "kissat",
         drat_trim_binary: str = "drat-trim",
-        max_parallel: int = 4
+        max_parallel: Optional[int] = None
     ):
         """
         Initialize portfolio solver
@@ -46,13 +47,19 @@ class PortfolioSolver:
         Args:
             kissat_binary: Path to Kissat binary
             drat_trim_binary: Path to drat-trim binary
-            max_parallel: Maximum number of parallel solvers to run
+            max_parallel: Maximum number of parallel solvers to run. Each
+                config is a CPU-bound Kissat subprocess, so running more of
+                them at once than there are cores causes contention rather
+                than speedup. Defaults to the machine's CPU count (capped
+                at 4, since the default portfolio only has 4 configs).
         """
         self.kissat = KissatWrapper(kissat_binary)
         self.drat_checker = DRATChecker(drat_trim_binary)
-        self.max_parallel = max_parallel
+        if max_parallel is None:
+            max_parallel = min(4, os.cpu_count() or 4)
+        self.max_parallel = max(1, max_parallel)
         # Shared executor so solver subprocesses don't block the event loop
-        self._executor = ThreadPoolExecutor(max_workers=max_parallel)
+        self._executor = ThreadPoolExecutor(max_workers=self.max_parallel)
 
     def get_default_portfolio(self) -> List[PortfolioConfig]:
         """

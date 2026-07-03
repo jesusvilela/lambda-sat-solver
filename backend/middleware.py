@@ -33,6 +33,7 @@ from .kissat_wrapper import (
     SolverResult as KissatResult
 )
 from .proof_checking import DRATChecker, LRATChecker
+from .binary_clause_check import check_binary_clauses
 
 
 #: Explicit certification modes
@@ -42,6 +43,25 @@ from .proof_checking import DRATChecker, LRATChecker
 #:   research - like dev, but responses additionally carry raw Kissat output
 #:              alongside the verification status
 CERTIFICATION_MODES = ('dev', 'strict', 'research')
+
+
+def _certificate_status(status: str, verified: Optional[bool]) -> str:
+    """Map a raw (status, verified) pair to an explicit certificate status.
+
+    This is a read of existing response fields, not a new correctness
+    guarantee: SAT_CERTIFIED/UNSAT_CERTIFIED mean the model/proof check
+    already in `_handle_solve` passed. UNVERIFIED_SOLVER_CLAIM marks a
+    solver-reported SAT/UNSAT that wasn't independently verified (only
+    reachable outside strict mode, since strict mode already turns an
+    unverified result into ERROR).
+    """
+    if status == 'SAT':
+        return 'SAT_CERTIFIED' if verified else 'UNVERIFIED_SOLVER_CLAIM'
+    if status == 'UNSAT':
+        return 'UNSAT_CERTIFIED' if verified else 'UNVERIFIED_SOLVER_CLAIM'
+    if status == 'TIMEOUT':
+        return 'TIMEOUT'
+    return 'ERROR'
 
 
 class SolverMiddleware:
@@ -135,6 +155,31 @@ class SolverMiddleware:
         budget: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Effect handler: Solve CNF formula"""
+        # Fast independent pre-check: a binary-clause (2-SAT) contradiction
+        # proves the whole formula UNSAT without invoking Kissat or waiting
+        # on DRAT verification - the SCC argument is self-verifying, and
+        # runs even if Kissat isn't installed. This only fires when such a
+        # contradiction exists in the 2-literal clauses; otherwise it's a
+        # no-op and Kissat runs as usual.
+        binary_check = check_binary_clauses(cnf)
+        if not binary_check.consistent:
+            response = {
+                'status': 'UNSAT',
+                'verified': True,
+                'proof_message': (
+                    f'Proved UNSAT from binary clauses alone (2-SAT contradiction '
+                    f'on variable {binary_check.conflicting_variable}); Kissat not invoked.'
+                ),
+                'stats': None,
+            }
+            if self.mode == 'research':
+                response['raw_output'] = None
+                response['mode'] = 'research'
+            response['certificate'] = _certificate_status(
+                response['status'], response.get('verified')
+            )
+            return response
+
         if self.kissat is None:
             raise RuntimeError("Kissat solver not available")
 
@@ -215,6 +260,10 @@ class SolverMiddleware:
         if self.mode == 'research':
             response['raw_output'] = result.raw_output
             response['mode'] = 'research'
+
+        response['certificate'] = _certificate_status(
+            response['status'], response.get('verified')
+        )
 
         return response
 
@@ -335,9 +384,11 @@ class SolverMiddleware:
             }
 
         # λ cnf. solve(cnf, heuristic, budget)
-        return abs_(
-            'cnf',
-            effect('solve', var('cnf'), literal(heuristic), literal(budget))
+        # Wrapped in pipeline() (a no-op for a single stage) so this stays
+        # consistent with create_path_pipeline() and any future multi-stage
+        # composition, rather than returning the raw abs_(...) directly.
+        return pipeline(
+            abs_('cnf', effect('solve', var('cnf'), literal(heuristic), literal(budget)))
         )
 
     def create_path_pipeline(
