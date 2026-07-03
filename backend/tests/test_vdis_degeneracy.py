@@ -55,7 +55,10 @@ def _run_with_recording(cnf: CNFFormula, heuristic, max_conflicts=20000):
 
 
 def _degenerate_vdis(num_vars: int) -> VDISHeuristic:
-    return VDISHeuristic(num_vars, dim=1, c=0.0, eta=1.0, decay_gamma=1.0)
+    # eta/decay_gamma must match EVSIDSHeuristic's defaults (var_inc=1.0,
+    # var_decay=0.95) exactly for the order-equivalence argument in
+    # docs/vdis/PHASE_1_PATCH.md to apply.
+    return VDISHeuristic(num_vars, dim=1, c=0.0, eta=1.0, decay_gamma=0.95)
 
 
 class TestDegeneracyGate:
@@ -67,21 +70,6 @@ class TestDegeneracyGate:
         assert len(suite) >= 20
         return suite.instances
 
-    @pytest.mark.xfail(
-        reason=(
-            "S4 gate FAILS as diagnosed in docs/vdis/PHASE_1.md: the S3.1/S3.2 "
-            "conflict-bump rule (Delta_C computed from literals' CURRENT "
-            "tangent state, applied via gyrotransport) has an absorbing fixed "
-            "point at t=0 when all literals start at zero - confirmed "
-            "empirically, tangent state stays exactly zero even after real "
-            "conflicts occur. This is a property of the pinned update rule, "
-            "not an implementation bug in gyro_ops.py (142/142 property tests "
-            "pass separately). Marked xfail(strict=True) rather than deleted "
-            "so a corrected update rule can be checked against this same test "
-            "later; an unexpected pass will show as XPASS and demand attention."
-        ),
-        strict=True,
-    )
     def test_decision_sequences_identical(self, instances):
         mismatches = []
         for inst in instances:

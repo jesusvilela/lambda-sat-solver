@@ -3,20 +3,28 @@ VDIS Track B1 - the object of study. Implements the DecisionHeuristic
 protocol (backend.refsolver.heuristics) using the gyrovector state/update
 rule pinned in the spec (S3), via backend.vdis.gyro_ops.
 
-Phase 1 scope: only the degenerate configuration needed for the S4
-degeneracy test (A=R, D=1, c->0, beta=0, lambda_tau=lambda_chi=0) is
-exercised so far. The rotor/torsion channel (S3.4), multi-algebra
-support (C/H), and the curvature bandit (S3.5) are Phase 2 - the
-constructor accepts their parameters now so Phase 2 can fill in the
-rotor update without changing this file's interface, but `beta`,
-`lambda_tau`, `lambda_chi` are inert (asserted zero) until then.
+Patch (this file, second pass): the S3.1 rule "Delta_C = sum_l alpha_l *
+t_l" has an absorbing fixed point at t=0 (docs/vdis/PHASE_1.md) - proved
+empirically, tangent state stayed exactly zero even after real conflicts.
+Fix: axis 0 of the tangent space is reserved as the "infinitesimal
+fossil" direction and always receives a FIXED unit contribution
+(1.0) per conflict, independent of any literal's current state - a
+hyperdimensional-infinitesimal decomposition where the scalar/real part
+carries exactly the EVSIDS dynamic (see the exact-equivalence argument in
+docs/vdis/PHASE_1_PATCH.md) and axes 1..D-1, present only for D>1, carry
+the genuinely state-dependent "living field" contribution untouched by
+this patch (still inert / Phase 2 scope while D=1).
 
-State: per literal (not per variable - matches heap[lit] = VDIS(lit) in
-S3.6), a tangent vector t_lit of dimension `dim` (= D * m; Phase 1 only
-supports A=R so m=1 and dim=D), stored at the origin per the spec's own
-"implementation detail" note (avoids exp/log round trips every bump;
-the ball point V_lit = exp_0(t_lit) is materialized only when the
-transport-target geometry requires it).
+Two more bugs fixed in the same pass, both needed for the degeneracy
+claim and neither related to the absorbing fixed point:
+  - pick() must rank VARIABLES by combined activity across both
+    polarities (t_v[0] + t_(-v)[0]), matching EVSIDS's single
+    per-variable score - not by comparing the two literals' individual
+    scores against each other, which is a different selection rule.
+  - phase (polarity) selection needs an explicit saved-phase mechanism
+    (last assigned polarity), matching EVSIDSHeuristic, rather than
+    "whichever literal's own score is higher" - a per-literal score
+    comparison is not what phase-saving is and doesn't reduce to it.
 """
 
 from __future__ import annotations
@@ -35,7 +43,7 @@ class VDISHeuristic:
         dim: int = 1,
         c: float = 0.0,
         eta: float = 1.0,
-        decay_gamma: float = 1.0,
+        decay_gamma: float = 0.95,
         beta: float = 0.0,
         lambda_tau: float = 0.0,
         lambda_chi: float = 0.0,
@@ -63,26 +71,31 @@ class VDISHeuristic:
 
         self.saved_phase = [True] * (num_vars + 1)
 
-    def _score(self, lit: int) -> float:
-        """VDIS(lit) per S3.6 with lambda_tau=lambda_chi=0 and Psi taken as
-        the fixed unit vector e_0 (torsion channel is disabled in this
-        configuration, so there is no learned global conflict direction
-        yet - Phase 2 replaces this with the EMA-updated Psi)."""
-        psi = np.zeros(self.dim)
-        psi[0] = 1.0
-        return float(np.dot(self.t[lit], psi))  # sigma is monotone -> ranks the same pre/post
+    def _var_activity(self, v: int) -> float:
+        """Combined activity across both polarities of variable v, axis 0
+        only (the fossil/EVSIDS-equivalent axis) - matches EVSIDS's single
+        per-variable score, which accumulates regardless of which polarity
+        of v appeared in a given learned clause."""
+        return float(self.t[v][0] + self.t[-v][0])
 
     def on_conflict(self, learned: Sequence[int], lbd: int, trail: Sequence[int]) -> None:
-        # Delta_C = sum_{l in C} alpha_l * t_l  (S3.1), alpha_l = 1/|C| default
         alpha = 1.0 / len(learned)
         delta_c = np.zeros(self.dim)
-        for lit in learned:
-            delta_c = delta_c + alpha * self.t[lit]
 
-        # Bump = gyrotransport step (S3.2), applied to every literal in the
-        # learned clause using the *pre-bump* Delta_C computed above.
+        # Axis 0: fixed infinitesimal unit of conflict mass - a conflict
+        # occurred and this literal participated, full stop, independent
+        # of anyone's current state. This is what the degenerate (D=1)
+        # case reduces to; it is NOT state-dependent, unlike axes 1..D-1.
+        delta_c[0] = 1.0
+
+        # Axes 1..D-1 (Phase 2 scope, inert while dim=1): the genuinely
+        # state-dependent "living field" contribution from S3.1.
+        if self.dim > 1:
+            for lit in learned:
+                delta_c[1:] += alpha * self.t[lit][1:]
+
         for lit in learned:
-            v_lit = exp_map_zero(self.t[lit], self.c)  # materialize ball point
+            v_lit = exp_map_zero(self.t[lit], self.c)
             transported = parallel_transport_from_zero(v_lit, delta_c, self.c)
             new_v_lit = exp_map(v_lit, self.eta * transported, self.c)
             self.t[lit] = log_map_zero(new_v_lit, self.c)
@@ -95,18 +108,25 @@ class VDISHeuristic:
 
     def pick(self, num_vars: int, value: List[Optional[bool]]) -> int:
         best_var = -1
-        best_score = -float("inf")
+        best_activity = -float("inf")
         for v in range(1, num_vars + 1):
             if value[v] is not None:
                 continue
-            s = max(self._score(v), self._score(-v))
-            if s > best_score:
-                best_score = s
+            a = self._var_activity(v)
+            if a > best_activity:
+                best_activity = a
                 best_var = v
-        return best_var if self._score(best_var) >= self._score(-best_var) else -best_var
+        return best_var if self.saved_phase[best_var] else -best_var
 
     def decay(self) -> None:
-        # Decay = Mobius scalar multiplication (S3.3): t <- gamma (x)_c t
+        # Decay = Mobius scalar multiplication (S3.3): t <- gamma (x)_c t,
+        # applied to every literal's full state every conflict. At c=0
+        # this is a direct rescale t *= gamma, which is exactly order-
+        # equivalent (up to a positive global constant shared by every
+        # literal at a given step) to EVSIDS's "grow var_inc instead of
+        # decaying scores" implementation, provided decay_gamma ==
+        # EVSIDSHeuristic's var_decay and eta == its initial var_inc -
+        # see docs/vdis/PHASE_1_PATCH.md for the derivation.
         if self.decay_gamma == 1.0:
             return
         for lit in list(self.t.keys()):
