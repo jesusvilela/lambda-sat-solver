@@ -1,30 +1,52 @@
 """
 VDIS Track B1 - the object of study. Implements the DecisionHeuristic
 protocol (backend.refsolver.heuristics) using the gyrovector state/update
-rule pinned in the spec (S3), via backend.vdis.gyro_ops.
+rule pinned in the spec (S3), via backend.vdis.gyro_ops and, for the
+Phase 2 rotor/torsion channel, backend.vdis.algebra.
 
-Patch (this file, second pass): the S3.1 rule "Delta_C = sum_l alpha_l *
-t_l" has an absorbing fixed point at t=0 (docs/vdis/PHASE_1.md) - proved
-empirically, tangent state stayed exactly zero even after real conflicts.
-Fix: axis 0 of the tangent space is reserved as the "infinitesimal
-fossil" direction and always receives a FIXED unit contribution
-(1.0) per conflict, independent of any literal's current state - a
-hyperdimensional-infinitesimal decomposition where the scalar/real part
-carries exactly the EVSIDS dynamic (see the exact-equivalence argument in
-docs/vdis/PHASE_1_PATCH.md) and axes 1..D-1, present only for D>1, carry
-the genuinely state-dependent "living field" contribution untouched by
-this patch (still inert / Phase 2 scope while D=1).
+Phase 1 patch (kept): the S3.1 rule "Delta_C = sum_l alpha_l * t_l" has
+an absorbing fixed point at t=0 (docs/vdis/PHASE_1.md) - proved
+empirically. Fix: axis 0 of the tangent space is the "infinitesimal
+fossil" direction and always receives a FIXED unit contribution (1.0)
+per conflict, independent of any literal's current state; the scalar
+part carries exactly the EVSIDS dynamic (docs/vdis/PHASE_1_PATCH.md;
+gate accepted at float64 exactness by operator decision).
 
-Two more bugs fixed in the same pass, both needed for the degeneracy
-claim and neither related to the absorbing fixed point:
-  - pick() must rank VARIABLES by combined activity across both
-    polarities (t_v[0] + t_(-v)[0]), matching EVSIDS's single
-    per-variable score - not by comparing the two literals' individual
-    scores against each other, which is a different selection rule.
-  - phase (polarity) selection needs an explicit saved-phase mechanism
-    (last assigned polarity), matching EVSIDSHeuristic, rather than
-    "whichever literal's own score is higher" - a per-literal score
-    comparison is not what phase-saving is and doesn't reduce to it.
+Phase 2 (docs/vdis/PHASE_2.md) adds, per the S3 spec:
+  - Hypercomplex algebras A in {R, C, H}: dim = D * m real axes viewed
+    as D slots of m = dim_R(A) coords each. Axis 0 (slot 0's scalar
+    part) remains the fossil axis.
+  - Living-field initialization: axes 1..dim-1 start at eps * N(0,1)
+    (seeded). Without this the SAME absorbing-fixed-point argument that
+    killed Phase 1's first attempt applies verbatim to the living axes:
+    their forcing (S3.1) and the rotor wedge are both proportional to
+    current state, so from exact zero they stay exactly zero forever.
+    The spec's state decomposition (u_l on the unit sphere S^{Dm-1})
+    presumes a direction exists; eps-init makes one. Axis 0's init
+    stays exactly 0.0, so the fossil dynamic is untouched.
+  - Rotor/torsion channel (S3.4): Omega_l += beta * (that_l ^ dhat_C)
+    with vectors extracted per algebra.vector_part from normalized
+    slot-sums; R_l = exp(Omega_l / 2); tau_l = <R_l Psi R_l', Psi>_0.
+    Psi is a unit rotor updated as an EMA of the rotors exp(w/2),
+    w = (previous conflict direction) ^ (current conflict direction).
+    Omega decays by the same gamma as t (pinned choice - unspecified in
+    S3.4; without it |Omega| grows ~beta per conflict without bound).
+  - Decision scalar (S3.6): score(l) = <t_l, Psi>_Cl + lambda_tau*tau_l
+    + lambda_chi*chi_l, with <t, Psi>_Cl = sum over slots of the
+    Clifford inner product <slot_d Psi~>_0 = dot(slot_d, Psi). sigma is
+    the identity (monotone, so ordering-equivalent to any sigmoid, and
+    it cannot introduce new float64 ties the way a compressive sigma
+    could). Variables are ranked by score(+v) + score(-v), phase by
+    saved polarity - both carried over from the Phase 1 patch.
+  - chi_l: precomputed per-literal clause-length statistic (see
+    compute_chi) - 0 when no formula profile is supplied.
+
+Degenerate-path guarantee: with algebra='R', dim=1, beta=0,
+lambda_tau=lambda_chi=0 every arithmetic operation on the fossil axis
+is float64-identical to the Phase 1 implementation (vectorized decay
+multiplies elementwise by the same gamma; the bump chain is unchanged),
+so the S4 degeneracy gate keeps holding - enforced by
+test_vdis_degeneracy.py, not assumed.
 """
 
 from __future__ import annotations
@@ -33,7 +55,44 @@ from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 
-from .gyro_ops import exp_map, exp_map_zero, log_map_zero, mobius_scalar_mul, parallel_transport_from_zero
+from .algebra import (
+    algebra_dims,
+    identity_rotor,
+    rotor_exp,
+    rotor_normalize,
+    rotor_sandwich,
+    vector_part,
+    wedge,
+)
+from .gyro_ops import (
+    exp_map,
+    exp_map_zero,
+    log_map_zero,
+    parallel_transport_from_zero,
+)
+
+_TINY = 1e-12
+
+
+def compute_chi(clauses: Sequence[Sequence[int]], num_vars: int) -> np.ndarray:
+    """Per-literal chi (S3.6): 2 / (mean length of clauses containing the
+    literal), in (0, 1] with 1 for all-binary neighborhoods, 0 for
+    literals in no clause. Pinned simple version - the spec's
+    "curvature-compatibility with kappa_f" is not given a formula, and
+    inventing a kappa interaction here would be exactly the kind of
+    unvalidated bridge the protocol parks; the kappa dependence enters
+    only through which kappa the curvature bandit picks per family.
+    Indexed by lit + num_vars (same layout as the heuristic's state)."""
+    total_len = np.zeros(2 * num_vars + 1)
+    count = np.zeros(2 * num_vars + 1)
+    for clause in clauses:
+        n = len(clause)
+        for lit in clause:
+            total_len[lit + num_vars] += n
+            count[lit + num_vars] += 1
+    with np.errstate(invalid="ignore", divide="ignore"):
+        chi = np.where(count > 0, 2.0 * count / np.where(total_len > 0, total_len, 1.0), 0.0)
+    return chi
 
 
 class VDISHeuristic:
@@ -44,39 +103,118 @@ class VDISHeuristic:
         c: float = 0.0,
         eta: float = 1.0,
         decay_gamma: float = 0.95,
+        algebra: str = "R",
         beta: float = 0.0,
         lambda_tau: float = 0.0,
         lambda_chi: float = 0.0,
+        psi_mu: float = 0.05,
+        living_eps: float = 1e-3,
+        chi: Optional[np.ndarray] = None,
         seed: int = 0,
     ):
-        if beta != 0.0 or lambda_tau != 0.0 or lambda_chi != 0.0:
-            raise NotImplementedError(
-                "rotor/torsion channel (beta, lambda_tau, lambda_chi != 0) is "
-                "Phase 2 scope; Phase 1 only implements the degenerate "
-                "(beta=0, lambda_tau=0, lambda_chi=0) configuration needed "
-                "for the S4 degeneracy test."
+        m, bdim = algebra_dims(algebra)
+        if dim % m != 0:
+            raise ValueError(
+                f"dim={dim} is not a multiple of dim_R({algebra!r})={m}"
             )
+        if algebra == "R" and (beta != 0.0 or lambda_tau != 0.0):
+            raise ValueError(
+                "rotor/torsion channel needs a bivector structure; "
+                "algebra 'R' has none (use 'C' or 'H')"
+            )
+        if dim > 64:
+            raise ValueError("S3.7 hard budget: dim = D*m <= 64")
+
         self.num_vars = num_vars
         self.dim = dim
         self.c = c
         self.eta = eta
         self.decay_gamma = decay_gamma
+        self.algebra = algebra
+        self.m = m
+        self.D = dim // m
+        self.beta = beta
+        self.lambda_tau = lambda_tau
+        self.lambda_chi = lambda_chi
+        self.psi_mu = psi_mu
         self._rng = np.random.default_rng(seed)
 
-        # Tangent state per literal, at the origin (t_lit = log_0^c(V_lit)).
-        self.t: Dict[int, np.ndarray] = {}
-        for v in range(1, num_vars + 1):
-            self.t[v] = np.zeros(dim)
-            self.t[-v] = np.zeros(dim)
+        # Tangent state, one row per literal: row index = lit + num_vars
+        # (row num_vars, "literal 0", is unused). self.t exposes dict-of-
+        # views access; all mutation goes through the backing array so
+        # views stay live and decay can be one vectorized multiply.
+        self._t = np.zeros((2 * num_vars + 1, dim))
+        if dim > 1 and living_eps > 0.0:
+            self._t[:, 1:] = living_eps * self._rng.standard_normal(
+                (2 * num_vars + 1, dim - 1)
+            )
+            self._t[num_vars, :] = 0.0
+        self.t: Dict[int, np.ndarray] = {
+            lit: self._t[lit + num_vars]
+            for lit in range(-num_vars, num_vars + 1)
+            if lit != 0
+        }
 
         self.saved_phase = [True] * (num_vars + 1)
 
+        # Rotor channel state (only materialized when the algebra has
+        # bivectors AND the channel can influence anything).
+        self._rotor_active = bdim > 0 and beta != 0.0
+        if bdim > 0:
+            self._omega = np.zeros((2 * num_vars + 1, bdim))
+            self._rotors = np.tile(identity_rotor(algebra), (2 * num_vars + 1, 1))
+            self._rotors_dirty = False
+            self.psi = identity_rotor(algebra)
+            self._prev_dvec: Optional[np.ndarray] = None
+        else:
+            self.psi = identity_rotor("R") if algebra == "R" else None
+
+        self._chi = chi
+        if chi is not None and len(chi) != 2 * num_vars + 1:
+            raise ValueError("chi must have length 2*num_vars + 1")
+
+        # Full scoring engages whenever anything beyond the fossil-axis
+        # activity can matter. The degenerate configuration keeps the
+        # exact Phase 1 code path (see module docstring).
+        self._full_scoring = (
+            algebra != "R" or self.lambda_tau != 0.0 or self.lambda_chi != 0.0
+        )
+
+    # -- helpers ----------------------------------------------------------
+
     def _var_activity(self, v: int) -> float:
-        """Combined activity across both polarities of variable v, axis 0
-        only (the fossil/EVSIDS-equivalent axis) - matches EVSIDS's single
-        per-variable score, which accumulates regardless of which polarity
-        of v appeared in a given learned clause."""
+        """Degenerate-path ranking: combined axis-0 activity across both
+        polarities, matching EVSIDS's single per-variable score."""
         return float(self.t[v][0] + self.t[-v][0])
+
+    def _unit_alg_vector(self, x: np.ndarray) -> Optional[np.ndarray]:
+        """Normalized tangent -> slot-sum algebra element -> grade-1
+        vector -> normalized; None when any stage is degenerate."""
+        n = np.linalg.norm(x)
+        if n <= _TINY:
+            return None
+        vec = vector_part((x / n).reshape(self.D, self.m).sum(axis=0), self.algebra)
+        vn = np.linalg.norm(vec)
+        if vn <= _TINY:
+            return None
+        return vec / vn
+
+    def _lit_scores(self) -> np.ndarray:
+        """S3.6 decision scalar for every literal (row layout)."""
+        psi_tiled = np.tile(self.psi, self.D)
+        scores = self._t @ psi_tiled
+        if self.lambda_tau != 0.0:
+            if self._rotors_dirty:
+                self._rotors = rotor_exp(self._omega / 2.0, self.algebra)
+                self._rotors_dirty = False
+            sandwich = rotor_sandwich(self._rotors, self.psi, self.algebra)
+            tau = np.sum(sandwich * self.psi, axis=-1)
+            scores = scores + self.lambda_tau * tau
+        if self.lambda_chi != 0.0 and self._chi is not None:
+            scores = scores + self.lambda_chi * self._chi
+        return scores
+
+    # -- DecisionHeuristic protocol ----------------------------------------
 
     def on_conflict(self, learned: Sequence[int], lbd: int, trail: Sequence[int]) -> None:
         alpha = 1.0 / len(learned)
@@ -84,21 +222,41 @@ class VDISHeuristic:
 
         # Axis 0: fixed infinitesimal unit of conflict mass - a conflict
         # occurred and this literal participated, full stop, independent
-        # of anyone's current state. This is what the degenerate (D=1)
-        # case reduces to; it is NOT state-dependent, unlike axes 1..D-1.
+        # of anyone's current state (the Phase 1 patch; this is what the
+        # degenerate D=1 case reduces to).
         delta_c[0] = 1.0
 
-        # Axes 1..D-1 (Phase 2 scope, inert while dim=1): the genuinely
-        # state-dependent "living field" contribution from S3.1.
+        # Axes 1..dim-1: the state-dependent "living field" from S3.1.
         if self.dim > 1:
             for lit in learned:
                 delta_c[1:] += alpha * self.t[lit][1:]
 
+        # Rotor/torsion channel (S3.4).
+        if self._rotor_active:
+            dvec = self._unit_alg_vector(delta_c)
+            if dvec is not None:
+                for lit in learned:
+                    tvec = self._unit_alg_vector(self.t[lit])
+                    if tvec is not None:
+                        self._omega[lit + self.num_vars] += self.beta * wedge(
+                            tvec, dvec, self.algebra
+                        )
+                self._rotors_dirty = True
+                if self._prev_dvec is not None:
+                    w = wedge(self._prev_dvec, dvec, self.algebra)
+                    r_c = rotor_exp(w / 2.0, self.algebra)
+                    self.psi = rotor_normalize(
+                        (1.0 - self.psi_mu) * self.psi + self.psi_mu * r_c,
+                        self.algebra,
+                    )
+                self._prev_dvec = dvec
+
+        # Bump = gyrotransport step (S3.2), unchanged from Phase 1.
         for lit in learned:
             v_lit = exp_map_zero(self.t[lit], self.c)
             transported = parallel_transport_from_zero(v_lit, delta_c, self.c)
             new_v_lit = exp_map(v_lit, self.eta * transported, self.c)
-            self.t[lit] = log_map_zero(new_v_lit, self.c)
+            self.t[lit][:] = log_map_zero(new_v_lit, self.c)
 
     def on_assign(self, lit: int) -> None:
         self.saved_phase[abs(lit)] = lit > 0
@@ -109,25 +267,53 @@ class VDISHeuristic:
     def pick(self, num_vars: int, value: List[Optional[bool]]) -> int:
         best_var = -1
         best_activity = -float("inf")
-        for v in range(1, num_vars + 1):
-            if value[v] is not None:
-                continue
-            a = self._var_activity(v)
-            if a > best_activity:
-                best_activity = a
-                best_var = v
+        if self._full_scoring:
+            scores = self._lit_scores()
+            for v in range(1, num_vars + 1):
+                if value[v] is not None:
+                    continue
+                a = scores[v + self.num_vars] + scores[-v + self.num_vars]
+                if a > best_activity:
+                    best_activity = a
+                    best_var = v
+        else:
+            for v in range(1, num_vars + 1):
+                if value[v] is not None:
+                    continue
+                a = self._var_activity(v)
+                if a > best_activity:
+                    best_activity = a
+                    best_var = v
         return best_var if self.saved_phase[best_var] else -best_var
 
     def decay(self) -> None:
-        # Decay = Mobius scalar multiplication (S3.3): t <- gamma (x)_c t,
-        # applied to every literal's full state every conflict. At c=0
-        # this is a direct rescale t *= gamma, which is exactly order-
-        # equivalent (up to a positive global constant shared by every
-        # literal at a given step) to EVSIDS's "grow var_inc instead of
-        # decaying scores" implementation, provided decay_gamma ==
-        # EVSIDSHeuristic's var_decay and eta == its initial var_inc -
-        # see docs/vdis/PHASE_1_PATCH.md for the derivation.
+        # Decay = Mobius scalar multiplication (S3.3): t <- gamma (x)_c t.
+        # At c=0 this is elementwise t *= gamma - bit-identical to the
+        # Phase 1 per-literal mobius_scalar_mul(gamma, t, 0) = gamma * t,
+        # which is what keeps the degeneracy gate green (verified by
+        # test_vdis_degeneracy.py, not assumed). For c>0 the same map is
+        # applied row-vectorized: tanh(gamma * artanh(sqrt(c)|t|)) along
+        # each t's own direction.
         if self.decay_gamma == 1.0:
             return
-        for lit in list(self.t.keys()):
-            self.t[lit] = mobius_scalar_mul(self.decay_gamma, self.t[lit], self.c)
+        if self.c <= 0:
+            self._t *= self.decay_gamma
+        else:
+            sqrt_c = np.sqrt(self.c)
+            norms = np.linalg.norm(self._t, axis=1, keepdims=True)
+            arg = np.clip(sqrt_c * norms, 0.0, 1.0 - 1e-15)
+            with np.errstate(invalid="ignore", divide="ignore"):
+                scale = np.where(
+                    norms > _TINY,
+                    np.tanh(self.decay_gamma * np.arctanh(arg))
+                    / (sqrt_c * np.where(norms > 0, norms, 1.0)),
+                    0.0,
+                )
+            self._t *= scale
+        # Pinned choice: the rotor memory decays with the same gamma so
+        # |Omega| stays bounded by ~beta/(1-gamma) (S3.4 doesn't specify
+        # a decay; without one the bivector grows without bound and the
+        # rotor angle aliases mod 2*pi).
+        if self._rotor_active:
+            self._omega *= self.decay_gamma
+            self._rotors_dirty = True

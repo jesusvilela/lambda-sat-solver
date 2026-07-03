@@ -1,3 +1,4 @@
+from .vdis_heuristic import VDISHeuristic, compute_chi
 from .gyro_ops import (
     NumericalInstabilityError,
     conformal_factor,
@@ -16,6 +17,8 @@ from .gyro_ops import (
 )
 
 __all__ = [
+    "VDISHeuristic",
+    "compute_chi",
     "NumericalInstabilityError",
     "conformal_factor",
     "exp_map",
