@@ -315,7 +315,10 @@ class VDISHeuristic:
         neg = vunit[n - 1 :: -1][:n]   # rows for -1..-n, aligned to +1..+n
         ok = (norms[n + 1 :, 0] > _TINY) & (norms[n - 1 :: -1][:n, 0] > _TINY)
         ok &= (vnorm[n + 1 :, 0] > _TINY) & (vnorm[n - 1 :: -1][:n, 0] > _TINY)
-        cross = np.linalg.norm(np.cross(pos, neg), axis=1)
+        raw_cross = np.cross(pos, neg)
+        # np.cross returns (N,) scalars for 2-dim inputs (algebra C),
+        # (N, 3) vectors for 3-dim (algebra H)
+        cross = np.abs(raw_cross) if raw_cross.ndim == 1 else np.linalg.norm(raw_cross, axis=1)
         dot = np.sum(pos * neg, axis=1)
         theta = np.where(ok, np.arctan2(cross, dot), 0.0)
         out = np.zeros(self.num_vars + 1)

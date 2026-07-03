@@ -252,6 +252,45 @@ def stage_b13v4(done):
                 run_one("b13v4", name, family, cnf, label, mk, seed, done)
 
 
+def b13f_instances():
+    """B13'' (VDIS5_PREREG.md): php unchanged (deterministic), r3sat
+    with fresh seeds 11-13 never used elsewhere in the track."""
+    out = []
+    for n in (5, 6, 7, 8):
+        cnf, _ = pigeonhole(n)
+        out.append((f"php_{n}_{n-1}", "pigeonhole", cnf))
+    for n in (50, 75, 100):
+        for s in (11, 12, 13):
+            cnf, _ = random_ksat(n, int(n * 4.267), k=3, seed=s)
+            out.append((f"r3sat_n{n}_s{s}", "random-3sat", cnf))
+    return out
+
+
+def stage_b13f(done):
+    """VDIS v5 per VDIS5_PREREG.md: fresh-instance benchmark."""
+    vdis_configs = (
+        ("C-plain", "C", dict()),
+        ("C-PA", "C", dict(tie_break_pair=True)),
+        ("H-PA", "H", dict(tie_break_pair=True)),
+        ("H-MF3", "H", dict(beta=0.1, moving_frame=True, tie_break_pair=True,
+                            tie_break_frame=1.0, torsion_anchor=True)),
+    )
+    for name, family, cnf in b13f_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        for label, mk in BASELINES.items():
+            for seed in SEEDS:
+                run_one("b13f", name, family, cnf, label, mk(cnf), seed, done)
+        for tag, algebra, extra in vdis_configs:
+            label = f"VDIS5,{tag}"
+            for seed in SEEDS:
+                def mk2(seed, a=algebra, e=extra):
+                    return VDISHeuristic(
+                        cnf.num_vars, dim=32, c=-kappa_for(a, family),
+                        algebra=a, lambda_chi=0.1, chi=chi, seed=seed, **e,
+                    )
+                run_one("b13f", name, family, cnf, label, mk2, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -263,6 +302,8 @@ def main():
         stage_b13v3(done)
     elif stage == "b13v4":
         stage_b13v4(done)
+    elif stage == "b13f":
+        stage_b13f(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":
