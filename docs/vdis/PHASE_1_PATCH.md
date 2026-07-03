@@ -97,7 +97,18 @@ and do drift under repeated floating-point rounding — it just wasn't the
 mechanism actually operating in 2 of these 3 cases, and I should have
 checked before writing it down as the explanation.
 
-## Open question (not resolved unilaterally)
+## Open question — RESOLVED by operator decision (2026-07-03)
+
+**The operator chose path (a)**: float64-exact equivalence — 150/150 on
+the quick suite, 60/63 on the medium suite, with the residual 3 fully
+diagnosed above as exact-tie ULP sensitivity between two mathematically
+identical decay bookkeeping strategies — is accepted as satisfying the
+S4 degeneracy gate's intent. The structural bug S4 exists to catch (the
+absorbing fixed point) is fixed and verified; the residual divergence is
+a property of float64 itself, not of the gyro machinery. Track B1
+proceeds to Phase 2. Original decision text kept below for the record.
+
+### Original decision text
 
 The S4 gate as literally stated ("decision sequences equal element-wise")
 is not met bit-for-bit on arbitrarily long runs, because of this float64
