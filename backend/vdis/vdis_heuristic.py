@@ -147,6 +147,8 @@ class VDISHeuristic:
         wedge_ortho: bool = False,
         pair_torsion: float = 0.0,
         tie_break_pair: bool = False,
+        moving_frame: bool = False,
+        tie_break_frame: float = 0.0,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -216,6 +218,24 @@ class VDISHeuristic:
         self.tie_break_pair = tie_break_pair
         self.tie_breaks_fired = 0  # R1 liveness instrumentation
 
+        # VDIS v4 (VDIS4_PREREG.md): rotor restored in a Cartan moving
+        # frame. F chases the conflict flow with body-frame (right)
+        # composition - the "moving moving" scheme; per-literal Omega
+        # accumulates FRAME-RELATIVE wedges, so the signal zero is
+        # "co-rotating with the flow", not "aligned with Delta" (the
+        # measured v1/v2 death mode). Readout: rho_v = |Omega_+v -
+        # Omega_-v| (polarity disagreement, x/x' conjunction), fed to
+        # the anti-ambiguous tie-break with weight tie_break_frame.
+        if moving_frame and (algebra != "H" or beta == 0.0):
+            raise ValueError("moving_frame needs algebra 'H' and beta != 0")
+        if tie_break_frame != 0.0 and not moving_frame:
+            raise ValueError("tie_break_frame needs moving_frame=True")
+        self.moving_frame = moving_frame
+        self.tie_break_frame = tie_break_frame
+        if moving_frame:
+            self._frame = identity_rotor(algebra)
+            self._prev_dworld: Optional[np.ndarray] = None
+
         # Rotor channel state (only materialized when the algebra has
         # bivectors AND the channel can influence anything).
         self._rotor_active = bdim > 0 and beta != 0.0
@@ -261,6 +281,22 @@ class VDISHeuristic:
         if vn <= _TINY:
             return None
         return vec / vn
+
+    def _to_frame(self, v: np.ndarray) -> np.ndarray:
+        """Express a 3-vector in the moving frame: Im(F-conj (0,v) F)."""
+        from .algebra import quat_mul, quat_conj
+        q = np.concatenate([[0.0], v])
+        return quat_mul(quat_mul(quat_conj(self._frame), q), self._frame)[1:]
+
+    def _frame_rho(self) -> np.ndarray:
+        """rho_v = |Omega_+v - Omega_-v| per variable (v4 readout):
+        polarity disagreement of frame-relative accumulated torsion."""
+        n = self.num_vars
+        pos = self._omega[n + 1 :]
+        neg = self._omega[n - 1 :: -1][:n]
+        out = np.zeros(n + 1)
+        out[1:] = np.linalg.norm(pos - neg, axis=1)
+        return out
 
     def _pair_angles(self) -> np.ndarray:
         """theta_v in [0, pi] per variable (index 1..num_vars): angle
@@ -318,8 +354,40 @@ class VDISHeuristic:
             for lit in learned:
                 delta_c[1:] += alpha * self.t[lit][1:]
 
+        # v4 moving-frame rotor (VDIS4_PREREG.md) - replaces the fixed-
+        # frame S3.4 accumulation entirely when active.
+        if self._rotor_active and self.moving_frame:
+            dvec = self._unit_alg_vector(delta_c)
+            if dvec is not None:
+                d_rel = self._to_frame(dvec)
+                if self._prev_dworld is not None:
+                    p_rel = self._to_frame(self._prev_dworld)
+                    w = wedge(p_rel, d_rel, self.algebra)
+                    # body-frame (right) composition: the frame update
+                    # is expressed in the frame's own coordinates.
+                    from .algebra import quat_mul
+                    self._frame = rotor_normalize(
+                        quat_mul(self._frame, rotor_exp(w / 2.0, self.algebra)),
+                        self.algebra,
+                    )
+                    d_rel = self._to_frame(dvec)  # re-express in updated frame
+                for lit in learned:
+                    tvec = self._unit_alg_vector(self.t[lit])
+                    if tvec is not None:
+                        self._omega[lit + self.num_vars] += self.beta * wedge(
+                            self._to_frame(tvec), d_rel, self.algebra
+                        )
+                    if self.torsion_anchor:
+                        # v4-MF3: fixed prime-phase anchor, re-expressed
+                        # in the moving frame - the anchor precesses
+                        # with the conflict flow instead of being static.
+                        self._omega[lit + self.num_vars] += (
+                            self.beta
+                            * self._to_frame(self._anchors[lit + self.num_vars])
+                        )
+                self._prev_dworld = dvec
         # Rotor/torsion channel (S3.4; v2 variants per VDIS2_PREREG.md).
-        if self._rotor_active:
+        elif self._rotor_active:
             dvec = self._unit_alg_vector(delta_c)
             if dvec is not None:
                 for lit in learned:
@@ -386,6 +454,7 @@ class VDISHeuristic:
         best_activity = -float("inf")
         if self._full_scoring:
             scores = self._lit_scores()
+            tie_active = self.tie_break_pair or self.tie_break_frame != 0.0
             theta = (
                 self._pair_angles()
                 if (self.pair_torsion != 0.0 or self.tie_break_pair)
@@ -400,12 +469,18 @@ class VDISHeuristic:
                 if a > best_activity:
                     best_activity = a
                     best_var = v
-            if self.tie_break_pair and best_var != -1:
-                # Anti-ambiguous injection (v3): within the near-tie
-                # band the most polarity-contested variable wins.
-                # Clear decisions are untouched by construction.
+            if tie_active and best_var != -1:
+                # Anti-ambiguous injection (v3/v4): within the near-tie
+                # band the variable with the largest tie scalar wins -
+                # pair angle (v3), frame-torsion polarity disagreement
+                # (v4), or their sum. Clear decisions untouched.
+                tie = np.zeros(self.num_vars + 1)
+                if self.tie_break_pair:
+                    tie += theta / np.pi
+                if self.tie_break_frame != 0.0:
+                    tie += self.tie_break_frame * self._frame_rho()
                 band = best_activity - 1e-6 * max(abs(best_activity), 1.0)
-                tied_best, tied_theta = best_var, theta[best_var]
+                tied_best, tied_score = best_var, tie[best_var]
                 n_tied = 1
                 for v in range(1, num_vars + 1):
                     if v == best_var or value[v] is not None:
@@ -415,8 +490,8 @@ class VDISHeuristic:
                         a += self.pair_torsion * (theta[v] / np.pi)
                     if a >= band:
                         n_tied += 1
-                        if theta[v] > tied_theta:
-                            tied_best, tied_theta = v, theta[v]
+                        if tie[v] > tied_score:
+                            tied_best, tied_score = v, tie[v]
                 if n_tied > 1 and tied_best != best_var:
                     self.tie_breaks_fired += 1
                     best_var = tied_best

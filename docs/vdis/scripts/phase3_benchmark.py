@@ -227,6 +227,31 @@ def stage_b13v3(done):
                 run_one("b13v3", name, family, cnf, label, mk, seed, done)
 
 
+def stage_b13v4(done):
+    """VDIS v4 sweep per VDIS4_PREREG.md: moving-frame rotor on the v3
+    PA setup. H, dim=32, lambda_chi=0.1, kappa per family.
+    CTRL is the beta=0-plain attribution control."""
+    configs = (
+        ("CTRL", dict(beta=0.0)),
+        ("MF1", dict(beta=0.1, moving_frame=True, tie_break_pair=True,
+                     tie_break_frame=1.0)),
+        ("MF2", dict(beta=0.1, moving_frame=True, tie_break_frame=1.0)),
+        ("MF3", dict(beta=0.1, moving_frame=True, tie_break_pair=True,
+                     tie_break_frame=1.0, torsion_anchor=True)),
+    )
+    for name, family, cnf in b13_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        for tag, extra in configs:
+            label = f"VDIS4-H,{tag}"
+            for seed in SEEDS:
+                def mk(seed, e=extra):
+                    return VDISHeuristic(
+                        cnf.num_vars, dim=32, c=-kappa_for("H", family),
+                        algebra="H", lambda_chi=0.1, chi=chi, seed=seed, **e,
+                    )
+                run_one("b13v4", name, family, cnf, label, mk, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -236,6 +261,8 @@ def main():
         stage_b13v2(done)
     elif stage == "b13v3":
         stage_b13v3(done)
+    elif stage == "b13v4":
+        stage_b13v4(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":

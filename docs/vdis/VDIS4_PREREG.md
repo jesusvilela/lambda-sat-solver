@@ -49,6 +49,16 @@ implementation.**
    removal was the improvement; CTRL ≈ v1's 24 599 ⇒ the tie-break was.
 2. **MF1** (θ + ρ tie-break, moving-frame rotor, β = 0.1).
 3. **MF2** (ρ-only tie-break, moving-frame rotor, β = 0.1).
+4. **MF3** (= MF1 + prime-number anchors feeding the moving-frame Ω,
+   re-expressed in the frame each conflict so the fixed prime phases
+   PRECESS with the conflict flow — primes give identity, the frame
+   gives dynamics). Added by operator decision before any v4 run
+   ("do we keep primes too in the sense of prime numbers?" → add as
+   its own config). Risk pre-declared: with antipodal polarity anchors
+   the anchor term does NOT cancel in ρ_v = ‖Ω₊ − Ω₋‖, so MF3's
+   tie-break carries a static prime-fingerprint component alongside
+   the holonomy signal; MF3 vs MF1 measures whether that identity
+   component helps or just shuffles ties arbitrarily.
 
 B13′, seeds 0–4, cap 100 000, median decisions — apparatus unchanged.
 
@@ -65,3 +75,23 @@ B13′, seeds 0–4, cap 100 000, median decisions — apparatus unchanged.
 - **W4 (the operator's question)**: best MF config > v3-PA's 5/13 —
   does the restored, moving-frame rotor add wins to the current setup?
 - **No-rescue**: grid final for v4.
+
+---
+
+## W1 probe disposition (ADDENDUM — after probe, before benchmark; thresholds unedited)
+
+- Frame liveness: ‖F_biv‖ = 0.32 (r3sat) / 0.52 (php) — the moving
+  frame moves, ✓ (contrast v2's Ψ ≤ 2×10⁻⁴).
+- ρ spread on r3sat: 0.082 (MF1/MF2) ✓; 1.13 (MF3, prime fingerprint
+  dominating as pre-declared).
+- **php: ρ = 0 exactly.** Deeper than the v1 alignment death: PHP's
+  polarity symmetry gives x and x′ identical bump histories, so
+  Ω₊ = Ω₋ identically and no frame can separate them. Third
+  independent confirmation of the family asymmetry; pre-declared.
+- Tie-break fires: MF1/MF2 ✓ on the pinned probe. MF3 fired 0 there —
+  characterized on five further r3sat instances before any benchmark:
+  fires 28/12/1/0/0, i.e. the probe's zero was a single-tie-event
+  sample, not systematic deadness. W1 read as PASS for all three
+  configs, with the characterization runs disclosed here (they are
+  seed-0 probes; benchmark medians are untouched by them).
+- Proceeding to the full grid: CTRL, MF1, MF2, MF3.
