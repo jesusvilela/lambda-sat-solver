@@ -34,6 +34,8 @@ from .kissat_wrapper import (
 )
 from .proof_checking import DRATChecker, LRATChecker
 from .binary_clause_check import check_binary_clauses
+from .cnf_profile import profile_cnf, CNFProfile
+from .policy import choose_heuristic, choose_budget
 
 
 #: Explicit certification modes
@@ -135,7 +137,11 @@ class SolverMiddleware:
             'solve': self._handle_solve,
             'checkModel': self._handle_check_model,
             'checkDRAT': self._handle_check_drat,
-            'checkLRAT': self._handle_check_lrat
+            'checkLRAT': self._handle_check_lrat,
+            'profileCNF': self._handle_profile_cnf,
+            'selectHeuristic': self._handle_select_heuristic,
+            'solveWithConfig': self._handle_solve_with_config,
+            'certify': self._handle_certify,
         }
 
         self.type_checker = TypeChecker()
@@ -147,6 +153,45 @@ class SolverMiddleware:
         if not path_obj.exists():
             raise FileNotFoundError(f"CNF file not found: {path}")
         return parse_dimacs_file(path_obj)
+
+    async def _handle_profile_cnf(self, cnf: CNFFormula) -> CNFProfile:
+        """Effect handler: extract structural features (backend.cnf_profile)"""
+        return profile_cnf(cnf)
+
+    async def _handle_select_heuristic(self, profile: CNFProfile) -> Dict[str, Any]:
+        """Effect handler: rule-based heuristic/budget selection (backend.policy)
+
+        Returns a "Config" - {heuristic, budget} as the dataclass instances
+        choose_heuristic/choose_budget already produce, not re-wrapped as
+        dicts, since _handle_solve_with_config passes them straight through
+        to _handle_solve, which already accepts either dataclass or dict.
+        """
+        return {
+            'heuristic': choose_heuristic(profile),
+            'budget': choose_budget(profile),
+        }
+
+    async def _handle_solve_with_config(
+        self,
+        cnf: CNFFormula,
+        config: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Effect handler: solve using a Config produced by selectHeuristic,
+        rather than the caller supplying heuristic/budget literals directly
+        (that path is still create_solve_pipeline(), unchanged)."""
+        return await self._handle_solve(cnf, config['heuristic'], config['budget'])
+
+    async def _handle_certify(self, result: Dict[str, Any]) -> str:
+        """Effect handler: project a solve Result down to its certificate.
+
+        _handle_solve already computes and attaches 'certificate' onto its
+        response (see _certificate_status below), so this is a real type
+        change (Result -> Certificate, i.e. the bare status string) rather
+        than a no-op pass-through stage - it exists as its own effect so a
+        composed pipeline can express "solve, then certify" as two visible
+        stages instead of certification being invisible inside solve.
+        """
+        return result['certificate']
 
     async def _handle_solve(
         self,
@@ -430,6 +475,36 @@ class SolverMiddleware:
         )
         # pipeline(read_stage, solve_stage) == λx. solve_stage(read_stage(x))
         return pipeline(read_stage, solve_stage)
+
+    def create_adaptive_pipeline(self) -> LambdaExpr:
+        """
+        Create the profile -> select -> solve -> certify pipeline:
+
+            lambda cnf. certify(solveWithConfig(cnf, selectHeuristic(profileCNF(cnf))))
+
+        Unlike create_solve_pipeline() (which takes heuristic/budget as
+        caller-supplied literals), this pipeline derives them from the CNF
+        itself via backend.cnf_profile / backend.policy, and each stage is
+        a real composed effect application rather than a single hardcoded
+        solve() call - the four stages are individually visible to the type
+        checker (Profile -> Config -> Result -> Certificate) rather than
+        being one opaque effect.
+
+        `cnf` is referenced twice in the body (once for profiling, once for
+        solving) - ordinary lambda calculus allows reusing a bound variable;
+        there is no linearity restriction here.
+        """
+        return abs_(
+            'cnf',
+            effect(
+                'certify',
+                effect(
+                    'solveWithConfig',
+                    var('cnf'),
+                    effect('selectHeuristic', effect('profileCNF', var('cnf')))
+                )
+            )
+        )
 
 
 def create_middleware(
