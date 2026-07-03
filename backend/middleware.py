@@ -172,9 +172,14 @@ class SolverMiddleware:
             verified = False
             proof_message = "No proof available"
 
-            # Verify proof if available
+            # Verify proof if available. Proof checking is a separate step
+            # from solving and can take longer than the solve itself on hard
+            # instances, so give it the same time budget the caller asked
+            # for rather than a timeout hardcoded independent of it.
             if result.proof_path and self.drat_checker:
-                proof_check = self.drat_checker.check_proof(cnf, result.proof_path)
+                proof_check = self.drat_checker.check_proof(
+                    cnf, result.proof_path, timeout=budget_obj.time_limit
+                )
                 verified = proof_check.valid
                 proof_message = proof_check.message
 
