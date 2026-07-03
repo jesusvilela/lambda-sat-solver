@@ -73,3 +73,28 @@ Configs (algebra H, dim 32, κ per family table, λχ = 0.1):
   purely-additive P config on the vs-EVSIDS count — "anti ambiguous
   will help" made falsifiable.
 - **No-rescue**: this grid is final for v3.
+
+---
+
+## R1 probe disposition (ADDENDUM — written after the probe, before the benchmark; thresholds above unedited)
+
+Measured:
+- r3sat_n100_s1: θ spread 0.69, λ_p toggle changes decisions, PA fires
+  (1 re-decision). **Fully alive.**
+- php_7_6: θ spread at end-of-solve = 0.0000 — the pre-declared
+  residual risk confirmed on the structured family (both polarities
+  track Δ̂, mutually align). Re-measured at decision time (the honest
+  measurement point, which the criterion above failed to specify):
+  spread > 10⁻² in 47.8% of 1777 decisions, mean 0.92, median 0.0009 —
+  the signal **oscillates**: alive after backtracks, collapsing during
+  aligned stretches. λ_p toggle changes decisions (1777 vs 1909). PA
+  fired 0 re-decisions on php (ties there coincide with collapsed-θ
+  phases).
+
+Disposition, declared before running: **proceed with all four
+configs.** P's liveness holds on both probes at decision time; PA's
+fire-criterion holds on r3sat and fails on php — so PA is recorded
+a-priori as family-dependent (expected dead on pigeonhole, alive on
+random-3sat), and R4 will be read per-family as well as overall, with
+this asymmetry pre-declared rather than discovered post hoc. No
+threshold, config, or metric above is altered.

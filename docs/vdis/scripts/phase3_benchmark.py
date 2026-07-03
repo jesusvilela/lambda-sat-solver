@@ -203,6 +203,30 @@ def stage_b13v2(done):
                     run_one("b13v2", name, family, cnf, label, mk, seed, done)
 
 
+def stage_b13v3(done):
+    """VDIS v3 sweep per VDIS3_PREREG.md: polarity-pair torsion.
+    H, dim=32, beta=0 (rotor machinery off), lambda_chi=0.1, kappa per
+    family. Configs: P@0.1, P@0.3, PA, P@0.1+PA."""
+    configs = (
+        ("P,lp=0.1", 0.1, False),
+        ("P,lp=0.3", 0.3, False),
+        ("PA", 0.0, True),
+        ("P,lp=0.1+PA", 0.1, True),
+    )
+    for name, family, cnf in b13_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        for tag, lp, tie in configs:
+            label = f"VDIS3-H,{tag}"
+            for seed in SEEDS:
+                def mk(seed, l=lp, t=tie):
+                    return VDISHeuristic(
+                        cnf.num_vars, dim=32, c=-kappa_for("H", family),
+                        algebra="H", beta=0.0, lambda_chi=0.1, chi=chi,
+                        pair_torsion=l, tie_break_pair=t, seed=seed,
+                    )
+                run_one("b13v3", name, family, cnf, label, mk, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -210,6 +234,8 @@ def main():
         stage_b13(done)
     elif stage == "b13v2":
         stage_b13v2(done)
+    elif stage == "b13v3":
+        stage_b13v3(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":

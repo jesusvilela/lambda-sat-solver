@@ -145,6 +145,8 @@ class VDISHeuristic:
         chi: Optional[np.ndarray] = None,
         torsion_anchor: bool = False,
         wedge_ortho: bool = False,
+        pair_torsion: float = 0.0,
+        tie_break_pair: bool = False,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -203,6 +205,17 @@ class VDISHeuristic:
         self.wedge_ortho = wedge_ortho
         self._anchors = prime_anchor_bivectors(num_vars) if torsion_anchor else None
 
+        # VDIS v3 (VDIS3_PREREG.md): polarity-pair torsion - theta_v =
+        # angle between the living-state directions of x and x' (the
+        # operator's corrected reading of "primes ... in conjunction to
+        # ortho"). Read directly from the pair: no Psi, no rotor, so
+        # neither of the two measured v1/v2 death pathways applies.
+        if (pair_torsion != 0.0 or tie_break_pair) and dim <= 1:
+            raise ValueError("pair torsion needs living axes (dim > 1)")
+        self.pair_torsion = pair_torsion
+        self.tie_break_pair = tie_break_pair
+        self.tie_breaks_fired = 0  # R1 liveness instrumentation
+
         # Rotor channel state (only materialized when the algebra has
         # bivectors AND the channel can influence anything).
         self._rotor_active = bdim > 0 and beta != 0.0
@@ -223,7 +236,11 @@ class VDISHeuristic:
         # activity can matter. The degenerate configuration keeps the
         # exact Phase 1 code path (see module docstring).
         self._full_scoring = (
-            algebra != "R" or self.lambda_tau != 0.0 or self.lambda_chi != 0.0
+            algebra != "R"
+            or self.lambda_tau != 0.0
+            or self.lambda_chi != 0.0
+            or self.pair_torsion != 0.0
+            or self.tie_break_pair
         )
 
     # -- helpers ----------------------------------------------------------
@@ -244,6 +261,30 @@ class VDISHeuristic:
         if vn <= _TINY:
             return None
         return vec / vn
+
+    def _pair_angles(self) -> np.ndarray:
+        """theta_v in [0, pi] per variable (index 1..num_vars): angle
+        between the two polarities' living-state directions (v3, pinned
+        in VDIS3_PREREG.md). 0 where either side is degenerate."""
+        n = self.num_vars
+        norms = np.linalg.norm(self._t, axis=1, keepdims=True)
+        safe = np.where(norms > _TINY, norms, 1.0)
+        unit = self._t / safe
+        # slot-sum -> algebra element -> vector part (imaginary coords for H)
+        alg = unit.reshape(2 * n + 1, self.D, self.m).sum(axis=1)
+        vec = alg[:, 1:] if self.algebra == "H" else alg
+        vnorm = np.linalg.norm(vec, axis=1, keepdims=True)
+        vunit = np.where(vnorm > _TINY, vec / np.where(vnorm > 0, vnorm, 1.0), 0.0)
+        pos = vunit[n + 1 :]           # rows for +1..+n
+        neg = vunit[n - 1 :: -1][:n]   # rows for -1..-n, aligned to +1..+n
+        ok = (norms[n + 1 :, 0] > _TINY) & (norms[n - 1 :: -1][:n, 0] > _TINY)
+        ok &= (vnorm[n + 1 :, 0] > _TINY) & (vnorm[n - 1 :: -1][:n, 0] > _TINY)
+        cross = np.linalg.norm(np.cross(pos, neg), axis=1)
+        dot = np.sum(pos * neg, axis=1)
+        theta = np.where(ok, np.arctan2(cross, dot), 0.0)
+        out = np.zeros(self.num_vars + 1)
+        out[1:] = theta
+        return out
 
     def _lit_scores(self) -> np.ndarray:
         """S3.6 decision scalar for every literal (row layout)."""
@@ -345,13 +386,40 @@ class VDISHeuristic:
         best_activity = -float("inf")
         if self._full_scoring:
             scores = self._lit_scores()
+            theta = (
+                self._pair_angles()
+                if (self.pair_torsion != 0.0 or self.tie_break_pair)
+                else None
+            )
             for v in range(1, num_vars + 1):
                 if value[v] is not None:
                     continue
                 a = scores[v + self.num_vars] + scores[-v + self.num_vars]
+                if self.pair_torsion != 0.0:
+                    a += self.pair_torsion * (theta[v] / np.pi)
                 if a > best_activity:
                     best_activity = a
                     best_var = v
+            if self.tie_break_pair and best_var != -1:
+                # Anti-ambiguous injection (v3): within the near-tie
+                # band the most polarity-contested variable wins.
+                # Clear decisions are untouched by construction.
+                band = best_activity - 1e-6 * max(abs(best_activity), 1.0)
+                tied_best, tied_theta = best_var, theta[best_var]
+                n_tied = 1
+                for v in range(1, num_vars + 1):
+                    if v == best_var or value[v] is not None:
+                        continue
+                    a = scores[v + self.num_vars] + scores[-v + self.num_vars]
+                    if self.pair_torsion != 0.0:
+                        a += self.pair_torsion * (theta[v] / np.pi)
+                    if a >= band:
+                        n_tied += 1
+                        if theta[v] > tied_theta:
+                            tied_best, tied_theta = v, theta[v]
+                if n_tied > 1 and tied_best != best_var:
+                    self.tie_breaks_fired += 1
+                    best_var = tied_best
         else:
             for v in range(1, num_vars + 1):
                 if value[v] is not None:
