@@ -107,3 +107,10 @@ agent's).
   torsion source — as a new pre-registered protocol. The frozen
   κ-table transfer test (P4) and the parked Laplacian-feature
   experiment remain available as designed follow-ups.
+
+**Addendum**: the torsion-source revival was subsequently run as VDIS
+v2 on operator instruction (prime-anchored 360° phases + orthogonalized
+wedge; `VDIS2_PREREG.md`). The channel was successfully brought alive
+(Q1 PASS) and, once alive, measured as not helping (Q2/Q4 FAIL — the
+genuinely-new configs score 4–5/13 vs the v1 baseline's 6/13). See
+`VDIS2_REPORT.md`. The n=100 signal was reconfirmed by every v2 config.
