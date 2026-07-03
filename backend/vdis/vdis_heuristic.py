@@ -74,6 +74,39 @@ from .gyro_ops import (
 _TINY = 1e-12
 
 
+def primes_up_to_nth(n: int) -> np.ndarray:
+    """First n primes (simple sieve with a safe upper bound)."""
+    if n == 0:
+        return np.array([], dtype=int)
+    # n-th prime < n(ln n + ln ln n) for n >= 6; pad generously below that
+    bound = max(15, int(n * (np.log(n) + np.log(np.log(n)) + 1.2))) if n >= 6 else 15
+    sieve = np.ones(bound + 1, dtype=bool)
+    sieve[:2] = False
+    for p in range(2, int(bound ** 0.5) + 1):
+        if sieve[p]:
+            sieve[p * p :: p] = False
+    primes = np.flatnonzero(sieve)
+    assert len(primes) >= n, "prime bound too small"
+    return primes[:n]
+
+
+def prime_anchor_bivectors(num_vars: int) -> np.ndarray:
+    """VDIS v2 anchors (VDIS2_PREREG.md): variable v gets the fixed unit
+    bivector (cos th_v, sin th_v, 0) with th_v = 2*pi*(p_v mod 360)/360,
+    p_v the v-th prime; negative polarity is antipodal (th + pi).
+    Prime spacing mod 360 spreads phases over the full circle with no
+    collectively re-aligning arithmetic subfamily - deterministic,
+    state-independent symmetry breaking for the rotor channel.
+    Returns (2*num_vars+1, 3), indexed lit + num_vars."""
+    theta = 2.0 * np.pi * (primes_up_to_nth(num_vars) % 360) / 360.0
+    anchors = np.zeros((2 * num_vars + 1, 3))
+    for v in range(1, num_vars + 1):
+        t = theta[v - 1]
+        anchors[v + num_vars] = (np.cos(t), np.sin(t), 0.0)
+        anchors[-v + num_vars] = (np.cos(t + np.pi), np.sin(t + np.pi), 0.0)
+    return anchors
+
+
 def compute_chi(clauses: Sequence[Sequence[int]], num_vars: int) -> np.ndarray:
     """Per-literal chi (S3.6): 2 / (mean length of clauses containing the
     literal), in (0, 1] with 1 for all-binary neighborhoods, 0 for
@@ -110,6 +143,8 @@ class VDISHeuristic:
         psi_mu: float = 0.05,
         living_eps: float = 1e-3,
         chi: Optional[np.ndarray] = None,
+        torsion_anchor: bool = False,
+        wedge_ortho: bool = False,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -156,6 +191,17 @@ class VDISHeuristic:
         }
 
         self.saved_phase = [True] * (num_vars + 1)
+
+        # VDIS v2 (VDIS2_PREREG.md): prime-anchored 360-degree torsion
+        # source and/or orthogonalized wedge. Anchors need the 3-dim
+        # bivector space of H; ortho works for any rotor algebra.
+        if torsion_anchor and algebra != "H":
+            raise ValueError("torsion_anchor requires algebra 'H' (3-dim bivectors)")
+        if (torsion_anchor or wedge_ortho) and beta == 0.0:
+            raise ValueError("v2 torsion variants need beta != 0")
+        self.torsion_anchor = torsion_anchor
+        self.wedge_ortho = wedge_ortho
+        self._anchors = prime_anchor_bivectors(num_vars) if torsion_anchor else None
 
         # Rotor channel state (only materialized when the algebra has
         # bivectors AND the channel can influence anything).
@@ -231,18 +277,48 @@ class VDISHeuristic:
             for lit in learned:
                 delta_c[1:] += alpha * self.t[lit][1:]
 
-        # Rotor/torsion channel (S3.4).
+        # Rotor/torsion channel (S3.4; v2 variants per VDIS2_PREREG.md).
         if self._rotor_active:
             dvec = self._unit_alg_vector(delta_c)
             if dvec is not None:
                 for lit in learned:
                     tvec = self._unit_alg_vector(self.t[lit])
                     if tvec is not None:
-                        self._omega[lit + self.num_vars] += self.beta * wedge(
-                            tvec, dvec, self.algebra
+                        if self.wedge_ortho:
+                            # v2 "360 orto": wedge from the renormalized
+                            # orthogonal component - unit magnitude by
+                            # construction, cannot align itself to death.
+                            perp = tvec - float(np.dot(tvec, dvec)) * dvec
+                            pn = np.linalg.norm(perp)
+                            if pn > _TINY:
+                                self._omega[lit + self.num_vars] += (
+                                    self.beta * wedge(perp / pn, dvec, self.algebra)
+                                )
+                        else:
+                            self._omega[lit + self.num_vars] += self.beta * wedge(
+                                tvec, dvec, self.algebra
+                            )
+                    if self.torsion_anchor:
+                        # v2 "360 + primes": fixed per-literal phase
+                        # injection - the fossil-axis trick lifted to
+                        # the rotor channel, state-independent.
+                        self._omega[lit + self.num_vars] += (
+                            self.beta * self._anchors[lit + self.num_vars]
                         )
                 self._rotors_dirty = True
-                if self._prev_dvec is not None:
+                if self.torsion_anchor:
+                    # Psi = EMA of the learned clause's anchor signature:
+                    # a running phase-record of WHICH variables conflict.
+                    omega_c = np.mean(
+                        [self._anchors[lit + self.num_vars] for lit in learned],
+                        axis=0,
+                    )
+                    r_c = rotor_exp(omega_c / 2.0, self.algebra)
+                    self.psi = rotor_normalize(
+                        (1.0 - self.psi_mu) * self.psi + self.psi_mu * r_c,
+                        self.algebra,
+                    )
+                elif self._prev_dvec is not None:
                     w = wedge(self._prev_dvec, dvec, self.algebra)
                     r_c = rotor_exp(w / 2.0, self.algebra)
                     self.psi = rotor_normalize(

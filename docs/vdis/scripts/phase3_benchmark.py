@@ -183,11 +183,33 @@ def stage_suite(done, spec):
             )
 
 
+def stage_b13v2(done):
+    """VDIS v2 sweep per VDIS2_PREREG.md: H only, {A, B, AB} variants x
+    lambda_tau {0.1, 0.3}; lambda_chi=0.1, beta=0.1, kappa per family.
+    Baselines reused from the b13 stage, not rerun."""
+    variants = (("A", True, False), ("B", False, True), ("AB", True, True))
+    for name, family, cnf in b13_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        for tag, anchor, ortho in variants:
+            for lt in (0.1, 0.3):
+                label = f"VDIS2-H,{tag},lt={lt}"
+                for seed in SEEDS:
+                    def mk(seed, a=anchor, o=ortho, l=lt):
+                        return VDISHeuristic(
+                            cnf.num_vars, dim=32, c=-kappa_for("H", family),
+                            algebra="H", beta=0.1, lambda_tau=l, lambda_chi=0.1,
+                            chi=chi, torsion_anchor=a, wedge_ortho=o, seed=seed,
+                        )
+                    run_one("b13v2", name, family, cnf, label, mk, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
     if stage == "b13":
         stage_b13(done)
+    elif stage == "b13v2":
+        stage_b13v2(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":
