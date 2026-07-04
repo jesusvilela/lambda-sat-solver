@@ -154,6 +154,8 @@ class VDISHeuristic:
         combine_eta: float = 0.5,
         combine_traders: tuple = ("theta", "prime"),
         clauses: Optional[Sequence[Sequence[int]]] = None,
+        breath_amp: float = 0.0,
+        breath_rate: float = 0.05,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -172,6 +174,13 @@ class VDISHeuristic:
         self.num_vars = num_vars
         self.dim = dim
         self.c = c
+        # Breathing curvature (hypercomplex_breathing.py): c oscillates
+        # with conflict count, c(t) = c_base + amp*sin(rate*t), clamped
+        # >= 0 (c is curvature magnitude). amp=0 disables (fixed c).
+        self._c_base = c
+        self.breath_amp = breath_amp
+        self.breath_rate = breath_rate
+        self._breath_t = 0
         self.eta = eta
         self.decay_gamma = decay_gamma
         self.algebra = algebra
@@ -390,6 +399,9 @@ class VDISHeuristic:
     # -- DecisionHeuristic protocol ----------------------------------------
 
     def on_conflict(self, learned: Sequence[int], lbd: int, trail: Sequence[int]) -> None:
+        if self.breath_amp != 0.0:
+            self._breath_t += 1
+            self.c = max(0.0, self._c_base + self.breath_amp * np.sin(self.breath_rate * self._breath_t))
         alpha = 1.0 / len(learned)
         delta_c = np.zeros(self.dim)
 
