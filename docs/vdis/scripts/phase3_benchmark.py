@@ -375,6 +375,35 @@ def stage_b7(done):
                 run_one("b7", name, family, cnf, label, mk2, seed, done)
 
 
+def stage_b8(done):
+    """VDIS8: self-reference centrality prior, on the v7 instance set."""
+    for name, family, cnf in b7_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        kap = kappa_for("C", family)
+        for label, mk in BASELINES.items():
+            if label == "LRB":
+                continue
+            for seed in SEEDS:
+                run_one("b8", name, family, cnf, label, mk(cnf), seed, done)
+        specs = (
+            ("C-plain", None),
+            ("lam-only", ("lagrange",)),
+            ("cent-only", ("centrality",)),
+            ("cent+lam", ("centrality", "lagrange")),
+        )
+        for tag, traders in specs:
+            label = f"VDIS8,{tag}"
+            for seed in SEEDS:
+                def mk2(seed, tr=traders):
+                    kw = dict(dim=32, c=-kap, algebra="C", lambda_chi=0.1,
+                              chi=chi, seed=seed)
+                    if tr is not None:
+                        kw.update(combine_nudges=True, nudge_gate=1.0,
+                                  combine_traders=tr, clauses=cnf.clauses)
+                    return VDISHeuristic(cnf.num_vars, **kw)
+                run_one("b8", name, family, cnf, label, mk2, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -392,6 +421,8 @@ def main():
         stage_b50(done)
     elif stage == "b7":
         stage_b7(done)
+    elif stage == "b8":
+        stage_b8(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":

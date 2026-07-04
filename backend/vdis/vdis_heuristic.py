@@ -153,6 +153,7 @@ class VDISHeuristic:
         nudge_gate: float = 1.0,
         combine_eta: float = 0.5,
         combine_traders: tuple = ("theta", "prime"),
+        clauses: Optional[Sequence[Sequence[int]]] = None,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -230,11 +231,17 @@ class VDISHeuristic:
         self.nudge_gate = nudge_gate
         self.combine_eta = combine_eta
         if combine_nudges:
-            valid = {"theta", "prime", "lagrange"}
+            valid = {"theta", "prime", "lagrange", "centrality"}
             if not combine_traders or set(combine_traders) - valid:
                 raise ValueError(f"combine_traders must be a nonempty subset of {valid}")
             if "theta" in combine_traders and dim <= 1:
                 raise ValueError("theta trader needs living axes (dim > 1)")
+            if "centrality" in combine_traders and clauses is None:
+                raise ValueError("centrality trader needs clauses= at construction")
+            self._centrality = (
+                self._eigenvector_centrality(clauses, num_vars)
+                if "centrality" in combine_traders else None
+            )
             self._traders = tuple(combine_traders)
             self._w = np.full(len(self._traders), 1.0 / len(self._traders))
             pr = primes_up_to_nth(num_vars)
@@ -506,6 +513,38 @@ class VDISHeuristic:
     def on_unassign(self, lit: int) -> None:
         pass
 
+    @staticmethod
+    def _eigenvector_centrality(clauses, num_vars: int) -> np.ndarray:
+        """Principal eigenvector of the variable co-occurrence graph
+        A_ij = #clauses containing both i and j (VDIS8). The Godelian
+        fixed point c_v proportional to sum_u A_vu c_u, by power
+        iteration. Static structural prior, computed once. Returns a
+        length num_vars+1 vector (index 0 unused)."""
+        from collections import defaultdict
+        adj = defaultdict(float)
+        for cl in clauses:
+            vs = list({abs(l) for l in cl})
+            for a in range(len(vs)):
+                for b in range(a + 1, len(vs)):
+                    adj[(vs[a], vs[b])] += 1.0
+                    adj[(vs[b], vs[a])] += 1.0
+        c = np.ones(num_vars + 1)
+        c[0] = 0.0
+        for _ in range(100):
+            nxt = np.zeros(num_vars + 1)
+            for (i, j), w in adj.items():
+                nxt[i] += w * c[j]
+            n = np.linalg.norm(nxt)
+            if n < 1e-15:
+                break  # empty graph -> uniform (stays ones)
+            nxt /= n
+            if np.linalg.norm(nxt - c) < 1e-8:
+                c = nxt
+                break
+            c = nxt
+        c[0] = 0.0
+        return c
+
     def _trader_score(self, name: str) -> np.ndarray:
         """Per-variable score vector for a named trader, in [0,1]."""
         if name == "theta":
@@ -517,6 +556,12 @@ class VDISHeuristic:
             lam = self._lam.copy()
             lo, hi = lam[1:].min(), lam[1:].max()
             out = (lam - lo) / (hi - lo) if hi > lo else np.zeros_like(lam)
+            out[0] = 0.0
+            return out
+        if name == "centrality":
+            c = self._centrality
+            lo, hi = c[1:].min(), c[1:].max()
+            out = (c - lo) / (hi - lo) if hi > lo else np.zeros_like(c)
             out[0] = 0.0
             return out
         raise ValueError(name)
