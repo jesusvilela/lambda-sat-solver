@@ -152,6 +152,7 @@ class VDISHeuristic:
         combine_nudges: bool = False,
         nudge_gate: float = 1.0,
         combine_eta: float = 0.5,
+        combine_traders: tuple = ("theta", "prime"),
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -225,19 +226,25 @@ class VDISHeuristic:
         # nudges become experts; base (fossil axis-0) is the always-on
         # channelized core; theta and a static prime identity scalar are
         # Hedge-reweighted on LBD reward, scaled by an ascendency gate.
-        if combine_nudges and dim <= 1:
-            raise ValueError("combiner needs living axes (dim > 1) for the theta trader")
         self.combine_nudges = combine_nudges
         self.nudge_gate = nudge_gate
         self.combine_eta = combine_eta
         if combine_nudges:
-            self._w = np.array([0.5, 0.5])  # [w_theta, w_prime] on the 2-simplex
+            valid = {"theta", "prime", "lagrange"}
+            if not combine_traders or set(combine_traders) - valid:
+                raise ValueError(f"combine_traders must be a nonempty subset of {valid}")
+            if "theta" in combine_traders and dim <= 1:
+                raise ValueError("theta trader needs living axes (dim > 1)")
+            self._traders = tuple(combine_traders)
+            self._w = np.full(len(self._traders), 1.0 / len(self._traders))
             pr = primes_up_to_nth(num_vars)
             self._prime_scalar = np.zeros(num_vars + 1)
             self._prime_scalar[1:] = (pr % 360) / 360.0
+            self._lam = np.zeros(num_vars + 1)  # Lagrange multipliers
             self._last_decision = -1
-            self._last_endorse = (0.0, 0.0)
+            self._last_endorse = np.zeros(len(self._traders))
             self._ema_lbd = None  # running LBD baseline for advantage reward
+            self._lam_cycled = False  # Z0 instrumentation: saw a descent
 
         # VDIS v4 (VDIS4_PREREG.md): rotor restored in a Cartan moving
         # frame. F chases the conflict flow with body-frame (right)
@@ -475,23 +482,44 @@ class VDISHeuristic:
         # r=1/lbd rule from self-saturating (a dominating trader endorses
         # its own picks and, with unconditionally-positive reward, runs
         # away regardless of quality - caught at the Y0 probe).
-        if self.combine_nudges and self._last_decision != -1:
-            if self._ema_lbd is None:
-                self._ema_lbd = float(lbd)
-            adv = (self._ema_lbd - lbd) / max(self._ema_lbd, 1.0)
-            self._ema_lbd = 0.95 * self._ema_lbd + 0.05 * lbd
-            et, ep = self._last_endorse
-            self._w[0] *= np.exp(self.combine_eta * adv * (et - 0.5))
-            self._w[1] *= np.exp(self.combine_eta * adv * (ep - 0.5))
-            s = self._w.sum()
-            if s > 0:
-                self._w /= s
+        if self.combine_nudges:
+            # Lagrange dual ascent + relaxation decay (VDIS7): a variable
+            # still being litigated in conflicts has its multiplier raised;
+            # all multipliers decay (bounded). Descent-on-decision is in pick().
+            if "lagrange" in self._traders:
+                for lit in learned:
+                    self._lam[abs(lit)] += 1.0
+                self._lam *= 0.95
+            if self._last_decision != -1:
+                if self._ema_lbd is None:
+                    self._ema_lbd = float(lbd)
+                adv = (self._ema_lbd - lbd) / max(self._ema_lbd, 1.0)
+                self._ema_lbd = 0.95 * self._ema_lbd + 0.05 * lbd
+                self._w *= np.exp(self.combine_eta * adv * (self._last_endorse - 0.5))
+                s = self._w.sum()
+                if s > 0:
+                    self._w /= s
 
     def on_assign(self, lit: int) -> None:
         self.saved_phase[abs(lit)] = lit > 0
 
     def on_unassign(self, lit: int) -> None:
         pass
+
+    def _trader_score(self, name: str) -> np.ndarray:
+        """Per-variable score vector for a named trader, in [0,1]."""
+        if name == "theta":
+            return self._pair_angles() / np.pi
+        if name == "prime":
+            return self._prime_scalar
+        if name == "lagrange":
+            # min-max normalized multiplier
+            lam = self._lam.copy()
+            lo, hi = lam[1:].min(), lam[1:].max()
+            out = (lam - lo) / (hi - lo) if hi > lo else np.zeros_like(lam)
+            out[0] = 0.0
+            return out
+        raise ValueError(name)
 
     def _combiner_pick(self, num_vars: int, value: List[Optional[bool]]) -> int:
         # base = min-max-normalized fossil activity over unassigned vars
@@ -504,14 +532,19 @@ class VDISHeuristic:
             return -1
         lo, hi = finite.min(), finite.max()
         base = np.where(np.isfinite(act), (act - lo) / (hi - lo) if hi > lo else 0.0, -np.inf)
-        theta = self._pair_angles() / np.pi
-        combined = base + self.nudge_gate * (
-            self._w[0] * theta + self._w[1] * self._prime_scalar
+        scores = [self._trader_score(t) for t in self._traders]
+        combined = base + self.nudge_gate * sum(
+            self._w[k] * scores[k] for k in range(len(self._traders))
         )
         combined[~np.isfinite(act)] = -np.inf
         best_var = int(np.argmax(combined[1:])) + 1
         self._last_decision = best_var
-        self._last_endorse = (float(theta[best_var]), float(self._prime_scalar[best_var]))
+        self._last_endorse = np.array([float(s[best_var]) for s in scores])
+        # Lagrange dual descent: committing to a variable pays down its
+        # multiplier (the distinguishing primal-coupling; see VDIS7).
+        if "lagrange" in self._traders and self._lam[best_var] > 0:
+            self._lam[best_var] *= 0.5
+            self._lam_cycled = True
         return best_var if self.saved_phase[best_var] else -best_var
 
     def pick(self, num_vars: int, value: List[Optional[bool]]) -> int:

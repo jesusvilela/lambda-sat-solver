@@ -332,6 +332,49 @@ def stage_b50(done):
                 run_one("b50", name, family, cnf, label, mk2, seed, done)
 
 
+def b7_instances():
+    """VDIS7 (VDIS7_PREREG.md): structured (pigeonhole + mutilated-
+    chessboard) + random-3sat negative control."""
+    from backend.eval.generators import mutilated_chessboard
+    out = []
+    for n in (5, 6, 7, 8):
+        out.append((f"php_{n}_{n-1}", "pigeonhole", pigeonhole(n)[0]))
+    for n in (8, 10):
+        out.append((f"mutil_{n}", "mutilated-chessboard", mutilated_chessboard(n)[0]))
+    for s in range(300, 315):
+        out.append((f"r3sat_n90_s{s}", "random-3sat",
+                    random_ksat(90, int(90 * 4.267), k=3, seed=s)[0]))
+    return out
+
+
+def stage_b7(done):
+    for name, family, cnf in b7_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        kap = kappa_for("C", family)
+        for label, mk in BASELINES.items():
+            if label == "LRB":
+                continue  # EVSIDS + Random suffice as baselines here
+            for seed in SEEDS:
+                run_one("b7", name, family, cnf, label, mk(cnf), seed, done)
+        specs = (
+            ("C-plain", None),
+            ("COMBO", ("theta", "prime")),
+            ("COMBO+lam", ("theta", "prime", "lagrange")),
+            ("lam-only", ("lagrange",)),
+        )
+        for tag, traders in specs:
+            label = f"VDIS7,{tag}"
+            for seed in SEEDS:
+                def mk2(seed, tr=traders):
+                    kw = dict(dim=32, c=-kap, algebra="C", lambda_chi=0.1,
+                              chi=chi, seed=seed)
+                    if tr is not None:
+                        kw.update(combine_nudges=True, nudge_gate=1.0,
+                                  combine_traders=tr)
+                    return VDISHeuristic(cnf.num_vars, **kw)
+                run_one("b7", name, family, cnf, label, mk2, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -347,6 +390,8 @@ def main():
         stage_b13f(done)
     elif stage == "b50":
         stage_b50(done)
+    elif stage == "b7":
+        stage_b7(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":
