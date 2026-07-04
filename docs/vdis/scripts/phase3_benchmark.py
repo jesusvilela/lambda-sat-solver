@@ -404,6 +404,41 @@ def stage_b8(done):
                 run_one("b8", name, family, cnf, label, mk2, seed, done)
 
 
+def stage_maxgeo(done):
+    """MAX-GEO one-shot (MAXGEO_ONESHOT_PREREG.md): maximal hyperbolic-
+    hypercomplex geometry vs EVSIDS/LRB/degree on fresh instances."""
+    from backend.eval.generators import mutilated_chessboard
+    insts = []
+    for s in range(500, 510):
+        insts.append((f"r3sat_n90_s{s}", "random-3sat",
+                      random_ksat(90, int(90 * 4.267), k=3, seed=s)[0]))
+    for n in (5, 6, 7, 8):
+        insts.append((f"php_{n}_{n-1}", "pigeonhole", pigeonhole(n)[0]))
+    insts.append(("mutil_8", "mutilated-chessboard", mutilated_chessboard(8)[0]))
+    for name, family, cnf in insts:
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        for label, mk in BASELINES.items():
+            if label == "Random":
+                continue
+            for seed in SEEDS:
+                run_one("maxgeo", name, family, cnf, label, mk(cnf), seed, done)
+        for seed in SEEDS:
+            def mk_deg(seed):
+                return VDISHeuristic(
+                    cnf.num_vars, dim=32, c=-kappa_for("C", family), algebra="C",
+                    lambda_chi=0.1, chi=chi, combine_nudges=True, nudge_gate=1.0,
+                    combine_traders=("degree",), clauses=cnf.clauses, seed=seed)
+            run_one("maxgeo", name, family, cnf, "degree", mk_deg, seed, done)
+        for seed in SEEDS:
+            def mk_mg(seed):
+                return VDISHeuristic(
+                    cnf.num_vars, dim=32, c=1.0, algebra="H",
+                    beta=0.1, lambda_tau=0.1, lambda_chi=0.1,
+                    moving_frame=True, tie_break_frame=1.0, tie_break_pair=True,
+                    torsion_anchor=True, chi=chi, seed=seed)
+            run_one("maxgeo", name, family, cnf, "MAX-GEO", mk_mg, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -423,6 +458,8 @@ def main():
         stage_b7(done)
     elif stage == "b8":
         stage_b8(done)
+    elif stage == "maxgeo":
+        stage_maxgeo(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":
