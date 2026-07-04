@@ -72,6 +72,37 @@ variables). That is a legitimate, contract-bearing follow-up — pending
 operator go-ahead — and is the benchmark where this construction could
 actually pay off.
 
+## Holographic-screen / cellular-gate — BUILT AND TESTED on its home turf
+
+The globular-balls construction decoded to community + cut-variable
+branching. Rather than only note the benchmark mismatch, I built the
+matching testbed: `planted_community_ksat` (communities = balls, cut
+clauses = screens/gates) and a `gate` trader scoring each variable by how
+many communities its clauses span (boundary/screen variables high),
+using **oracle** planted labels AND **detected** (label-propagation)
+communities. `holographic_screen_test.py`.
+
+- **Detection works**: label-prop recovers the planted communities
+  exactly (5 planted → 5 found); oracle and detected gate scores are
+  identical, so detection is NOT the bottleneck.
+- **The mechanism does not help**, in any structural regime tested
+  (12 seeds each):
+
+| instances | EVSIDS | degree | gate | gate beats EV | gate beats degree |
+|---|---|---|---|---|---|
+| 5×30 ir3.9 cut80 (diffuse) | 3 823 | 2 171 | 3 292 | 8/12 | 0/12 |
+| 5×30 ir4.0 cut25 (sharp) | 2 161 | 1 362 | 2 447 | 5/12 | 2/12 |
+| 6×25 ir3.6 cut30 (SAT-heavy) | 1 334 | 1 558 | 2 164 | 3/12 | 5/12 |
+| 4×35 ir4.1 cut20 | 1 263 | 1 272 | 1 595 | 4/12 | 5/12 |
+
+Boundary-variable branching is worse than EVSIDS on balance (3–8/12) and
+never beats degree on aggregate — given even oracle community labels, on
+the exact community-structured instances the construction is for.
+CDCL's clause learning already absorbs cross-community coupling; putting
+separator variables first does not decompose the search the way the
+tree-decomposition intuition suggests. The construction, tested on its
+home turf with every advantage, is another negative.
+
 ## Verdict
 
 The magic ingredient is not in the material. Every element is one of:

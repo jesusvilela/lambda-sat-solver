@@ -419,3 +419,54 @@ def ladder_encoding(
         comments=[f"Ladder encoding n={num_vars} target={t} seed={seed}"],
     )
     return formula, "SAT"
+
+
+def planted_community_ksat(
+    num_communities: int = 4,
+    vars_per_community: int = 20,
+    intra_ratio: float = 4.0,
+    num_cut_clauses: int = 20,
+    k: int = 3,
+    seed=None,
+):
+    """Planted-community 3-SAT (the "globular Poincare balls" testbed).
+
+    Each community is a random k-SAT block over its own variable range
+    ("a ball"); communities are stitched by `num_cut_clauses` clauses
+    whose literals are drawn from >=2 communities ("holographic-screen /
+    cellular-gate" clauses). Returns (CNFFormula, community_labels,
+    cut_vars): community_labels[v] is the planted community of variable v
+    (1-indexed, [0]=unused), cut_vars is the set of variables appearing
+    in any cut clause (the boundary/screen variables).
+    """
+    rng = random.Random(seed)
+    n = num_communities * vars_per_community
+    labels = [0] * (n + 1)
+    for c in range(num_communities):
+        for j in range(vars_per_community):
+            labels[c * vars_per_community + j + 1] = c
+    clauses = []
+    # intra-community blocks
+    for c in range(num_communities):
+        lo = c * vars_per_community + 1
+        block = list(range(lo, lo + vars_per_community))
+        for _ in range(int(vars_per_community * intra_ratio)):
+            vs = rng.sample(block, min(k, len(block)))
+            clauses.append([v if rng.random() < 0.5 else -v for v in vs])
+    # inter-community cut clauses (the gates)
+    cut_vars = set()
+    for _ in range(num_cut_clauses):
+        comms = rng.sample(range(num_communities), min(k, num_communities))
+        clause = []
+        for c in comms:
+            lo = c * vars_per_community + 1
+            v = rng.randrange(lo, lo + vars_per_community)
+            clause.append(v if rng.random() < 0.5 else -v)
+            cut_vars.add(v)
+        clauses.append(clause)
+    formula = CNFFormula(
+        num_vars=n, clauses=clauses,
+        comments=[f"planted-community k={k} comms={num_communities} "
+                  f"vpc={vars_per_community} cut={num_cut_clauses} seed={seed}"],
+    )
+    return formula, labels, cut_vars
