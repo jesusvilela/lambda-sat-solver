@@ -2173,3 +2173,6 @@
 {"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "EVSIDS", "seed": 2, "result": "UNSAT", "decisions": 5099, "conflicts": 3686, "wall_s": 1.333}
 {"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "EVSIDS", "seed": 3, "result": "UNSAT", "decisions": 5099, "conflicts": 3686, "wall_s": 1.344}
 {"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "EVSIDS", "seed": 4, "result": "UNSAT", "decisions": 5099, "conflicts": 3686, "wall_s": 1.352}
+{"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "LRB", "seed": 0, "result": "UNSAT", "decisions": 19176, "conflicts": 14703, "wall_s": 17.081}
+{"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "LRB", "seed": 1, "result": "UNSAT", "decisions": 19176, "conflicts": 14703, "wall_s": 16.978}
+{"stage": "b50", "instance": "php_8_7", "family": "pigeonhole", "config": "LRB", "seed": 2, "result": "UNSAT", "decisions": 19176, "conflicts": 14703, "wall_s": 16.972}
