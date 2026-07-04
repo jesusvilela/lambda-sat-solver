@@ -291,6 +291,47 @@ def stage_b13f(done):
                 run_one("b13f", name, family, cnf, label, mk2, seed, done)
 
 
+def b50_instances():
+    """B50 (VDIS6_PREREG.md): 50 fresh r3sat (n=90, seeds 200-249) +
+    php 5-8 (deterministic wall)."""
+    out = []
+    for n in (5, 6, 7, 8):
+        cnf, _ = pigeonhole(n)
+        out.append((f"php_{n}_{n-1}", "pigeonhole", cnf))
+    for s in range(200, 250):
+        cnf, _ = random_ksat(90, int(90 * 4.267), k=3, seed=s)
+        out.append((f"r3sat_n90_s{s}", "random-3sat", cnf))
+    return out
+
+
+def stage_b50(done):
+    """VDIS v6: online nudge-combiner benchmark."""
+    import ascendency_probe
+    def gate(a):
+        return float(min(max(1.0 - a / 0.3, 0.0), 1.0)) if a is not None else 1.0
+    for name, family, cnf in b50_instances():
+        chi = compute_chi(cnf.clauses, cnf.num_vars)
+        g = gate(ascendency_probe.ascendency_alpha(cnf))
+        kap = kappa_for("C", family)
+        for label, mk in BASELINES.items():
+            for seed in SEEDS:
+                run_one("b50", name, family, cnf, label, mk(cnf), seed, done)
+        specs = (
+            ("C-plain", dict()),
+            ("COMBO", dict(combine_nudges=True, nudge_gate=g)),
+            ("COMBO-nogate", dict(combine_nudges=True, nudge_gate=1.0)),
+        )
+        for tag, extra in specs:
+            label = f"VDIS6,{tag}"
+            for seed in SEEDS:
+                def mk2(seed, e=extra):
+                    return VDISHeuristic(
+                        cnf.num_vars, dim=32, c=-kap, algebra="C",
+                        lambda_chi=0.1, chi=chi, seed=seed, **e,
+                    )
+                run_one("b50", name, family, cnf, label, mk2, seed, done)
+
+
 def main():
     done = load_done()
     stage = sys.argv[1]
@@ -304,6 +345,8 @@ def main():
         stage_b13v4(done)
     elif stage == "b13f":
         stage_b13f(done)
+    elif stage == "b50":
+        stage_b50(done)
     elif stage == "ablation":
         stage_ablation(done, sys.argv[2])
     elif stage == "p4":

@@ -149,6 +149,9 @@ class VDISHeuristic:
         tie_break_pair: bool = False,
         moving_frame: bool = False,
         tie_break_frame: float = 0.0,
+        combine_nudges: bool = False,
+        nudge_gate: float = 1.0,
+        combine_eta: float = 0.5,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -217,6 +220,24 @@ class VDISHeuristic:
         self.pair_torsion = pair_torsion
         self.tie_break_pair = tie_break_pair
         self.tie_breaks_fired = 0  # R1 liveness instrumentation
+
+        # VDIS v6 (VDIS6_PREREG.md): online nudge-combiner. The surviving
+        # nudges become experts; base (fossil axis-0) is the always-on
+        # channelized core; theta and a static prime identity scalar are
+        # Hedge-reweighted on LBD reward, scaled by an ascendency gate.
+        if combine_nudges and dim <= 1:
+            raise ValueError("combiner needs living axes (dim > 1) for the theta trader")
+        self.combine_nudges = combine_nudges
+        self.nudge_gate = nudge_gate
+        self.combine_eta = combine_eta
+        if combine_nudges:
+            self._w = np.array([0.5, 0.5])  # [w_theta, w_prime] on the 2-simplex
+            pr = primes_up_to_nth(num_vars)
+            self._prime_scalar = np.zeros(num_vars + 1)
+            self._prime_scalar[1:] = (pr % 360) / 360.0
+            self._last_decision = -1
+            self._last_endorse = (0.0, 0.0)
+            self._ema_lbd = None  # running LBD baseline for advantage reward
 
         # VDIS v4 (VDIS4_PREREG.md): rotor restored in a Cartan moving
         # frame. F chases the conflict flow with body-frame (right)
@@ -446,13 +467,56 @@ class VDISHeuristic:
             new_v_lit = exp_map(v_lit, self.eta * transported, self.c)
             self.t[lit][:] = log_map_zero(new_v_lit, self.c)
 
+        # v6 Hedge update (advantage-baselined - see VDIS6_PREREG.md
+        # correction 1). Reward = normalized ADVANTAGE of this conflict's
+        # LBD over the running-average LBD: positive when the endorsed
+        # decision produced a tighter-than-typical (better) learned
+        # clause, NEGATIVE when worse. Baselining is what stops the naive
+        # r=1/lbd rule from self-saturating (a dominating trader endorses
+        # its own picks and, with unconditionally-positive reward, runs
+        # away regardless of quality - caught at the Y0 probe).
+        if self.combine_nudges and self._last_decision != -1:
+            if self._ema_lbd is None:
+                self._ema_lbd = float(lbd)
+            adv = (self._ema_lbd - lbd) / max(self._ema_lbd, 1.0)
+            self._ema_lbd = 0.95 * self._ema_lbd + 0.05 * lbd
+            et, ep = self._last_endorse
+            self._w[0] *= np.exp(self.combine_eta * adv * (et - 0.5))
+            self._w[1] *= np.exp(self.combine_eta * adv * (ep - 0.5))
+            s = self._w.sum()
+            if s > 0:
+                self._w /= s
+
     def on_assign(self, lit: int) -> None:
         self.saved_phase[abs(lit)] = lit > 0
 
     def on_unassign(self, lit: int) -> None:
         pass
 
+    def _combiner_pick(self, num_vars: int, value: List[Optional[bool]]) -> int:
+        # base = min-max-normalized fossil activity over unassigned vars
+        act = np.full(self.num_vars + 1, -np.inf)
+        for v in range(1, num_vars + 1):
+            if value[v] is None:
+                act[v] = self.t[v][0] + self.t[-v][0]
+        finite = act[np.isfinite(act)]
+        if finite.size == 0:
+            return -1
+        lo, hi = finite.min(), finite.max()
+        base = np.where(np.isfinite(act), (act - lo) / (hi - lo) if hi > lo else 0.0, -np.inf)
+        theta = self._pair_angles() / np.pi
+        combined = base + self.nudge_gate * (
+            self._w[0] * theta + self._w[1] * self._prime_scalar
+        )
+        combined[~np.isfinite(act)] = -np.inf
+        best_var = int(np.argmax(combined[1:])) + 1
+        self._last_decision = best_var
+        self._last_endorse = (float(theta[best_var]), float(self._prime_scalar[best_var]))
+        return best_var if self.saved_phase[best_var] else -best_var
+
     def pick(self, num_vars: int, value: List[Optional[bool]]) -> int:
+        if self.combine_nudges:
+            return self._combiner_pick(num_vars, value)
         best_var = -1
         best_activity = -float("inf")
         if self._full_scoring:
