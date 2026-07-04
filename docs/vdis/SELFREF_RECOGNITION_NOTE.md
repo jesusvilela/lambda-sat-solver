@@ -1,19 +1,18 @@
 # Self-reference / mutual recognition / mutual resonance — assessment
 
-Operator: "consider Smythe symmetry scenario from the point of view of
+Operator: "consider the symmetry scenario from the point of view of
 Gödelian self-reference, others' mutual recognition and mutual
-resonance." Exploratory — assessment, not a build. Same discipline as
+resonance" (an earlier "Smythe" was an autocorrect typo for "the
+symmetry"). Exploratory — assessment, not a build. Same discipline as
 every concept in this track: find the computable cousin with an
 input→invariant→action→benchmark contract, or name it vocabulary.
 
-## "Smythe symmetry" — cannot verify, flagged
+## Scope: the symmetry scenario
 
-No confident referent for "Smythe symmetry" in SAT/combinatorics or
-standard mathematics (there is Smyth topology / powerdomains, and Smith
-normal form — neither is a symmetry framework). Not fabricating one.
-Treating the operative content as the symmetry thread already measured
-(pigeonhole / mutilated-chessboard). If there's a specific source,
-point to it and this reassesses.
+The operative content is the symmetry thread already measured
+(pigeonhole / mutilated-chessboard) — the families where structure, not
+random constraint density, drives difficulty, and where the v6 prime
+order and v7 λ multiplier had their sharpest and most divergent effects.
 
 ## Empirical premise-check (before theorizing)
 
