@@ -231,17 +231,29 @@ class VDISHeuristic:
         self.nudge_gate = nudge_gate
         self.combine_eta = combine_eta
         if combine_nudges:
-            valid = {"theta", "prime", "lagrange", "centrality"}
+            valid = {"theta", "prime", "lagrange", "centrality", "degree", "random"}
             if not combine_traders or set(combine_traders) - valid:
                 raise ValueError(f"combine_traders must be a nonempty subset of {valid}")
             if "theta" in combine_traders and dim <= 1:
                 raise ValueError("theta trader needs living axes (dim > 1)")
-            if "centrality" in combine_traders and clauses is None:
-                raise ValueError("centrality trader needs clauses= at construction")
+            if ("centrality" in combine_traders or "degree" in combine_traders) and clauses is None:
+                raise ValueError("centrality/degree trader needs clauses= at construction")
             self._centrality = (
                 self._eigenvector_centrality(clauses, num_vars)
                 if "centrality" in combine_traders else None
             )
+            # degree = raw variable occurrence count (the classical, non-
+            # self-referential ablation of eigenvector centrality)
+            if "degree" in combine_traders:
+                deg = np.zeros(num_vars + 1)
+                for cl in clauses:
+                    for l in cl:
+                        deg[abs(l)] += 1.0
+                self._degree = deg
+            # random static prior (information control: same shape, zero signal)
+            if "random" in combine_traders:
+                self._random_prior = self._rng.random(num_vars + 1)
+                self._random_prior[0] = 0.0
             self._traders = tuple(combine_traders)
             self._w = np.full(len(self._traders), 1.0 / len(self._traders))
             pr = primes_up_to_nth(num_vars)
@@ -558,8 +570,9 @@ class VDISHeuristic:
             out = (lam - lo) / (hi - lo) if hi > lo else np.zeros_like(lam)
             out[0] = 0.0
             return out
-        if name == "centrality":
-            c = self._centrality
+        if name in ("centrality", "degree", "random"):
+            c = {"centrality": self._centrality, "degree": getattr(self, "_degree", None),
+                 "random": getattr(self, "_random_prior", None)}[name]
             lo, hi = c[1:].min(), c[1:].max()
             out = (c - lo) / (hi - lo) if hi > lo else np.zeros_like(c)
             out[0] = 0.0

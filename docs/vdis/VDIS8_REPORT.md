@@ -1,5 +1,27 @@
 # VDIS v8 report — self-reference centrality prior: the strongest result in the track
 
+> **VALIDATION ADDENDUM (post-hoc, adversarial — "don't get carried away
+> by enthusiasm").** The v8 win REPLICATES on fresh seeds (400+) and
+> other sizes — it is not overfitting. BUT the mechanism framing is
+> falsified: eigenvector centrality is **0.95–0.98 rank-correlated with
+> plain variable degree**, and **degree is statistically tied**
+> (`vdis8_validate.py`, fresh seeds 400–409: n=50 cent 480 / degree 498;
+> n=90 cent 2560 / degree 2424 total decisions). The self-reference
+> fixed-point adds nothing over raw occurrence-counting — it *is* degree
+> branching (Jeroslow-Wang / MOM-family, 1970s). A random static prior
+> is *worse* than EVSIDS, confirming the effect is real structural
+> information, not a base-path artifact.
+>
+> **Survives validation (robustly):** the RESULT replicates on fresh
+> seeds and both sizes — cent and degree each beat EVSIDS 9–10/10 and
+> LRB 8–9/10, halving totals (n=50 ≈490 vs EVSIDS 1082; n=90 ≈2500 vs
+> 5258). Not overfitting. **Retracted:** the STORY —
+> "self-reference / eigenvector centrality / Gödelian" is decoration
+> over **degree branching**. Honest headline: *a classical static degree
+> prior halves decisions vs EVSIDS/LRB on random 3-SAT in our reference
+> solver, replicated across sizes and fresh seeds* — no gyrovector
+> machinery, no self-reference, involved.
+
 **Verdict: V1 PASS emphatically, V2 PASS where signals apply, V0b/V3
 confirmed. The Gödelian-self-reference lens, pursued honestly, produced
 a static structural prior (eigenvector centrality) that beats BOTH
