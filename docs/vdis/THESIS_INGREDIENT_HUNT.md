@@ -34,6 +34,44 @@ branching. `breath_amp` is retained in the code as a tested, documented
 negative (default 0 = off), so "did we try time-varying curvature?" is
 answered with data, not assumption.
 
+## Adiabatic-infinitesimal follow-up (operator request)
+
+Tested breathing in the adiabatic (breath_rate→0) / infinitesimal
+(amp→0) limit, 10 fresh r3sat, total decisions:
+
+| config | total |
+|---|---|
+| degree | 1 737 |
+| MAXGEO fixed-c | 4 389 |
+| breath rate=0.001 amp=0.5 (most adiabatic) | 12 708 |
+| breath rate=0.001 amp=0.1 | 8 427 |
+| breath rate=0.2 amp=0.1 (least adiabatic) | 3 473 |
+
+The **adiabatic limit is the WORST** regime: slow breathing lets c drift
+to a consistently-wrong value and sit there all solve instead of
+averaging out; faster breathing recovers toward fixed-c but never near
+degree. "Adiabatic infinitesimal" is precisely the direction that hurts.
+
+## The globular-balls / holographic-screen construction — decode
+
+"Globular Poincaré balls connected by fiber-bundled Möbius channels,
+frontier as holographic screen / cellular gate" decodes to a **community
+decomposition with cut-variable (separator) branching**: clusters = the
+balls, inter-cluster boundary variables = the screens/gates, branch on
+them first. This is a REAL SAT technique (community structure / cutset /
+tree-decomposition branching).
+
+**Why it can't be tested on the current benchmark:** random 3-SAT is the
+textbook instance with *no* community structure (a flat random expander);
+pigeonhole is symmetric. Our whole suite is the class engineered to have
+no exploitable global structure — which is likely WHY every
+manifold/geometry idea had nothing to grip, and why a local count
+(degree) is the ceiling here. To test the holographic-screen idea fairly
+requires **planted-community instances** (genuine clusters + sparse cut
+variables). That is a legitimate, contract-bearing follow-up — pending
+operator go-ahead — and is the benchmark where this construction could
+actually pay off.
+
 ## Verdict
 
 The magic ingredient is not in the material. Every element is one of:
