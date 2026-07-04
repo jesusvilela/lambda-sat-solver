@@ -6,14 +6,19 @@ changes to the DSL don't silently regress, and so that the gap between
 current capability and the intended effect-system design is explicit and
 machine-checked.
 
-Current status (per SOTA critique):
-  - compose() / pipeline() are correctly implemented but are dead code —
-    nothing in the production path calls them.  The tests below verify
-    their semantics; the corresponding production fix wires pipeline() into
-    create_solve_pipeline() so these combinators are no longer dead.
-  - TypeChecker maps effect names to flat return types only; it does NOT
-    enforce ordering or linearity ("you can't get a Result without going
-    through a check effect").  Tests document this limitation explicitly.
+Current status (per SOTA critique, updated after the profile/select/solve/
+certify pipeline landed):
+  - compose() / pipeline() are correctly implemented and now used by both
+    create_path_pipeline() and create_adaptive_pipeline() in middleware.py.
+  - TypeChecker now validates each effect's argument types against a
+    per-effect signature (EFFECT_SIGNATURES: name -> (arg_types, return_type)),
+    not just the outermost effect's declared return type - a composition
+    like certify(profileCNF(cnf)) (skipping selectHeuristic/solveWithConfig)
+    is rejected with a real type-mismatch error, not silently accepted.
+  - It still does NOT enforce ordering/linearity in the full type-theoretic
+    sense (e.g. nothing stops calling profileCNF twice, or discarding a
+    Result without ever calling certify on it) - argument-type checking
+    catches wrong composition, not missing-or-duplicated-effect usage.
   - Evaluator dispatches effects to Python handlers; it does not carry
     session/linear-type information.
 """
@@ -148,7 +153,7 @@ class TestTypeCheckerAbsAndApp:
 
     def test_abs_over_effect_gives_function_type(self):
         # λcnf. solve(cnf, h, b)  →  CNF -> Result
-        expr = abs_('cnf', effect('solve', var('cnf')))
+        expr = abs_('cnf', effect('solve', var('cnf'), literal({}), literal({})))
         assert self.tc.check(expr) == 'CNF -> Result'
 
     def test_abs_readcnf(self):
@@ -160,7 +165,7 @@ class TestTypeCheckerAbsAndApp:
 
     def test_type_mismatch_in_app_raises(self):
         # Apply a (CNF -> Result) function to a Bool literal — should fail
-        func = abs_('cnf', effect('solve', var('cnf')))
+        func = abs_('cnf', effect('solve', var('cnf'), literal({}), literal({})))
         arg = literal(True)   # Bool
         with pytest.raises(TypeError, match="Type mismatch"):
             self.tc.check(app(func, arg))
@@ -366,3 +371,83 @@ class TestCreatePathPipelineStructure:
         assert not isinstance(path.body, Effect)
         # solve pipeline has a bare Effect as its body
         assert isinstance(solve.body, Effect)
+
+
+class TestEffectArgumentTypeChecking:
+    """EFFECT_SIGNATURES: each effect now has an expected-argument-type list,
+    not just a return type - this is what makes composition errors (not just
+    unbound variables) rejectable."""
+
+    def setup_method(self):
+        self.tc = TypeChecker()
+
+    def test_correct_arity_and_types_pass(self):
+        expr = effect('profileCNF', literal({'clauses': []}))
+        assert self.tc.check(expr) == 'Profile'
+
+    def test_wrong_arity_rejected(self):
+        with pytest.raises(TypeError, match="expects 1 argument"):
+            self.tc.check(effect('profileCNF', literal({'clauses': []}), literal(1)))
+
+    def test_wrong_arg_type_rejected(self):
+        # certify expects a Result, not a bare Profile-typed effect
+        expr = effect('certify', effect('profileCNF', literal({'clauses': []})))
+        with pytest.raises(TypeError, match="argument type mismatch"):
+            self.tc.check(expr)
+
+    def test_correctly_composed_chain_passes(self):
+        expr = effect(
+            'certify',
+            effect(
+                'solveWithConfig',
+                literal({'clauses': []}),
+                effect('selectHeuristic', effect('profileCNF', literal({'clauses': []})))
+            )
+        )
+        assert self.tc.check(expr) == 'Certificate'
+
+    def test_any_type_matches_opaque_literals(self):
+        # solve's heuristic/budget args are 'Any' - arbitrary non-CNF dicts
+        # must still be accepted, not rejected as a type mismatch.
+        expr = effect('solve', literal({'clauses': []}), literal({'branching': 'vsids'}), literal({'time_limit': 30}))
+        assert self.tc.check(expr) == 'Result'
+
+    def test_unknown_effect_still_rejected(self):
+        with pytest.raises(TypeError, match="Unknown effect"):
+            self.tc.check(effect('notARealEffect', literal(1)))
+
+
+class TestAdaptivePipeline:
+    """create_adaptive_pipeline(): profile -> select -> solve -> certify,
+    the first pipeline in this repo with more than two real composed
+    stages, each individually type-checked."""
+
+    def test_typechecks_as_cnf_to_certificate(self):
+        from backend.middleware import create_middleware
+        mw = create_middleware(strict_mode=False)
+        p = mw.create_adaptive_pipeline()
+        tc = TypeChecker()
+        assert tc.check(p) == 'CNF -> Certificate'
+
+    def test_is_abs_with_nested_effects(self):
+        from backend.middleware import create_middleware
+        mw = create_middleware(strict_mode=False)
+        p = mw.create_adaptive_pipeline()
+        assert isinstance(p, Abs)
+        assert isinstance(p.body, Effect)
+        assert p.body.name == 'certify'
+
+    @pytest.mark.asyncio
+    async def test_executes_end_to_end(self):
+        from backend.cnf_utils import CNFFormula
+        from backend.middleware import create_middleware
+        import shutil, os
+
+        if shutil.which(os.environ.get('KISSAT_BIN', 'kissat')) is None:
+            pytest.skip("Kissat not available")
+
+        mw = create_middleware(strict_mode=False)
+        p = mw.create_adaptive_pipeline()
+        cnf = CNFFormula(num_vars=1, clauses=[[1], [-1]])
+        certificate = await mw.execute_pipeline(p, cnf)
+        assert certificate == 'UNSAT_CERTIFIED'

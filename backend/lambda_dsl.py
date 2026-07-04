@@ -100,13 +100,25 @@ class TypeEnv:
 class TypeChecker:
     """Type checker for lambda expressions"""
 
-    EFFECT_TYPES = {
-        'readCNF': 'CNF',
-        'solve': 'Result',
-        'checkModel': 'Bool',
-        'checkDRAT': 'Bool',
-        'checkLRAT': 'Bool'
+    #: name -> (expected arg types, return type). 'Any' matches anything
+    #: (used for opaque literal payloads like heuristic/budget dicts, which
+    #: the Literal-type-inference below can't type more precisely without a
+    #: richer value-type system than this DSL has).
+    EFFECT_SIGNATURES = {
+        'readCNF': (['Any'], 'CNF'),
+        'solve': (['CNF', 'Any', 'Any'], 'Result'),
+        'checkModel': (['CNF', 'Any'], 'Bool'),
+        'checkDRAT': (['CNF', 'Any'], 'Bool'),
+        'checkLRAT': (['CNF', 'Any'], 'Bool'),
+        'profileCNF': (['CNF'], 'Profile'),
+        'selectHeuristic': (['Profile'], 'Config'),
+        'solveWithConfig': (['CNF', 'Config'], 'Result'),
+        'certify': (['Result'], 'Certificate'),
     }
+
+    #: Derived name -> return-type view, kept for readability/back-compat
+    #: with anything that only wants the return type.
+    EFFECT_TYPES = {name: sig[1] for name, sig in EFFECT_SIGNATURES.items()}
 
     def check(self, expr: LambdaExpr, env: Optional[TypeEnv] = None) -> str:
         """Type check an expression and return its type"""
@@ -144,9 +156,29 @@ class TypeChecker:
                 raise TypeError(f"Cannot apply non-function type: {func_type}")
 
         elif isinstance(expr, Effect):
-            if expr.name not in self.EFFECT_TYPES:
+            if expr.name not in self.EFFECT_SIGNATURES:
                 raise TypeError(f"Unknown effect: {expr.name}")
-            return self.EFFECT_TYPES[expr.name]
+            expected_arg_types, return_type = self.EFFECT_SIGNATURES[expr.name]
+            if len(expr.args) != len(expected_arg_types):
+                raise TypeError(
+                    f"Effect {expr.name!r} expects {len(expected_arg_types)} "
+                    f"argument(s), got {len(expr.args)}"
+                )
+            # Recurse into nested-expression args so a composed pipeline
+            # (effect(a, effect(b, effect(c, var(x))))) gets its inner
+            # stages checked, AND validate each argument's actual type
+            # against what this effect expects - this is what catches a
+            # composition like certify(profileCNF(cnf)) (skipping
+            # selectHeuristic/solveWithConfig): certify expects 'Result',
+            # profileCNF produces 'Profile', mismatch, rejected below.
+            for arg, expected in zip(expr.args, expected_arg_types):
+                actual = self.check(arg, env) if isinstance(arg, LambdaExpr) else 'Any'
+                if expected != 'Any' and actual != 'Any' and actual != expected:
+                    raise TypeError(
+                        f"Effect {expr.name!r}: argument type mismatch - "
+                        f"expected {expected}, got {actual}"
+                    )
+            return return_type
 
         elif isinstance(expr, Literal):
             # Infer type from value

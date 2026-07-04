@@ -56,27 +56,59 @@ provided `decay_gamma == var_decay` and `eta == var_inc_0`.
   `r4sat_n40_..._seed0`: diverges at decision 14, ends 908 vs 944 total
   decisions; `php_8_7`: diverges at decision 1721, ends 5099 vs 9590).
 
-## Diagnosis of the residual 3/63
+## Diagnosis of the residual 3/63 (corrected after a self-check caught an error)
 
-Not a math error. Checked directly: simulated the same bump-then-decay
-sequence for 2000 steps in exact rational arithmetic (`fractions.Fraction`)
-versus float64. Exact ratio between the two decay strategies: **exactly
-1**. Float64 ratio after 2000 steps: **0.9999999999999986** - a ~1.4e-15
-relative drift. EVSIDS's approach never re-touches a stored score once
-added (only `var_inc` is repeatedly divided); VDIS's approach
-re-multiplies *every* stored score by `decay_gamma` on *every* conflict,
-so an old bump has been through many more float64 multiplications by
-the time it matters. That tiny compounding drift is invisible almost
-always, but CDCL search is chaotically sensitive to decision order: once
-a sufficiently close tie between two candidate variables flips because
-of a 1e-15-level difference, the entire subsequent search trajectory
-diverges completely (hence 908 vs 944, not "off by one somewhere
-near the end"). This is exactly why only the three *longest* runs in
-the suite (all requiring hundreds to over a thousand conflicts before
-divergence) are affected, and every shorter-running instance in both
-suites matches exactly.
+**Correction**: the first version of this section claimed the mismatches
+were "only the three longest runs in the suite" and attributed the cause
+to drift compounding over ~2000 steps. That claim doesn't survive its own
+evidence — the Result section two paragraphs up already recorded that
+`r4sat_n40_..._seed0` diverges at **decision 14** and `r3sat_n50_..._seed5`
+at **decision 23**. Those are not long runs. I wrote a plausible-sounding
+mechanism without checking it against the specific divergence points I'd
+already measured. Caught on a self-review pass, traced directly rather
+than re-argued from the armchair:
 
-## Open question (not resolved unilaterally)
+Instrumented both heuristics on `r4sat_n40_..._seed0` and dumped the
+actual variable scores at the exact decision where they diverge. Only
+**3 conflicts** had occurred by that point. EVSIDS: variables 11, 12, 17
+are in a bit-identical 3-way tie (`2.052631578947368` each) — its
+"never touch old scores, only grow `var_inc`" implementation gives them
+the exact same float64 value. VDIS: variables 11 and 12 are exactly tied
+(`1.7598749999999996`), but variable 17 differs by **~3 ULPs**
+(`1.7598749999999999`) — enough to win the strict `>` comparison in
+`pick()`. That's the whole mechanism: VDIS's decay directly re-multiplies
+*every* stored score by `decay_gamma` on *every* conflict (S3.3's literal
+prescription), so two variables bumped on different conflicts have been
+through a *different number of decay-multiplication steps* by the time
+they're compared — even if EVSIDS's mathematically-equivalent
+"grow-the-increment" bookkeeping gives them an exactly equal value. This
+can round differently after a handful of decay steps, not just after
+thousands; it isn't about accumulation length, it's about whether a
+genuine exact tie happens to occur (which is common early in a run, when
+few distinct conflict-clause patterns exist yet — three variables landing
+in the identical set of learned clauses so far is unremarkable). `php_8_7`
+diverging much later (decision 1721) is the same mechanism triggering on
+a different, later tie; it isn't evidence of a length-dependent effect,
+it's a second independent instance of the same tie-breaking sensitivity.
+The synthetic 2000-step check in the previous version of this section
+(exact-vs-float64 ratio 1 vs. 0.9999999999999986) is still accurate as
+far as it goes — the two decay strategies are mathematically identical
+and do drift under repeated floating-point rounding — it just wasn't the
+mechanism actually operating in 2 of these 3 cases, and I should have
+checked before writing it down as the explanation.
+
+## Open question — RESOLVED by operator decision (2026-07-03)
+
+**The operator chose path (a)**: float64-exact equivalence — 150/150 on
+the quick suite, 60/63 on the medium suite, with the residual 3 fully
+diagnosed above as exact-tie ULP sensitivity between two mathematically
+identical decay bookkeeping strategies — is accepted as satisfying the
+S4 degeneracy gate's intent. The structural bug S4 exists to catch (the
+absorbing fixed point) is fixed and verified; the residual divergence is
+a property of float64 itself, not of the gyro machinery. Track B1
+proceeds to Phase 2. Original decision text kept below for the record.
+
+### Original decision text
 
 The S4 gate as literally stated ("decision sequences equal element-wise")
 is not met bit-for-bit on arbitrarily long runs, because of this float64
