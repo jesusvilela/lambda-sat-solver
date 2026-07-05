@@ -173,3 +173,64 @@ def solution_stats(formula: CNFFormula, max_vars: int = 24) -> SolutionStats:
                 union(i, j)
     clusters = len({find(i) for i in range(len(sols))})
     return SolutionStats(len(sols), backbone, clusters, True)
+
+
+# ---------------------------------------------------------------------------
+# Resolution refutation width — the "sheaf obstruction level" made exact
+# ---------------------------------------------------------------------------
+# For an UNSAT formula, the minimum width w such that width-w resolution
+# derives the empty clause is the level at which local (width-<=w)
+# consistency fails to glue into global consistency (Atserias-Dalmau
+# k-consistency <-> width). By Ben-Sasson-Wigderson, resolution SIZE >=
+# exp(Omega((w - w0)^2 / n)), so width is an intrinsic, solver-independent
+# hardness carrier. This is the executable form of the sheaf-obstruction
+# view of UNSAT.
+
+def _resolve(c1, c2):
+    """All non-tautological resolvents of two clauses (frozensets of ints)."""
+    out = []
+    for lit in c1:
+        if -lit in c2:
+            r = (c1 - {lit}) | (c2 - {-lit})
+            if not any(-x in r for x in r):  # non-tautological
+                out.append(frozenset(r))
+    return out
+
+
+def min_refutation_width(formula: CNFFormula, wmax: int = 8,
+                         max_closure: int = 200000):
+    """Minimum resolution refutation width, or None if not found within
+    (wmax, max_closure). Only meaningful for UNSAT formulas; returns 0 if
+    the formula already contains the empty clause.
+
+    Exact for small formulas. Guarded by wmax and a closure-size cap so it
+    degrades gracefully rather than exploding."""
+    axioms = [frozenset(c) for c in formula.clauses]
+    if any(len(c) == 0 for c in axioms):
+        return 0
+    for w in range(1, wmax + 1):
+        clauses = {c for c in axioms if len(c) <= w}
+        frontier = list(clauses)
+        derived_empty = False
+        while frontier and len(clauses) < max_closure:
+            new = []
+            for i, c1 in enumerate(frontier):
+                for c2 in clauses:
+                    for r in _resolve(c1, c2):
+                        if len(r) <= w and r not in clauses:
+                            if len(r) == 0:
+                                derived_empty = True
+                                break
+                            new.append(r)
+                    if derived_empty:
+                        break
+                if derived_empty:
+                    break
+            if derived_empty:
+                return w
+            fresh = [c for c in new if c not in clauses]
+            clauses.update(fresh)
+            frontier = fresh
+        if derived_empty:
+            return w
+    return None

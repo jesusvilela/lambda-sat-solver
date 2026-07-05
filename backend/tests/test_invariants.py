@@ -51,3 +51,27 @@ class TestGraphInvariants:
     def test_entropy_uniform_high(self):
         f = CNFFormula(num_vars=4, clauses=[[1, 2], [3, 4], [1, 3], [2, 4]])
         assert 0.0 <= var_degree_entropy(f) <= 1.0
+
+
+class TestRefutationWidth:
+    def test_unit_contradiction_width_1(self):
+        from backend.complexity.invariants import min_refutation_width
+        f = CNFFormula(num_vars=1, clauses=[[1], [-1]])
+        assert min_refutation_width(f) == 1
+
+    def test_implication_chain_width_2(self):
+        from backend.complexity.invariants import min_refutation_width
+        f = CNFFormula(num_vars=3, clauses=[[1], [-1, 2], [-2, 3], [-3]])
+        assert min_refutation_width(f) == 2
+
+    def test_php_3_2_width_2(self):
+        # PHP(3 pigeons -> 2 holes): all clauses width 2, refutable at width 2
+        from backend.eval.generators import pigeonhole
+        from backend.complexity.invariants import min_refutation_width
+        cnf, _ = pigeonhole(3)
+        assert min_refutation_width(cnf, wmax=4) == 2
+
+    def test_empty_clause_width_0(self):
+        from backend.complexity.invariants import min_refutation_width
+        f = CNFFormula(num_vars=2, clauses=[[]])
+        assert min_refutation_width(f) == 0
