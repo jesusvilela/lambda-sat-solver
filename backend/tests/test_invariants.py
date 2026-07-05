@@ -75,3 +75,15 @@ class TestRefutationWidth:
         from backend.complexity.invariants import min_refutation_width
         f = CNFFormula(num_vars=2, clauses=[[]])
         assert min_refutation_width(f) == 0
+
+
+class TestSignedLaplacian:
+    def test_balanced_is_zero(self):
+        from backend.complexity.invariants import signed_laplacian_frustration
+        f = CNFFormula(num_vars=3, clauses=[[1, 2], [2, 3]])  # path: always balanced
+        assert signed_laplacian_frustration(f) < 1e-9
+
+    def test_frustrated_triangle_positive(self):
+        from backend.complexity.invariants import signed_laplacian_frustration
+        f = CNFFormula(num_vars=3, clauses=[[1, 2], [2, 3], [1, -3]])
+        assert signed_laplacian_frustration(f) > 0.0

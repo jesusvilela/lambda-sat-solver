@@ -59,6 +59,29 @@ solver. The geometry names the obstruction; it does not cheapen it.
   is a *lower-bound / structure* program, not a P=NP route. That
   agreement is the honest foundation to build the rest on.
 
+## Lateral technique tested: the connection (signed) Laplacian
+
+Per the operator's request to use lateral techniques from the prior
+studies, the signature object — the **connection Laplacian on the signed
+(ℤ/2 gain) variable graph** — was implemented
+(`signed_laplacian_frustration`) and tested honestly, not asserted about.
+Its smallest eigenvalue is the polarity-aware *frustration* (0 iff
+balanced), strictly more information than the unsigned spectral gap that
+Rung 1 found flat. Validated: balanced path → 0, frustrated triangle →
+0.5 (2 tests).
+
+Result across the n=50 transition (15 seeds/ratio): frustration is
+**also monotone in clause density** (0.31 → 0.47 as α goes 3.5 → 6.0)
+and does **not** peak at the hardness maximum (α≈4.6). Rank-correlation
+with hardness +0.19 — identical to the unsigned gap. Polarity-awareness
+does not rescue a graph-spectral invariant: the Rung-1 conclusion holds
+even for the refined, signed object. Where the connection Laplacian
+*does* have real bite is exactly the XOR / 2-SAT / equivalence-structured
+fragment (balance = 2-SAT satisfiability, already exploited by
+`binary_clause_check`), not general-3-SAT hardness prediction. The
+lateral technique is real and correctly scoped — just not a hardness
+carrier, for the same reason no graph spectrum is.
+
 ## Rung 3 (next, honest)
 
 The real open direction with real theorems under it: **width lower

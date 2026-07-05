@@ -234,3 +234,41 @@ def min_refutation_width(formula: CNFFormula, wmax: int = 8,
         if derived_empty:
             return w
     return None
+
+
+# ---------------------------------------------------------------------------
+# Connection (signed / Z2 gain) Laplacian frustration - the lateral technique
+# ---------------------------------------------------------------------------
+# From the connection_laplacian program: build the signed variable graph
+# where an edge (i,j) carries the product of the two literals' polarities
+# accumulated over the clauses they share. The signed Laplacian
+# L = D - A_signed is PSD; its smallest eigenvalue is 0 iff the signed
+# graph is BALANCED (frustration-free) and > 0 measures frustration - a
+# polarity-aware intrinsic obstruction the unsigned spectral gap misses.
+
+def signed_laplacian_frustration(formula: CNFFormula) -> float:
+    """Smallest eigenvalue of the signed (connection) Laplacian of the
+    variable graph, normalized by mean degree. 0 ⇒ balanced; larger ⇒
+    more frustrated. Polarity-aware, unlike spectral_gap."""
+    n = formula.num_vars
+    if n < 2:
+        return 0.0
+    A = np.zeros((n, n))
+    for cl in formula.clauses:
+        lits = [l for l in cl if 1 <= abs(l) <= n]
+        for a in range(len(lits)):
+            for b in range(a + 1, len(lits)):
+                i, j = abs(lits[a]) - 1, abs(lits[b]) - 1
+                if i == j:
+                    continue
+                s = (1 if lits[a] > 0 else -1) * (1 if lits[b] > 0 else -1)
+                A[i, j] += s
+                A[j, i] += s
+    deg = np.abs(A).sum(axis=1)
+    if np.all(deg == 0):
+        return 0.0
+    L = np.diag(deg) - A          # signed Laplacian, PSD
+    ev = np.linalg.eigvalsh((L + L.T) / 2.0)
+    lam_min = float(max(0.0, ev[0]))
+    mean_deg = deg.mean()
+    return lam_min / mean_deg if mean_deg > 0 else 0.0
