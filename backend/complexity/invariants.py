@@ -272,3 +272,107 @@ def signed_laplacian_frustration(formula: CNFFormula) -> float:
     lam_min = float(max(0.0, ev[0]))
     mean_deg = deg.mean()
     return lam_min / mean_deg if mean_deg > 0 else 0.0
+
+
+# ---------------------------------------------------------------------------
+# Energy-landscape saddle structure - "hardness as a saddle point"
+# ---------------------------------------------------------------------------
+# H(x) = number of violated clauses. Solutions are the energy-0 configs.
+# The SADDLE connecting two solution basins is the minimum energy E* such
+# that the sub-level set {x : H(x) <= E*} connects them (single-bit-flip
+# adjacency). E* is the barrier height a local search must climb - the
+# instance-level image of the free-energy saddle whose change of character
+# is the SAT phase transition (Mezard-Parisi-Zecchina). Exact, small n.
+
+@dataclass
+class SaddleStats:
+    satisfiable: bool
+    num_solution_basins: int   # solution clusters at E=0 (Hamming-1)
+    connect_barrier: int       # E* : energy to connect ALL solutions (0 = single basin)
+    ground_energy: int         # min H (0 if SAT)
+
+
+def energy_landscape_saddle(formula: CNFFormula, max_vars: int = 22) -> SaddleStats:
+    """Saddle/barrier structure of the violated-clause energy landscape."""
+    n = formula.num_vars
+    if n > max_vars:
+        raise ValueError(f"exact only for n<=max_vars={max_vars}; got n={n}")
+    clause_bits = []
+    for cl in formula.clauses:
+        pos = neg = 0
+        for l in cl:
+            v = abs(l) - 1
+            if l > 0:
+                pos |= (1 << v)
+            else:
+                neg |= (1 << v)
+        clause_bits.append((pos, neg))
+
+    def energy(x):
+        e = 0
+        for pos, neg in clause_bits:
+            if (x & pos) == 0 and (~x & neg) == 0:
+                e += 1
+        return e
+
+    N = 1 << n
+    E = np.fromiter((energy(x) for x in range(N)), dtype=np.int32, count=N)
+    ground = int(E.min())
+    sols = np.flatnonzero(E == 0)
+    if sols.size == 0:
+        return SaddleStats(False, 0, -1, ground)
+
+    # Flood the landscape in ascending energy order; union Hamming-1
+    # neighbours already flooded. Record when all solutions are connected.
+    order = np.argsort(E, kind="stable")
+    parent = list(range(N))
+    added = bytearray(N)
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    sol_set = set(int(s) for s in sols)
+    # basins at E=0 (solution clusters)
+    for s in sols:
+        added[s] = 1
+    for s in sols:
+        for v in range(n):
+            nb = int(s) ^ (1 << v)
+            if added[nb]:
+                union(int(s), nb)
+    num_basins = len({find(int(s)) for s in sols})
+
+    connect_barrier = 0
+    if num_basins > 1:
+        # continue flooding upward until all solutions share a root
+        # reset flood, redo in energy order tracking barrier
+        parent2 = list(range(N))
+        added2 = bytearray(N)
+        def find2(a):
+            while parent2[a] != a:
+                parent2[a] = parent2[parent2[a]]
+                a = parent2[a]
+            return a
+        def union2(a, b):
+            ra, rb = find2(a), find2(b)
+            if ra != rb:
+                parent2[ra] = rb
+        connect_barrier = ground
+        for x in order:
+            x = int(x)
+            added2[x] = 1
+            for v in range(n):
+                nb = x ^ (1 << v)
+                if added2[nb]:
+                    union2(x, nb)
+            roots = {find2(s) for s in sol_set}
+            if len(roots) == 1:
+                connect_barrier = int(E[x])
+                break
+    return SaddleStats(True, num_basins, connect_barrier, 0)

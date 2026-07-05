@@ -87,3 +87,20 @@ class TestSignedLaplacian:
         from backend.complexity.invariants import signed_laplacian_frustration
         f = CNFFormula(num_vars=3, clauses=[[1, 2], [2, 3], [1, -3]])
         assert signed_laplacian_frustration(f) > 0.0
+
+
+class TestEnergyLandscapeSaddle:
+    def test_connected_basin_zero_barrier(self):
+        from backend.complexity.invariants import energy_landscape_saddle
+        s = energy_landscape_saddle(CNFFormula(num_vars=2, clauses=[[1, 2]]))
+        assert s.satisfiable and s.num_solution_basins == 1 and s.connect_barrier == 0
+
+    def test_xor_two_basins_barrier_one(self):
+        from backend.complexity.invariants import energy_landscape_saddle
+        s = energy_landscape_saddle(CNFFormula(num_vars=2, clauses=[[1, 2], [-1, -2]]))
+        assert s.num_solution_basins == 2 and s.connect_barrier == 1
+
+    def test_unsat_reports_ground(self):
+        from backend.complexity.invariants import energy_landscape_saddle
+        s = energy_landscape_saddle(CNFFormula(num_vars=1, clauses=[[1], [-1]]))
+        assert not s.satisfiable and s.ground_energy == 1
