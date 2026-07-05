@@ -77,6 +77,43 @@ class TestRefutationWidth:
         assert min_refutation_width(f) == 0
 
 
+class TestNullstellensatzDegree:
+    def test_unit_contradiction_degree_1(self):
+        from backend.complexity.invariants import nullstellensatz_degree
+        f = CNFFormula(num_vars=1, clauses=[[1], [-1]])
+        assert nullstellensatz_degree(f) == 1
+
+    def test_implication_chain_degree_2(self):
+        from backend.complexity.invariants import nullstellensatz_degree
+        f = CNFFormula(num_vars=3, clauses=[[1], [-1, 2], [-2, 3], [-3]])
+        assert nullstellensatz_degree(f) == 2
+
+    def test_php_3_2_degree_4(self):
+        from backend.eval.generators import pigeonhole
+        from backend.complexity.invariants import nullstellensatz_degree
+        cnf, _ = pigeonhole(3)
+        assert nullstellensatz_degree(cnf, dmax=6) == 4
+
+    def test_satisfiable_returns_none(self):
+        from backend.complexity.invariants import nullstellensatz_degree
+        assert nullstellensatz_degree(CNFFormula(num_vars=2, clauses=[[1, 2]])) is None
+        # two solution clusters, still SAT -> no certificate
+        f = CNFFormula(num_vars=2, clauses=[[1, 2], [-1, -2]])
+        assert nullstellensatz_degree(f) is None
+
+    def test_empty_clause_degree_0(self):
+        from backend.complexity.invariants import nullstellensatz_degree
+        f = CNFFormula(num_vars=2, clauses=[[]])
+        assert nullstellensatz_degree(f) == 0
+
+    def test_guard_large_n(self):
+        import pytest
+        from backend.complexity.invariants import nullstellensatz_degree
+        with pytest.raises(ValueError):
+            nullstellensatz_degree(CNFFormula(num_vars=30, clauses=[[1], [-1]]),
+                                   max_vars=22)
+
+
 class TestSignedLaplacian:
     def test_balanced_is_zero(self):
         from backend.complexity.invariants import signed_laplacian_frustration
