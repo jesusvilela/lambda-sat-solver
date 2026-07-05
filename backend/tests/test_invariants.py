@@ -1,0 +1,53 @@
+"""Tests for intrinsic structural invariants (ladder Rung 1)."""
+
+from backend.cnf_utils import CNFFormula
+from backend.complexity.invariants import (
+    solution_stats, spectral_gap, mean_var_degree, var_degree_entropy,
+)
+
+
+class TestSolutionStats:
+    def test_disjunction(self):
+        s = solution_stats(CNFFormula(num_vars=2, clauses=[[1, 2]]))
+        assert s.num_solutions == 3 and s.backbone_fraction == 0.0
+        assert s.num_clusters == 1 and s.satisfiable
+
+    def test_conjunction_full_backbone(self):
+        s = solution_stats(CNFFormula(num_vars=2, clauses=[[1], [2]]))
+        assert s.num_solutions == 1 and s.backbone_fraction == 1.0
+
+    def test_xor_two_clusters(self):
+        # solutions 01 and 10 are Hamming distance 2 -> 2 clusters
+        s = solution_stats(CNFFormula(num_vars=2, clauses=[[1, 2], [-1, -2]]))
+        assert s.num_solutions == 2 and s.num_clusters == 2
+        assert s.backbone_fraction == 0.0
+
+    def test_unsat(self):
+        s = solution_stats(CNFFormula(num_vars=1, clauses=[[1], [-1]]))
+        assert not s.satisfiable and s.num_solutions == 0
+
+    def test_guard_large_n(self):
+        import pytest
+        with pytest.raises(ValueError):
+            solution_stats(CNFFormula(num_vars=30, clauses=[[1]]), max_vars=24)
+
+
+class TestGraphInvariants:
+    def test_mean_degree(self):
+        # 2 clauses of width 3 over 3 vars: each var appears twice
+        f = CNFFormula(num_vars=3, clauses=[[1, 2, 3], [-1, -2, -3]])
+        assert mean_var_degree(f) == 2.0
+
+    def test_spectral_gap_range(self):
+        f = CNFFormula(num_vars=4, clauses=[[1, 2, 3], [2, 3, 4], [1, 4, -2]])
+        g = spectral_gap(f)
+        assert 0.0 <= g <= 2.0
+
+    def test_spectral_gap_disconnected_is_zero(self):
+        # variable 3 isolated -> disconnected -> gap 0
+        f = CNFFormula(num_vars=3, clauses=[[1, 2]])
+        assert spectral_gap(f) == 0.0
+
+    def test_entropy_uniform_high(self):
+        f = CNFFormula(num_vars=4, clauses=[[1, 2], [3, 4], [1, 3], [2, 4]])
+        assert 0.0 <= var_degree_entropy(f) <= 1.0
