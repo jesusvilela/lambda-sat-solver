@@ -85,3 +85,35 @@ class TestGF2Refutation:
         # x1^x2=0 AND x1^x2=1  -> inconsistent -> refuted
         f = CNFFormula(num_vars=2, clauses=[[1, -2], [-1, 2], [1, 2], [-1, -2]])
         assert gf2_xor_refutation(f).refuted is True
+
+
+class TestGF2Solve:
+    def test_sat_xor_returns_verified_model(self):
+        from backend.xor_extraction import gf2_xor_solve
+        from backend.cnf_utils import verify_model
+        f = CNFFormula(num_vars=2, clauses=[[1, -2], [-1, 2]])  # x1^x2=0, SAT
+        r = gf2_xor_solve(f)
+        assert r.status == 'SAT' and r.model is not None
+        assert verify_model(f, r.model)          # independently verified
+
+    def test_unsat_tseitin(self):
+        from backend.xor_extraction import gf2_xor_solve
+        r = gf2_xor_solve(_tseitin_k4())
+        assert r.status == 'UNSAT' and r.model is None
+
+    def test_inconclusive_when_not_fully_covered(self):
+        from backend.xor_extraction import gf2_xor_solve
+        # x1^x2=0 (2 clauses) + a non-parity unit [3] -> XORs don't cover it
+        f = CNFFormula(num_vars=3, clauses=[[1, -2], [-1, 2], [3]])
+        r = gf2_xor_solve(f)
+        assert r.status == 'INCONCLUSIVE' and r.decides_fully is False
+
+    def test_never_claims_unverified_sat(self):
+        # every SAT verdict this returns must satisfy the formula
+        from backend.xor_extraction import gf2_xor_solve
+        from backend.cnf_utils import verify_model
+        # x1^x2^x3 = 1 (SAT), full parity
+        f = CNFFormula(num_vars=3,
+                       clauses=[[1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3]])
+        r = gf2_xor_solve(f)
+        assert r.status == 'SAT' and verify_model(f, r.model)

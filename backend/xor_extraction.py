@@ -26,7 +26,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
 
-from .cnf_utils import CNFFormula
+from .cnf_utils import CNFFormula, verify_model
 
 
 @dataclass
@@ -127,3 +127,76 @@ def gf2_xor_refutation(formula: CNFFormula, max_arity: int = 6) -> XORRefutation
         if refuted:
             break
     return XORRefutation(refuted, len(res.xors), res.xor_clause_fraction >= 0.999)
+
+
+@dataclass
+class XORSolveResult:
+    status: str                        # 'SAT' | 'UNSAT' | 'INCONCLUSIVE'
+    model: Optional[Dict[int, bool]]   # 1-indexed assignment, only when SAT
+    decides_fully: bool                # recovered XORs cover the whole formula
+
+
+def _rref_gf2(rows: List[int], n: int):
+    """Reduced row-echelon form over GF(2). Rows are ints: bits 0..n-1 are
+    variables, bit n is the rhs. Returns a dict pivot_col -> reduced row, or
+    None if the system is inconsistent (some row reduces to 0 = 1)."""
+    var_mask = (1 << n) - 1
+    basis: Dict[int, int] = {}
+    for r in rows:
+        cur = r
+        for col, brow in basis.items():        # eliminate known pivot columns
+            if (cur >> col) & 1:
+                cur ^= brow
+        if (cur & var_mask) == 0:              # variable part vanished
+            if cur == 0:
+                continue                        # dependent row
+            return None                         # 0 = 1  -> inconsistent
+        pivot_col = ((cur & var_mask) & -(cur & var_mask)).bit_length() - 1
+        for col in list(basis):                 # keep existing rows reduced
+            if (basis[col] >> pivot_col) & 1:
+                basis[col] ^= cur
+        basis[pivot_col] = cur
+    return basis
+
+
+def gf2_xor_solve(formula: CNFFormula, max_arity: int = 6) -> XORSolveResult:
+    """Complete the frame router's SAT side: decide a parity-structured formula
+    in the GF(2) frame by Gaussian elimination, and (when the recovered XORs
+    cover the whole formula) reconstruct a satisfying assignment.
+
+    - inconsistent XOR system  -> 'UNSAT' (sound for ANY formula: XORs entailed)
+    - consistent AND fully covered -> 'SAT' with a model, INDEPENDENTLY verified
+      against the original CNF via verify_model (Charter: verify, don't trust)
+    - otherwise -> 'INCONCLUSIVE' (fall through to CDCL): either the parity core
+      is satisfiable but does not cover the formula, or (defensively) a
+      reconstructed model failed verification.
+
+    This is the poly-time algebraic decision for the pure-parity frame — the SAT
+    counterpart of gf2_xor_refutation, closing the loop the frame benchmark
+    opened (UNSAT side only).
+    """
+    res = extract_xors(formula, max_arity=max_arity)
+    n = formula.num_vars
+    covered = res.xor_clause_fraction >= 0.999
+    rows = []
+    for x in res.xors:
+        row = 0
+        for v in x.variables:
+            row |= (1 << (v - 1))
+        if x.rhs:
+            row |= (1 << n)
+        rows.append(row)
+
+    basis = _rref_gf2(rows, n)
+    if basis is None:
+        return XORSolveResult('UNSAT', None, covered)   # sound regardless of coverage
+    if not covered:
+        return XORSolveResult('INCONCLUSIVE', None, False)
+
+    # consistent + fully covered: free variables := False, pivots := rhs bit
+    model = {v: False for v in range(1, n + 1)}
+    for pivot_col, row in basis.items():
+        model[pivot_col + 1] = bool((row >> n) & 1)
+    if verify_model(formula, model):
+        return XORSolveResult('SAT', model, True)
+    return XORSolveResult('INCONCLUSIVE', None, True)   # defensive: never claim unverified SAT

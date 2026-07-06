@@ -39,6 +39,28 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **proven:** recovered XORs are logically entailed (exact CNF encodings), so an inconsistent XOR subsystem soundly refutes the whole formula; Tseitin resolution width is Omega(n) (BSW) hence CDCL-exponential
 - **limit:** only refutes via the parity fragment -- inconclusive on formulas whose contradiction is not in the XOR core (falls through to CDCL)
 
+### cardinality_check.pigeonhole_counting_refutation (counting frame)
+
+- **binds:** `backend.cardinality_check.pigeonhole_counting_refutation`
+- **cost:** poly-time (all-positive/negative-binary scan + union-find + clique check)
+- **input:** any CNFFormula
+- **invariant:** refuted = the pigeonhole counting bound is violated: k variable-disjoint at-least-one clauses whose variables are covered by m < k disjoint at-most-one cliques (k > m => UNSAT)
+- **action:** the third sound UNSAT fast-path -- the COUNTING/cardinality frame, sibling of binary_clause_check (implication) and gf2_xor_refutation (parity); collapses pigeonhole where GF(2) is blind (magnitude, not parity)
+- **benchmark:** PHP(n->n-1) refuted for n=3..12 in <0.5ms (k=n, m=n-1) where Kissat times out at n=12; Tseitin/random/XORSAT not refuted (correctly falls through)
+- **proven:** counting: disjoint ALO clauses force >= k trues; disjoint AMO cliques allow <= m trues; k > m is a contradiction. PHP has poly cutting-planes proofs but 2^Omega(n) resolution (Haken'85)
+- **limit:** refutes the pigeonhole pattern and relatives only; non-clique at-most-one groups or overlapping ALO clauses -> falls through
+
+### xor_extraction.gf2_xor_solve (parity-frame decision)
+
+- **binds:** `backend.xor_extraction.gf2_xor_solve`
+- **cost:** poly-time (XOR recovery + GF(2) Gaussian elimination + model check)
+- **input:** any CNFFormula
+- **invariant:** decides the GF(2)/parity frame: 'UNSAT' (sound for any formula), or 'SAT' with an INDEPENDENTLY VERIFIED model when the recovered XORs cover the formula, else 'INCONCLUSIVE'
+- **action:** completes the frame router's SAT side -- routes satisfiable parity instances to the polynomial algebraic engine, not just the UNSAT ones (gf2_xor_refutation)
+- **benchmark:** SAT pure-XOR returns a verify_model-checked assignment; Tseitin -> UNSAT; on 40 random XORSAT: 0 unverified models, 39/40 agree with Kissat (40th correctly INCONCLUSIVE)
+- **proven:** GF(2) linear algebra decides XOR-SAT in polynomial time; SAT is only ever returned after independent model verification (never trusts the reconstruction) -- Charter: verify, don't trust
+- **limit:** only decides formulas whose clauses are (covered by) parity constraints; anything else is INCONCLUSIVE and falls to CDCL
+
 ## Exact structural readouts
 
 ### solution_stats
