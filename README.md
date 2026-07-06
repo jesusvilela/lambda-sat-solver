@@ -1,5 +1,7 @@
 # Lambda SAT Middleware
 
+[![tests](https://github.com/jesusvilela/lambda-sat-solver/actions/workflows/tests.yml/badge.svg)](https://github.com/jesusvilela/lambda-sat-solver/actions/workflows/tests.yml)
+
 A headless, math-aligned λ-logic middleware for Boolean satisfiability: it
 transforms formulas into CNF, solves with **Kissat**, and **independently
 certifies** every result — SAT by model replay, UNSAT by DRAT/LRAT proof
