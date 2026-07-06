@@ -194,6 +194,26 @@ REGISTRY: List[InvariantContract] = [
         verdict=STRUCTURE,
     ),
     InvariantContract(
+        name="xor_extraction.extract_xors (frame detector)",
+        target="backend.xor_extraction.extract_xors",
+        cost="poly-time O(clauses * arity) (capped by max_arity)",
+        input_domain="any CNFFormula",
+        invariant="recovered XOR/parity constraints and xor_clause_fraction = "
+                  "share of clauses that form complete parity groups",
+        action="cheap detector of the GF(2) shallow frame: high fraction => the "
+                "algebraic (Gaussian-elimination) frame is shallow here; the "
+                "practical poly-time shadow of cross_algebra_depth, sibling of "
+                "binary_clause_check (the 2-SAT frame detector)",
+        benchmark="Tseitin K4 fraction 1.0 (GF(2) shallow), PHP(3->2) 0.0 "
+                  "(resolution shallow); single 3-XOR recovered with correct rhs",
+        proven="XOR CNF encoding is exact (2^(k-1) clauses of fixed negative-"
+               "literal parity); recovery is sound for complete groups",
+        limit="detects only COMPLETE short parity groups (<= max_arity); a "
+              "frame discriminator, not a solver, and not wired into routing "
+              "until benchmarked (matching policy.py's evidence discipline)",
+        verdict=STRUCTURE,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

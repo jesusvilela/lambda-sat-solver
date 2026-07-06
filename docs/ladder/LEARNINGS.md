@@ -40,12 +40,21 @@ solver does, and it is why our middleware (Kissat + switchable heuristics /
 restarts) is the right shape: it cannot lower any one Emperor's depth, so it
 searches for the algebra where the depth is already low.
 
-**The landing artifact:** `cross_algebra_depth(F)` returns the obstruction depth
-in each algebra we can measure and their minimum — the portfolio principle made
-intrinsic. On the mixed pair {PHP, Tseitin} the portfolio min (2, 3) strictly
-beats width-only (2, 4) and NS-only (4, 3). It is honestly labelled a
-*demonstrator*, not a fast router (both depths are exponential to compute); its
-practical shadow is the solver's real portfolio/restart/heuristic switching.
+**The landing artifacts:**
+
+- `cross_algebra_depth(F)` — the obstruction depth in each algebra and their
+  minimum, the portfolio principle made intrinsic. On {PHP, Tseitin} the min
+  (2, 3) strictly beats width-only (2, 4) and NS-only (4, 3). Honestly labelled
+  a *demonstrator*, not a router (both depths are exponential).
+- `backend/xor_extraction.py` — the **cheap, poly-time shadow** that is actually
+  usable: it recovers XOR/parity structure and reports `xor_clause_fraction`,
+  the frame signal. Tseitin scores 1.0 (GF(2) frame shallow), PHP scores 0.0
+  (resolution frame shallow) — the same separation the exponential depths give,
+  now in polynomial time. It is the sibling of `binary_clause_check` (the 2-SAT
+  frame detector), and the honest practical form of the shallow-Emperor hunt:
+  cheaply guess *which algebra* is shallow for this instance. Not yet wired into
+  `policy.py` routing — that waits for benchmark evidence, per the repo's
+  standing discipline.
 
 ## The one fidelity kept (the drone)
 
