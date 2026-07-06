@@ -84,8 +84,10 @@ class DRATChecker:
                     timeout=timeout
                 )
 
-                # drat-trim returns 0 if proof is valid
-                if result.returncode == 0:
+                # drat-trim writes "s VERIFIED" to stdout on success and
+                # "s NOT VERIFIED" (or nothing) on failure.  The return code
+                # is not a reliable indicator of correctness.
+                if 's VERIFIED' in result.stdout:
                     return ProofCheckResult(
                         valid=True,
                         message="DRAT proof verified successfully",

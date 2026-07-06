@@ -5,6 +5,8 @@ Runs multiple solver configurations in parallel and returns the first successful
 """
 
 import asyncio
+import os
+from concurrent.futures import ThreadPoolExecutor
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,7 +39,7 @@ class PortfolioSolver:
         self,
         kissat_binary: str = "kissat",
         drat_trim_binary: str = "drat-trim",
-        max_parallel: int = 4
+        max_parallel: Optional[int] = None
     ):
         """
         Initialize portfolio solver
@@ -45,11 +47,19 @@ class PortfolioSolver:
         Args:
             kissat_binary: Path to Kissat binary
             drat_trim_binary: Path to drat-trim binary
-            max_parallel: Maximum number of parallel solvers to run
+            max_parallel: Maximum number of parallel solvers to run. Each
+                config is a CPU-bound Kissat subprocess, so running more of
+                them at once than there are cores causes contention rather
+                than speedup. Defaults to the machine's CPU count (capped
+                at 4, since the default portfolio only has 4 configs).
         """
         self.kissat = KissatWrapper(kissat_binary)
         self.drat_checker = DRATChecker(drat_trim_binary)
-        self.max_parallel = max_parallel
+        if max_parallel is None:
+            max_parallel = min(4, os.cpu_count() or 4)
+        self.max_parallel = max(1, max_parallel)
+        # Shared executor so solver subprocesses don't block the event loop
+        self._executor = ThreadPoolExecutor(max_workers=self.max_parallel)
 
     def get_default_portfolio(self) -> List[PortfolioConfig]:
         """
@@ -115,7 +125,12 @@ class PortfolioSolver:
         produce_proof: bool = True
     ) -> Tuple[str, Dict[str, Any]]:
         """
-        Solve with a single configuration
+        Solve with a single configuration.
+
+        The underlying Kissat call is blocking (subprocess.run).  To avoid
+        stalling the event loop while multiple configs run in parallel, we
+        dispatch it to a thread-pool executor so the async scheduler can
+        continue managing other tasks.
 
         Args:
             cnf: CNF formula to solve
@@ -127,8 +142,16 @@ class PortfolioSolver:
         """
         start_time = time.time()
 
+        loop = asyncio.get_event_loop()
         try:
-            result = self.kissat.solve(cnf, config.heuristic, config.budget, produce_proof)
+            # Run the blocking solver in a separate thread so we do not block
+            # the event loop and other portfolio configs can progress in parallel.
+            result = await loop.run_in_executor(
+                self._executor,
+                lambda: self.kissat.solve(
+                    cnf, config.heuristic, config.budget, produce_proof
+                ),
+            )
 
             solve_time = time.time() - start_time
 
@@ -205,20 +228,27 @@ class PortfolioSolver:
                     winning_result = result
                     break
 
-            # Try to get any other completed results
-            try:
-                for task in pending:
-                    try:
-                        await asyncio.wait_for(task, timeout=0.1)
-                    except (asyncio.TimeoutError, asyncio.CancelledError):
-                        pass
-            except Exception:
-                pass
+            # Await pending tasks to suppress CancelledError warnings; discard output
+            for task in pending:
+                try:
+                    await task
+                except (asyncio.CancelledError, Exception):
+                    pass
 
         else:
-            # Wait for all configurations to complete
+            # Wait for all configurations to complete.
+            # return_exceptions=True means exceptions are returned as values
+            # rather than propagated, so we must check each item's type.
             all_results = await asyncio.gather(*tasks, return_exceptions=True)
-            for config_name, result in all_results:
+            for item in all_results:
+                if isinstance(item, BaseException):
+                    # A task raised unexpectedly; treat as ERROR
+                    results.append({
+                        'status': 'ERROR',
+                        'error': str(item),
+                    })
+                    continue
+                config_name, result = item
                 results.append(result)
                 if result['status'] in ['SAT', 'UNSAT'] and winning_config is None:
                     winning_config = config_name

@@ -7,6 +7,7 @@ from pathlib import Path
 import tempfile
 from backend.cnf_utils import (
     CNFFormula,
+    DimacsParseError,
     parse_dimacs,
     parse_dimacs_file,
     write_dimacs,
@@ -310,3 +311,74 @@ class TestEdgeCases:
 
         model = {1: False}
         assert verify_model(cnf, model) is True
+
+
+class TestStrictDIMACSParser:
+    """Strict (TCB-grade) DIMACS validation"""
+
+    def test_valid_strict(self):
+        cnf = parse_dimacs("p cnf 3 2\n1 2 0\n-1 3 0", strict=True)
+        assert cnf.num_vars == 3
+        assert cnf.clauses == [[1, 2], [-1, 3]]
+
+    def test_missing_header_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("1 2 0", strict=True)
+
+    def test_duplicate_header_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2 1\np cnf 2 1\n1 2 0", strict=True)
+
+    def test_malformed_header_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2\n1 2 0", strict=True)
+
+    def test_non_integer_header_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf two 1\n1 2 0", strict=True)
+
+    def test_negative_header_counts_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf -2 1\n1 2 0", strict=True)
+
+    def test_wrong_clause_count_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2 3\n1 2 0\n-1 0", strict=True)
+
+    def test_variable_out_of_range_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2 1\n1 5 0", strict=True)
+
+    def test_non_integer_clause_token_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2 1\n1 x 0", strict=True)
+
+    def test_unterminated_clause_rejected(self):
+        with pytest.raises(DimacsParseError):
+            parse_dimacs("p cnf 2 1\n1 2", strict=True)
+
+    def test_empty_clause_preserved(self):
+        # Empty clause makes the formula trivially UNSAT
+        # and must not be silently dropped
+        cnf = parse_dimacs("p cnf 2 2\n1 2 0\n0", strict=True)
+        assert [] in cnf.clauses
+        assert cnf.num_clauses == 2
+
+    def test_permissive_mode_still_lenient(self):
+        # Wrong declared count is tolerated in permissive mode
+        cnf = parse_dimacs("p cnf 2 5\n1 2 0")
+        assert cnf.num_clauses == 1
+
+    def test_permissive_rejects_non_integer_tokens(self):
+        with pytest.raises(ValueError):
+            parse_dimacs("1 abc 0")
+
+    def test_strict_file_parsing(self):
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.cnf', delete=False) as f:
+            f.write("p cnf 2 1\n1 5 0")
+            path = Path(f.name)
+        try:
+            with pytest.raises(DimacsParseError):
+                parse_dimacs_file(path, strict=True)
+        finally:
+            path.unlink()

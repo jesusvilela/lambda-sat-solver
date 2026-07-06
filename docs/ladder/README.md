@@ -1,0 +1,71 @@
+# The hardness-lower-bound ladder — index & honest standing
+
+This directory is a research program: find the **intrinsic, solver-independent
+object that carries SAT hardness**, climb from cheap-and-wrong to
+expensive-and-right, and keep every claim executable. It is *not* a P=NP route,
+and every rung says so.
+
+## Where it stands (honest)
+
+- **Two genuine hardness carriers, theorem-backed.** `min_refutation_width`
+  (Ben-Sasson–Wigderson: width lower-bounds resolution size) and
+  `nullstellensatz_degree` (Clegg–Edmonds–Impagliazzo: PC degree lower-bounds
+  PC size). They track but are *distinct*: NS ≥ width on every instance tested,
+  and PHP(3→2) separates them (NS 4 vs width 2). Both are exact and
+  exponential — the right object is genuinely expensive.
+- **A clean, well-measured negative.** No cheap graph-structural scalar
+  (`spectral_gap`, degree entropy, `signed_laplacian_frustration`) carries
+  random-3-SAT hardness — they are monotone in density, not peaked at the
+  transition (Rung 1 / connection-Laplacian addendum).
+- **The operator's geometric program, made executable and unified.** The
+  sheaf-obstruction *is* bounded resolution width (Rung 2); the zero-divisor =
+  rank-deficiency instinct *is* the Nullstellensatz degree
+  (RUNG2_ALGEBRAIC — corrected: a carrier for its *own* static system only,
+  **incomparable** to resolution width, PHP 4>2 vs Tseitin K4 3<4); the Lie
+  telos *is* 𝔤₂ = Der(𝕆) / Moreno's G₂ zero-divisor
+  space, real over ℝ (symmetry-adapted SOS) but char-2 obstructed over GF(2)
+  (RUNG2_LIE_TELOS); the braid-theta engine / star of closure is the dynamical
+  face of the same object — topological QC = BQP, which is *not* believed to
+  contain NP (RUNG2_BRAID_THETA). One exceptional object, three faces, each
+  real in its own register, none a polynomial SAT algorithm.
+
+## What's proven vs open
+
+- **Proven / measured:** the two size lower bounds (BSW, CEI) as theorems the
+  carriers compute against; the Rung-1 negative on our own instances; NS ≥ width
+  with PHP separation; the char-2 collapse of the naive symmetry channel.
+- **Open / next:** the ℝ-side **G₂-block-diagonalized moment/SOS matrix** on the
+  same rank-deficiency operator — the one place the exceptional symmetry is a
+  genuine computational lever rather than a name.
+
+## Contracts & evals (the discipline)
+
+Every invariant is pinned to an explicit **input → invariant → action →
+benchmark** contract with its theorem-backed part and its honest limit called
+out. Contracts cannot silently rot:
+
+- `backend/complexity/contracts.py` — the registry (source of truth).
+- `docs/ladder/CONTRACTS.md` — auto-rendered from the registry (a test enforces
+  sync).
+- `backend/tests/test_ladder_contracts.py` — binds every contract to its
+  callable and asserts its contracted claim on small fixtures.
+
+## Rung documents
+
+| doc | content |
+|---|---|
+| `RUNG1_PLAN.md`, `RUNG1_REPORT.md` | cheap graph invariants do NOT carry hardness (the negative) |
+| `RUNG2_REPORT.md` | sheaf-obstruction = min resolution refutation width; connection-Laplacian addendum |
+| `RUNG2_ALGEBRAIC_NOTE.md` | zero-divisor = rank-deficiency = Nullstellensatz degree (incomparable to width: PHP 4>2, Tseitin 3<4) |
+| `RUNG2_LIE_TELOS_NOTE.md` | 𝔤₂ = Der(𝕆) / G₂ symmetry; real over ℝ, char-2 obstructed over GF(2) |
+| `RUNG2_BRAID_THETA_NOTE.md` | braid-theta engine / star of closure = dynamical face; braiding = BQP, not a SAT route |
+| `RUNG_SADDLE_NOTE.md` | energy-landscape saddle/barrier structure; ruggedness ≠ hardness, the gate is the separator |
+| `HYPERCOMPLEX_DESIGNS_REVIEW.md` | honest review of the operator's computer designs (Berry-braid, symplectic RAM, orbifold, sedenion clock, VDIS channels) + two bridges into the ladder |
+
+## Reproducible experiments
+
+`docs/ladder/scripts/`: `rung1_transition_sweep.py` (hardness peak + cheap
+invariants), `ns_degree_vs_width.py` (algebraic vs resolution obstruction),
+`symmetry_channel_ns.py` (the char-2 fork), `saddle_ruggedness_vs_gate.py`
+(ruggedness vs the algebraic separator), `fano_braid_associator.py` (the
+octonion substrate).

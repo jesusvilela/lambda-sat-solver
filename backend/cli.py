@@ -43,7 +43,17 @@ async def main():
     parser.add_argument(
         '--strict',
         action='store_true',
-        help='Require proof verification for UNSAT'
+        help='Require proof verification for UNSAT (alias for --mode strict)'
+    )
+
+    parser.add_argument(
+        '--mode',
+        type=str,
+        choices=['dev', 'strict', 'research'],
+        default=None,
+        help='Certification mode: dev (tolerate missing tools), '
+             'strict (SAT must model-check, UNSAT must proof-check), '
+             'research (dev plus raw solver output)'
     )
 
     parser.add_argument(
@@ -106,7 +116,10 @@ async def main():
 
     # Create middleware
     try:
-        middleware = create_middleware(strict_mode=args.strict)
+        if args.mode:
+            middleware = create_middleware(mode=args.mode)
+        else:
+            middleware = create_middleware(strict_mode=args.strict)
     except RuntimeError as e:
         print(f"Error initializing middleware: {e}", file=sys.stderr)
         print("Make sure Kissat and drat-trim are installed and in PATH")

@@ -7,6 +7,11 @@ from typing import List, Dict, Optional, Set
 from pathlib import Path
 
 
+class DimacsParseError(ValueError):
+    """Raised when DIMACS input is malformed (strict parsing)"""
+    pass
+
+
 @dataclass
 class CNFFormula:
     """CNF formula representation"""
@@ -31,7 +36,7 @@ class CNFFormula:
         }
 
 
-def parse_dimacs(text: str) -> CNFFormula:
+def parse_dimacs(text: str, strict: bool = False) -> CNFFormula:
     """
     Parse DIMACS CNF format
 
@@ -39,33 +44,104 @@ def parse_dimacs(text: str) -> CNFFormula:
         c Comment lines
         p cnf <num_vars> <num_clauses>
         <lit1> <lit2> ... 0
+
+    Args:
+        text: DIMACS CNF text
+        strict: If True, enforce rigorous validation suitable for the
+            trusted computing base (TCB):
+            - exactly one well-formed 'p cnf <vars> <clauses>' header
+            - header must precede all clauses
+            - every clause line must be integers terminated by 0
+            - no literal may reference a variable outside [1, num_vars]
+            - the number of clauses must match the header declaration
+
+    Raises:
+        DimacsParseError: On malformed input. In permissive mode only
+            non-integer clause tokens raise; in strict mode all of the
+            checks above are enforced.
     """
     lines = text.strip().split('\n')
     comments = []
     num_vars = 0
-    num_clauses_declared = 0
+    num_clauses_declared = None
+    header_seen = False
     clauses = []
 
-    for line in lines:
-        line = line.strip()
+    for line_no, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
         if not line:
             continue
 
         if line.startswith('c'):
             comments.append(line[1:].strip())
-        elif line.startswith('p cnf'):
+        elif line.startswith('p'):
             parts = line.split()
-            if len(parts) >= 4:
-                num_vars = int(parts[2])
-                num_clauses_declared = int(parts[3])
+            if strict and header_seen:
+                raise DimacsParseError(
+                    f"Line {line_no}: duplicate 'p cnf' header"
+                )
+            if strict and (
+                len(parts) != 4 or parts[0] != 'p' or parts[1] != 'cnf'
+            ):
+                raise DimacsParseError(
+                    f"Line {line_no}: malformed header: {line!r} "
+                    "(expected 'p cnf <num_vars> <num_clauses>')"
+                )
+            if len(parts) >= 4 and parts[1] == 'cnf':
+                try:
+                    num_vars = int(parts[2])
+                    num_clauses_declared = int(parts[3])
+                except ValueError:
+                    raise DimacsParseError(
+                        f"Line {line_no}: non-integer counts in header: {line!r}"
+                    )
+                if num_vars < 0 or num_clauses_declared < 0:
+                    raise DimacsParseError(
+                        f"Line {line_no}: negative counts in header: {line!r}"
+                    )
+                header_seen = True
         else:
             # Parse clause
-            literals = [int(x) for x in line.split() if x]
+            if strict and not header_seen:
+                raise DimacsParseError(
+                    f"Line {line_no}: clause before 'p cnf' header"
+                )
+            try:
+                literals = [int(x) for x in line.split() if x]
+            except ValueError:
+                raise DimacsParseError(
+                    f"Line {line_no}: non-integer token in clause: {line!r}"
+                )
             # Remove trailing 0
             if literals and literals[-1] == 0:
                 literals = literals[:-1]
-            if literals:
+            elif strict:
+                raise DimacsParseError(
+                    f"Line {line_no}: clause not terminated by 0: {line!r}"
+                )
+            if strict and 0 in literals:
+                raise DimacsParseError(
+                    f"Line {line_no}: literal 0 inside clause: {line!r}"
+                )
+            if strict:
+                for lit in literals:
+                    if abs(lit) > num_vars:
+                        raise DimacsParseError(
+                            f"Line {line_no}: variable {abs(lit)} exceeds "
+                            f"declared maximum {num_vars}"
+                        )
+                # In strict mode preserve empty clauses (they make the
+                # formula trivially UNSAT and must not be silently dropped)
                 clauses.append(literals)
+            elif literals:
+                clauses.append(literals)
+
+    if strict and num_clauses_declared is not None:
+        if len(clauses) != num_clauses_declared:
+            raise DimacsParseError(
+                f"Header declares {num_clauses_declared} clauses "
+                f"but {len(clauses)} were found"
+            )
 
     if num_vars == 0:
         # Infer number of variables from clauses
@@ -82,10 +158,10 @@ def parse_dimacs(text: str) -> CNFFormula:
     )
 
 
-def parse_dimacs_file(path: Path) -> CNFFormula:
+def parse_dimacs_file(path: Path, strict: bool = False) -> CNFFormula:
     """Parse DIMACS CNF file"""
     with open(path, 'r') as f:
-        return parse_dimacs(f.read())
+        return parse_dimacs(f.read(), strict=strict)
 
 
 def write_dimacs(formula: CNFFormula, path: Path):
