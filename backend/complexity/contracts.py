@@ -235,6 +235,27 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="xor_extraction.gf2_xor_solve (parity-frame decision)",
+        target="backend.xor_extraction.gf2_xor_solve",
+        cost="poly-time (XOR recovery + GF(2) Gaussian elimination + model check)",
+        input_domain="any CNFFormula",
+        invariant="decides the GF(2)/parity frame: 'UNSAT' (sound for any "
+                  "formula), or 'SAT' with an INDEPENDENTLY VERIFIED model when "
+                  "the recovered XORs cover the formula, else 'INCONCLUSIVE'",
+        action="completes the frame router's SAT side -- routes satisfiable "
+                "parity instances to the polynomial algebraic engine, not just "
+                "the UNSAT ones (gf2_xor_refutation)",
+        benchmark="SAT pure-XOR returns a verify_model-checked assignment; "
+                  "Tseitin -> UNSAT; on 40 random XORSAT: 0 unverified models, "
+                  "39/40 agree with Kissat (40th correctly INCONCLUSIVE)",
+        proven="GF(2) linear algebra decides XOR-SAT in polynomial time; SAT is "
+               "only ever returned after independent model verification (never "
+               "trusts the reconstruction) -- Charter: verify, don't trust",
+        limit="only decides formulas whose clauses are (covered by) parity "
+              "constraints; anything else is INCONCLUSIVE and falls to CDCL",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

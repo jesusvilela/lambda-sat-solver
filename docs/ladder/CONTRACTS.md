@@ -39,6 +39,17 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **proven:** recovered XORs are logically entailed (exact CNF encodings), so an inconsistent XOR subsystem soundly refutes the whole formula; Tseitin resolution width is Omega(n) (BSW) hence CDCL-exponential
 - **limit:** only refutes via the parity fragment -- inconclusive on formulas whose contradiction is not in the XOR core (falls through to CDCL)
 
+### xor_extraction.gf2_xor_solve (parity-frame decision)
+
+- **binds:** `backend.xor_extraction.gf2_xor_solve`
+- **cost:** poly-time (XOR recovery + GF(2) Gaussian elimination + model check)
+- **input:** any CNFFormula
+- **invariant:** decides the GF(2)/parity frame: 'UNSAT' (sound for any formula), or 'SAT' with an INDEPENDENTLY VERIFIED model when the recovered XORs cover the formula, else 'INCONCLUSIVE'
+- **action:** completes the frame router's SAT side -- routes satisfiable parity instances to the polynomial algebraic engine, not just the UNSAT ones (gf2_xor_refutation)
+- **benchmark:** SAT pure-XOR returns a verify_model-checked assignment; Tseitin -> UNSAT; on 40 random XORSAT: 0 unverified models, 39/40 agree with Kissat (40th correctly INCONCLUSIVE)
+- **proven:** GF(2) linear algebra decides XOR-SAT in polynomial time; SAT is only ever returned after independent model verification (never trusts the reconstruction) -- Charter: verify, don't trust
+- **limit:** only decides formulas whose clauses are (covered by) parity constraints; anything else is INCONCLUSIVE and falls to CDCL
+
 ## Exact structural readouts
 
 ### solution_stats

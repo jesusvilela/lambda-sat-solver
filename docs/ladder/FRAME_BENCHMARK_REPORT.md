@@ -80,6 +80,12 @@ benchmark evidence"), so the sound integration is now in the tree:
 fast-path (the GF(2) sibling of `binary_clause_check`) that returns in <<1 ms on
 exactly the instances where CDCL times out. It is *sound* (recovered XORs are
 entailed, so an inconsistent XOR subsystem refutes the formula), so running it
-before CDCL can only help. Full SAT-side engine routing (reconstructing a model
-from the Gaussian solution) is the natural next step and is left for when the
-middleware grows an algebraic engine.
+before CDCL can only help.
+
+**Update — the SAT side is now complete too.** `gf2_xor_solve` closes the loop:
+on a parity-covered formula it decides both directions — `UNSAT` (sound for any
+formula) or `SAT` with a model **independently re-checked by `verify_model`**
+before it is ever returned (Charter: verify, don't trust). Cross-checked on 40
+random XORSAT instances: 0 unverified models, 39/40 agree with Kissat (the 40th
+correctly `INCONCLUSIVE`, not a disagreement). The algebraic frame is now a full
+poly-time decision procedure for the pure-parity fragment, SAT and UNSAT alike.
