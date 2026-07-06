@@ -65,6 +65,7 @@ out. Contracts cannot silently rot:
 | `FRAME_BENCHMARK_REPORT.md` | the corollary tested on Kissat + CaDiCaL: parity/Tseitin instances are CDCL-exponential but GF(2)-polynomial (~79× PAR-2 via `xor_fraction` routing, soundness 53/53) → `gf2_xor_refutation` fast-path shipped |
 | `SOTA_BENCHMARK_REPORT.md` | frame-aware middleware vs raw SOTA CDCL across 5 families: **40/40 solved · PAR-2 0.05s** (Kissat 35/40 · 5.33s, CaDiCaL 36/40 · 4.26s), 40/40 DRAT/model-certified; three sound frames divide the CDCL-hard families |
 | `COUNTING_FRAME_NOTE.md` | what survives PHP's collapse against GF(2): the counting/ℤ frame (magnitude, not parity) — PHP as the char-0 dual of Tseitin; `cardinality_check` refutes php12 in 0.44ms |
+| `LAMBDA_SAT_NOTE.md` | clashing Lambda ⊗ SAT (Λᴿ): what survived into `lambda_sat.py` (β-reduce → CNF-with-remainder → certified decision) vs what stayed lens; the honest ε=0 scoping |
 
 ## Reproducible experiments
 

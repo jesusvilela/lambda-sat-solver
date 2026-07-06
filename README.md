@@ -15,10 +15,16 @@ to a test; the discipline that keeps it that way is written down in
 
 **1. The solver middleware** (`backend/`)
 - Typed lambda DSL for composable solve/verify pipelines (`lambda_dsl.py`, `middleware.py`)
+- **Lambda ⊗ SAT fusion** (`lambda_sat.py`): a Boolean lambda term is β-reduced,
+  projected into CNF carrying a *remainder* (provenance from each clause back to
+  its lambda node), and decided with a re-verified witness — the lambda DSL
+  situated as an object the solver consumes, not just a pipeline language
 - Kissat integration with version-probed heuristic flags (`kissat_wrapper.py`)
 - Independent certification: model replay for SAT, DRAT/LRAT for UNSAT (`proof_checking.py`)
 - Portfolio solving (`portfolio.py`), rule-based heuristic policy (`policy.py`), structural profiling (`cnf_profile.py`)
-- Sound, engine-independent fast paths: 2-SAT (`binary_clause_check.py`) and GF(2)/XOR (`xor_extraction.py`)
+- Three sound, engine-independent frames (one per obstruction characteristic):
+  implication/2-SAT (`binary_clause_check.py`), parity/GF(2) (`xor_extraction.py`),
+  counting/cardinality (`cardinality_check.py`)
 
 **2. The hardness-lower-bound ladder** (`backend/complexity/`, `docs/ladder/`)
 - Intrinsic, solver-independent invariants with an enforced contract each
@@ -77,14 +83,16 @@ result = await middleware.execute_pipeline(pipeline, cnf)   # executed + verifie
 ```
 lambda-sat-solver/
 ├── backend/
-│   ├── lambda_dsl.py        # typed lambda DSL
+│   ├── lambda_dsl.py        # typed lambda DSL (pipelines)
+│   ├── lambda_sat.py        # Lambda ⊗ SAT fusion (β-reduce → CNF + remainder)
 │   ├── cnf_utils.py         # DIMACS parsing + model verification
 │   ├── kissat_wrapper.py    # Kissat integration (flag-probed)
 │   ├── proof_checking.py    # DRAT/LRAT verification
 │   ├── middleware.py        # pipeline kernel
 │   ├── portfolio.py         # parallel portfolio solving
-│   ├── binary_clause_check.py  # sound 2-SAT UNSAT fast-path
-│   ├── xor_extraction.py    # sound GF(2)/XOR UNSAT fast-path
+│   ├── binary_clause_check.py  # sound 2-SAT UNSAT fast-path (implication frame)
+│   ├── xor_extraction.py    # sound GF(2)/XOR fast-path (parity frame)
+│   ├── cardinality_check.py    # sound pigeonhole fast-path (counting frame)
 │   ├── complexity/          # the intrinsic-invariant ladder + contracts
 │   ├── vdis/                # experimental hypercomplex heuristic research
 │   ├── eval/                # generators + evaluation
