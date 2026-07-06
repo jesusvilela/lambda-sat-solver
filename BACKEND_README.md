@@ -224,7 +224,8 @@ The project includes comprehensive tests covering:
 ```
 backend/
 ├── __init__.py           # Package initialization
-├── lambda_dsl.py         # Lambda calculus DSL
+├── lambda_dsl.py         # Lambda calculus DSL (pipelines)
+├── lambda_sat.py         # Lambda ⊗ SAT fusion (β-reduce → CNF + remainder)
 ├── cnf_utils.py          # CNF parsing and Tseitin transformation
 ├── kissat_wrapper.py     # Kissat solver wrapper
 ├── proof_checking.py     # DRAT/LRAT proof checkers
@@ -232,8 +233,9 @@ backend/
 ├── cli.py                # Command-line interface
 ├── portfolio.py          # Portfolio solver
 ├── portfolio_cli.py      # Portfolio CLI
-├── binary_clause_check.py # sound 2-SAT UNSAT fast-path
-├── xor_extraction.py     # sound GF(2)/XOR UNSAT fast-path
+├── binary_clause_check.py # sound 2-SAT fast-path (implication frame)
+├── xor_extraction.py     # sound GF(2)/XOR fast-path (parity frame)
+├── cardinality_check.py  # sound pigeonhole fast-path (counting frame)
 ├── benchmark.py          # Benchmarking harness
 ├── benchmark_cli.py      # Benchmarking CLI
 ├── complexity/           # intrinsic-invariant hardness ladder + contracts
