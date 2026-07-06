@@ -49,8 +49,7 @@ RUN useradd -m -u 1000 satuser && \
     chown -R satuser:satuser /app
 USER satuser
 
-# Expose API port
-EXPOSE 5001
-
-# Default command: run API server
-CMD ["python", "-m", "backend.api_server"]
+# Default command: run the test suite (headless library + CLI image).
+# Override to solve, e.g.:
+#   docker run --rm IMAGE python -m backend.cli examples/simple_sat.cnf
+CMD ["python", "-m", "pytest", "backend/tests/", "-q"]

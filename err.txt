@@ -1,1 +1,0 @@
-kissat: error: invalid long option '--restart=block' (try '-h')
