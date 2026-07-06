@@ -173,6 +173,68 @@ REGISTRY: List[InvariantContract] = [
         verdict=STRUCTURE,
     ),
     InvariantContract(
+        name="cross_algebra_depth",
+        target="cross_algebra_depth",
+        cost="exact, exponential (runs both width and NS-degree)",
+        input_domain="UNSAT CNFFormula within both invariants' guards",
+        invariant="obstruction depth in each proof algebra we can measure "
+                  "(resolution width, GF(2) Nullstellensatz degree) and the "
+                  "minimum over them -- the 'shallow-Emperor' depth",
+        action="makes the portfolio principle intrinsic: since the two depths "
+                "are incomparable, best = min(...) beats either algebra alone "
+                "on a mixed workload -- why portfolio solvers win",
+        benchmark="PHP best = width 2 (< NS 4); Tseitin K4 best = NS 3 "
+                  "(< width 4); on the pair the portfolio (2,3) strictly beats "
+                  "width-only (2,4) and NS-only (4,3)",
+        proven="the incomparability itself (NS vs width) is verified; portfolio "
+               "= min is elementary",
+        limit="a DEMONSTRATOR, not a fast router -- both depths are exponential "
+              "to compute; the practical shadow is the solver's real "
+              "portfolio/restart/heuristic switching",
+        verdict=STRUCTURE,
+    ),
+    InvariantContract(
+        name="xor_extraction.extract_xors (frame detector)",
+        target="backend.xor_extraction.extract_xors",
+        cost="poly-time O(clauses * arity) (capped by max_arity)",
+        input_domain="any CNFFormula",
+        invariant="recovered XOR/parity constraints and xor_clause_fraction = "
+                  "share of clauses that form complete parity groups",
+        action="cheap detector of the GF(2) shallow frame: high fraction => the "
+                "algebraic (Gaussian-elimination) frame is shallow here; the "
+                "practical poly-time shadow of cross_algebra_depth, sibling of "
+                "binary_clause_check (the 2-SAT frame detector)",
+        benchmark="Tseitin K4 fraction 1.0 (GF(2) shallow), PHP(3->2) 0.0 "
+                  "(resolution shallow); single 3-XOR recovered with correct rhs",
+        proven="XOR CNF encoding is exact (2^(k-1) clauses of fixed negative-"
+               "literal parity); recovery is sound for complete groups",
+        limit="detects only COMPLETE short parity groups (<= max_arity); a "
+              "frame discriminator, not a solver, and not wired into routing "
+              "until benchmarked (matching policy.py's evidence discipline)",
+        verdict=STRUCTURE,
+    ),
+    InvariantContract(
+        name="xor_extraction.gf2_xor_refutation (sound fast-path)",
+        target="backend.xor_extraction.gf2_xor_refutation",
+        cost="poly-time (XOR recovery + GF(2) Gaussian elimination)",
+        input_domain="any CNFFormula",
+        invariant="refuted = the recovered XOR subsystem is inconsistent over "
+                  "GF(2) (=> formula UNSAT, a sound certificate); decides_fully "
+                  "= the XORs cover the whole formula",
+        action="engine-independent UNSAT fast-path in the algebraic frame, "
+                "sibling of binary_clause_check (the 2-SAT-frame fast-path); "
+                "run before CDCL to short-circuit parity-inconsistent instances",
+        benchmark="FRAME_BENCHMARK_REPORT: on Tseitin-expander returns UNSAT in "
+                  "<<1ms where Kissat AND CaDiCaL time out (>20s at nv=100); "
+                  "PAR-2 2.858s -> 0.036s as a router; soundness 53/53 vs Kissat",
+        proven="recovered XORs are logically entailed (exact CNF encodings), so "
+               "an inconsistent XOR subsystem soundly refutes the whole formula; "
+               "Tseitin resolution width is Omega(n) (BSW) hence CDCL-exponential",
+        limit="only refutes via the parity fragment -- inconclusive on formulas "
+              "whose contradiction is not in the XOR core (falls through to CDCL)",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

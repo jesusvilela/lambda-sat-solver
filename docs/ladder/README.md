@@ -61,6 +61,8 @@ out. Contracts cannot silently rot:
 | `RUNG2_BRAID_THETA_NOTE.md` | braid-theta engine / star of closure = dynamical face; braiding = BQP, not a SAT route |
 | `RUNG_SADDLE_NOTE.md` | energy-landscape saddle/barrier structure; ruggedness ≠ hardness, the gate is the separator |
 | `HYPERCOMPLEX_DESIGNS_REVIEW.md` | honest review of the operator's computer designs (Berry-braid, symplectic RAM, orbifold, sedenion clock, VDIS channels) + two bridges into the ladder |
+| `LEARNINGS.md` | the philosophical arc landed as engineering: each idea tied to its tested artifact; the "Emperor-depth is algebra-relative" corollary → `cross_algebra_depth` (portfolio principle) |
+| `FRAME_BENCHMARK_REPORT.md` | the corollary tested on Kissat + CaDiCaL: parity/Tseitin instances are CDCL-exponential but GF(2)-polynomial (~79× PAR-2 via `xor_fraction` routing, soundness 53/53) → `gf2_xor_refutation` fast-path shipped |
 
 ## Reproducible experiments
 

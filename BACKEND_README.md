@@ -34,19 +34,13 @@ A math-aligned λ-logic middleware that transforms formulas into CNF, solves wit
    - Type-checked pipeline execution
    - Strict mode for mandatory proof verification
 
-6. **API Server** (`api_server.py`)
-   - Flask REST API for frontend integration
-   - CORS enabled for cross-origin requests
-   - Async route handlers
-   - Health check endpoint
-
-7. **Portfolio Solver** (`portfolio.py`)
+6. **Portfolio Solver** (`portfolio.py`)
    - Parallel execution of multiple solver configurations
    - Sequential fallback mode
    - Configurable heuristic portfolios
    - First-result or exhaustive solving modes
 
-8. **Benchmarking Harness** (`benchmark.py`)
+7. **Benchmarking Harness** (`benchmark.py`)
    - Comprehensive benchmarking suite
    - PAR-2 (Penalized Average Runtime) scoring
    - Head-to-head configuration comparison
@@ -105,74 +99,6 @@ python -m backend.cli examples/pigeonhole_3_2.cnf \
 # Save results to JSON
 python -m backend.cli examples/simple_unsat.cnf \
   --output results.json
-```
-
-### API Server
-
-```bash
-# Start the API server
-python -m backend.api_server
-
-# Certification mode is configurable (dev | strict | research):
-#   dev      - solve even if proof tools are missing (default)
-#   strict   - SAT must model-check, UNSAT must proof-check
-#   research - dev behavior plus raw Kissat output in responses
-LAMBDA_SAT_MODE=strict python -m backend.api_server
-
-# Server will run on http://localhost:5001
-```
-
-#### API Endpoints
-
-**Health Check**
-```bash
-GET /health
-```
-
-**Solve CNF Formula**
-```bash
-POST /api/solve
-Content-Type: application/json
-
-{
-  "cnf": "p cnf 3 3\n1 2 0\n-1 3 0\n-2 -3 0",
-  "heuristic": {
-    "branching": "vsids",
-    "restarts": "geometric",
-    "phase": "saved",
-    "vivify": false
-  },
-  "budget": {
-    "time_limit": 30,
-    "memory_limit": 256
-  }
-}
-```
-
-**Solve with Lambda Middleware (Frontend Compatible)**
-```bash
-POST /api/solve-lambda
-Content-Type: application/json
-
-{
-  "formula": {
-    "variables": 3,
-    "clauses": [[1, 2], [-1, 3], [-2, -3]]
-  },
-  "heuristic": "conservative",
-  "budget": "standard"
-}
-```
-
-**Verify Model**
-```bash
-POST /api/verify-model
-Content-Type: application/json
-
-{
-  "cnf": "p cnf 3 3\n1 2 0\n-1 3 0\n-2 -3 0",
-  "model": {"1": true, "2": true, "3": true}
-}
 ```
 
 ### Python API
@@ -291,7 +217,7 @@ The project includes comprehensive tests covering:
   - End-to-end solving workflows
   - Tseitin + solving integration
   - Heuristic configurations
-  - Frontend-backend API compatibility
+  - Tseitin end-to-end and the GF(2)/2-SAT fast paths
 
 ### Code Structure
 
@@ -303,31 +229,27 @@ backend/
 ├── kissat_wrapper.py     # Kissat solver wrapper
 ├── proof_checking.py     # DRAT/LRAT proof checkers
 ├── middleware.py         # Main middleware kernel
-├── api_server.py         # Flask API server
 ├── cli.py                # Command-line interface
 ├── portfolio.py          # Portfolio solver
 ├── portfolio_cli.py      # Portfolio CLI
+├── binary_clause_check.py # sound 2-SAT UNSAT fast-path
+├── xor_extraction.py     # sound GF(2)/XOR UNSAT fast-path
 ├── benchmark.py          # Benchmarking harness
 ├── benchmark_cli.py      # Benchmarking CLI
+├── complexity/           # intrinsic-invariant hardness ladder + contracts
 ├── requirements.txt      # Python dependencies
-└── tests/
-    ├── __init__.py
-    ├── test_tseitin.py   # Tseitin transformation tests
-    ├── test_cnf_utils.py # CNF utilities tests
-    └── test_integration.py # Integration tests
+└── tests/                # the full test suite
 ```
 
 ## Docker Deployment
 
 ```bash
-# Build the container
+# Build the container (Kissat + drat-trim + the Python library)
 docker build -t lambda-sat-middleware .
 
-# Run the API server
-docker run -p 5001:5001 lambda-sat-middleware
-
-# Or use docker-compose for full stack
-docker-compose up
+# Run the CLI in the container
+docker run --rm lambda-sat-middleware \
+  python -m backend.cli examples/simple_sat.cnf
 ```
 
 ## New Features (v2.0)
