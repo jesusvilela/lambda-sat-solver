@@ -63,6 +63,7 @@ out. Contracts cannot silently rot:
 | `HYPERCOMPLEX_DESIGNS_REVIEW.md` | honest review of the operator's computer designs (Berry-braid, symplectic RAM, orbifold, sedenion clock, VDIS channels) + two bridges into the ladder |
 | `LEARNINGS.md` | the philosophical arc landed as engineering: each idea tied to its tested artifact; the "Emperor-depth is algebra-relative" corollary → `cross_algebra_depth` (portfolio principle) |
 | `FRAME_BENCHMARK_REPORT.md` | the corollary tested on Kissat + CaDiCaL: parity/Tseitin instances are CDCL-exponential but GF(2)-polynomial (~79× PAR-2 via `xor_fraction` routing, soundness 53/53) → `gf2_xor_refutation` fast-path shipped |
+| `SOTA_BENCHMARK_REPORT.md` | frame-aware middleware vs raw SOTA CDCL across 5 families: 39/40 solved · PAR-2 1.09s (Kissat 35/40 · 5.32s, CaDiCaL 36/40 · 4.25s) — win driven entirely by parity families; the one miss argues for a portfolio fallback |
 
 ## Reproducible experiments
 
