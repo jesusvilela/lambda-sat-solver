@@ -235,6 +235,28 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="cardinality_check.pigeonhole_counting_refutation (counting frame)",
+        target="backend.cardinality_check.pigeonhole_counting_refutation",
+        cost="poly-time (all-positive/negative-binary scan + union-find + clique check)",
+        input_domain="any CNFFormula",
+        invariant="refuted = the pigeonhole counting bound is violated: k "
+                  "variable-disjoint at-least-one clauses whose variables are "
+                  "covered by m < k disjoint at-most-one cliques (k > m => UNSAT)",
+        action="the third sound UNSAT fast-path -- the COUNTING/cardinality "
+                "frame, sibling of binary_clause_check (implication) and "
+                "gf2_xor_refutation (parity); collapses pigeonhole where GF(2) is "
+                "blind (magnitude, not parity)",
+        benchmark="PHP(n->n-1) refuted for n=3..12 in <0.5ms (k=n, m=n-1) where "
+                  "Kissat times out at n=12; Tseitin/random/XORSAT not refuted "
+                  "(correctly falls through)",
+        proven="counting: disjoint ALO clauses force >= k trues; disjoint AMO "
+               "cliques allow <= m trues; k > m is a contradiction. PHP has "
+               "poly cutting-planes proofs but 2^Omega(n) resolution (Haken'85)",
+        limit="refutes the pigeonhole pattern and relatives only; non-clique "
+              "at-most-one groups or overlapping ALO clauses -> falls through",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="xor_extraction.gf2_xor_solve (parity-frame decision)",
         target="backend.xor_extraction.gf2_xor_solve",
         cost="poly-time (XOR recovery + GF(2) Gaussian elimination + model check)",

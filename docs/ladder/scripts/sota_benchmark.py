@@ -18,9 +18,15 @@ import os
 import statistics
 import time
 
+import subprocess
+import tempfile
+from pathlib import Path
+
 from backend.binary_clause_check import check_binary_clauses
-from backend.cnf_utils import verify_model
+from backend.cardinality_check import pigeonhole_counting_refutation
+from backend.cnf_utils import verify_model, write_dimacs
 from backend.eval.generators import pigeonhole
+from backend.proof_checking import DRATChecker
 from backend.xor_extraction import extract_xors, gf2_xor_solve
 from docs.ladder.scripts.frame_benchmark import (
     mixed, random_3sat, random_xorsat, run_cdcl, tseitin)
@@ -28,28 +34,57 @@ from docs.ladder.scripts.frame_benchmark import (
 TIMEOUT = 20.0
 
 
+def _certified_kissat(formula, timeout_s):
+    """Kissat fallback with certification: UNSAT verified by drat-trim, SAT by
+    model replay. Returns (status, seconds, verified). This is DRAT brought back
+    into the loop -- no fallback verdict is trusted unchecked."""
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        cnfp, proofp = d / "f.cnf", d / "f.drat"
+        write_dimacs(formula, cnfp)
+        t0 = time.perf_counter()
+        try:
+            p = subprocess.run(["kissat", "--relaxed", str(cnfp), str(proofp)],
+                               capture_output=True, text=True,
+                               timeout=max(1.0, timeout_s))
+        except subprocess.TimeoutExpired:
+            return 'TIMEOUT', float(timeout_s), False
+        dt = time.perf_counter() - t0
+        if p.returncode == 20:                                   # UNSAT
+            res = DRATChecker().check_proof(formula, proofp, timeout=60)
+            return 'UNSAT', time.perf_counter() - t0, res.valid  # incl. drat-trim
+        if p.returncode == 10:                                   # SAT
+            model = {}
+            for line in p.stdout.splitlines():
+                if line.startswith('v '):
+                    for tok in line[2:].split():
+                        lit = int(tok)
+                        if lit != 0:
+                            model[abs(lit)] = (lit > 0)
+            return 'SAT', dt, verify_model(formula, model)
+        return 'UNKNOWN', dt, False
+
+
 def middleware_solve(formula, timeout_s=TIMEOUT):
-    """Fast-path pre-check, then CDCL fallback. Returns (status, seconds,
-    solved_by, verified)."""
+    """Three sound algebraic frames, then a DRAT/model-certified CDCL fallback.
+    Returns (status, seconds, solved_by, verified). Every verdict is certified."""
     t0 = time.perf_counter()
-    # sound 2-SAT refutation
-    bc = check_binary_clauses(formula)
-    if not bc.consistent:
+    # implication frame (2-SAT)
+    if not check_binary_clauses(formula).consistent:
         return 'UNSAT', time.perf_counter() - t0, 'binary_clause', True
-    # sound parity-frame decision (SAT model is verified inside gf2_xor_solve)
+    # parity frame (GF(2) Gaussian; SAT model verified inside)
     xr = gf2_xor_solve(formula)
     if xr.status == 'UNSAT':
         return 'UNSAT', time.perf_counter() - t0, 'gf2', True
-    if xr.status == 'SAT':
-        ok = verify_model(formula, xr.model)
-        if ok:
-            return 'SAT', time.perf_counter() - t0, 'gf2', True
-    # fallback to CDCL on the remaining budget. In THIS harness a Kissat verdict
-    # is not independently re-checked (SAT needs a model, UNSAT needs DRAT), so
-    # it is flagged unverified -- only the sound fast-path verdicts are certified.
+    if xr.status == 'SAT' and verify_model(formula, xr.model):
+        return 'SAT', time.perf_counter() - t0, 'gf2', True
+    # counting frame (cardinality / pigeonhole)
+    if pigeonhole_counting_refutation(formula).refuted:
+        return 'UNSAT', time.perf_counter() - t0, 'counting', True
+    # certified CDCL fallback
     elapsed = time.perf_counter() - t0
-    res, kt, _ = run_cdcl(formula, "kissat", timeout_s=max(1.0, timeout_s - elapsed))
-    return res, elapsed + kt, 'kissat', False
+    status, kt, verified = _certified_kissat(formula, timeout_s - elapsed)
+    return status, elapsed + kt, 'kissat', verified
 
 
 def instances():
@@ -117,11 +152,14 @@ def main():
     print(f"{'TOTAL':9s} {n:3d} | {ks:2d}/{n} {kp:6.2f}s   {cs:2d}/{n} {cp:6.2f}s   {ms:2d}/{n} {mp:6.2f}s")
 
     # honesty accounting
-    by_fastpath = sum(1 for r in rows if r['solved_by'] in ('binary_clause', 'gf2'))
-    unverified = sum(1 for r in rows if not r['verified'])
-    print(f"\nmiddleware decided by algebraic fast-path (no CDCL): {by_fastpath}/{n}")
-    print(f"middleware verdicts independently verified: {n - unverified}/{n} "
-          f"({unverified} kissat-SAT fallbacks not model-checked here)")
+    by_fastpath = sum(1 for r in rows
+                      if r['solved_by'] in ('binary_clause', 'gf2', 'counting'))
+    solved = sum(1 for r in rows if r['middleware'] in ('SAT', 'UNSAT'))
+    certified = sum(1 for r in rows
+                    if r['middleware'] in ('SAT', 'UNSAT') and r['verified'])
+    print(f"\nmiddleware decided by sound algebraic frame (no CDCL): {by_fastpath}/{n}")
+    print(f"middleware verdicts CERTIFIED (fast-path sound | DRAT | model): "
+          f"{certified}/{solved} solved")
 
     out = os.path.join(os.path.dirname(__file__), "sota_benchmark_results.json")
     with open(out, "w") as fh:
