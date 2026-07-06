@@ -51,6 +51,7 @@ test_vdis_degeneracy.py, not assumed.
 
 from __future__ import annotations
 
+import random
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
@@ -154,6 +155,9 @@ class VDISHeuristic:
         combine_eta: float = 0.5,
         combine_traders: tuple = ("theta", "prime"),
         clauses: Optional[Sequence[Sequence[int]]] = None,
+        community_labels: Optional[Sequence[int]] = None,
+        breath_amp: float = 0.0,
+        breath_rate: float = 0.05,
         seed: int = 0,
     ):
         m, bdim = algebra_dims(algebra)
@@ -172,6 +176,13 @@ class VDISHeuristic:
         self.num_vars = num_vars
         self.dim = dim
         self.c = c
+        # Breathing curvature (hypercomplex_breathing.py): c oscillates
+        # with conflict count, c(t) = c_base + amp*sin(rate*t), clamped
+        # >= 0 (c is curvature magnitude). amp=0 disables (fixed c).
+        self._c_base = c
+        self.breath_amp = breath_amp
+        self.breath_rate = breath_rate
+        self._breath_t = 0
         self.eta = eta
         self.decay_gamma = decay_gamma
         self.algebra = algebra
@@ -231,7 +242,7 @@ class VDISHeuristic:
         self.nudge_gate = nudge_gate
         self.combine_eta = combine_eta
         if combine_nudges:
-            valid = {"theta", "prime", "lagrange", "centrality", "degree", "random"}
+            valid = {"theta", "prime", "lagrange", "centrality", "degree", "random", "gate"}
             if not combine_traders or set(combine_traders) - valid:
                 raise ValueError(f"combine_traders must be a nonempty subset of {valid}")
             if "theta" in combine_traders and dim <= 1:
@@ -254,6 +265,20 @@ class VDISHeuristic:
             if "random" in combine_traders:
                 self._random_prior = self._rng.random(num_vars + 1)
                 self._random_prior[0] = 0.0
+            # gate / holographic-screen: how many distinct communities a
+            # variable's clauses span (boundary/cut variables score high).
+            # community_labels given = oracle; else detected by label prop.
+            if "gate" in combine_traders:
+                labels = (list(community_labels) if community_labels is not None
+                          else self._detect_communities(clauses, num_vars))
+                spans = [set() for _ in range(num_vars + 1)]
+                for cl in clauses:
+                    vs = [abs(l) for l in cl]
+                    for v in vs:
+                        for u in vs:
+                            spans[v].add(labels[u])
+                self._gate = np.array([len(s) for s in spans], dtype=float)
+                self._gate[0] = 0.0
             self._traders = tuple(combine_traders)
             self._w = np.full(len(self._traders), 1.0 / len(self._traders))
             pr = primes_up_to_nth(num_vars)
@@ -390,6 +415,9 @@ class VDISHeuristic:
     # -- DecisionHeuristic protocol ----------------------------------------
 
     def on_conflict(self, learned: Sequence[int], lbd: int, trail: Sequence[int]) -> None:
+        if self.breath_amp != 0.0:
+            self._breath_t += 1
+            self.c = max(0.0, self._c_base + self.breath_amp * np.sin(self.breath_rate * self._breath_t))
         alpha = 1.0 / len(learned)
         delta_c = np.zeros(self.dim)
 
@@ -526,6 +554,38 @@ class VDISHeuristic:
         pass
 
     @staticmethod
+    def _detect_communities(clauses, num_vars: int, iters: int = 20, seed: int = 0):
+        """Label propagation on the variable co-occurrence graph — cheap
+        unsupervised community detection (realistic; a solver does not
+        know planted structure). Returns a label per variable."""
+        from collections import defaultdict, Counter
+        adj = defaultdict(list)
+        for cl in clauses:
+            vs = list({abs(l) for l in cl})
+            for a in range(len(vs)):
+                for b in range(a + 1, len(vs)):
+                    adj[vs[a]].append(vs[b])
+                    adj[vs[b]].append(vs[a])
+        labels = list(range(num_vars + 1))
+        rng = random.Random(seed)
+        order = list(range(1, num_vars + 1))
+        for _ in range(iters):
+            rng.shuffle(order)
+            changed = False
+            for v in order:
+                if not adj[v]:
+                    continue
+                cnt = Counter(labels[u] for u in adj[v])
+                best = max(cnt.values())
+                top = sorted(l for l, c in cnt.items() if c == best)
+                if labels[v] not in top:
+                    labels[v] = top[0]
+                    changed = True
+            if not changed:
+                break
+        return labels
+
+    @staticmethod
     def _eigenvector_centrality(clauses, num_vars: int) -> np.ndarray:
         """Principal eigenvector of the variable co-occurrence graph
         A_ij = #clauses containing both i and j (VDIS8). The Godelian
@@ -570,9 +630,10 @@ class VDISHeuristic:
             out = (lam - lo) / (hi - lo) if hi > lo else np.zeros_like(lam)
             out[0] = 0.0
             return out
-        if name in ("centrality", "degree", "random"):
+        if name in ("centrality", "degree", "random", "gate"):
             c = {"centrality": self._centrality, "degree": getattr(self, "_degree", None),
-                 "random": getattr(self, "_random_prior", None)}[name]
+                 "random": getattr(self, "_random_prior", None),
+                 "gate": getattr(self, "_gate", None)}[name]
             lo, hi = c[1:].min(), c[1:].max()
             out = (c - lo) / (hi - lo) if hi > lo else np.zeros_like(c)
             out[0] = 0.0
