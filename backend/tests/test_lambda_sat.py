@@ -120,3 +120,41 @@ class TestMetaResolution:
             assert (r.status == 'SAT') == brute
             if r.status == 'SAT':
                 assert eval_bool(beta_normalize(term), r.witness)
+
+
+class TestBoundedFixpoint:
+    def test_stabilizes_when_body_ignores_recursion(self):
+        # λs. a  -- the fixpoint does not depend on the tail: ε = 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar
+        r = fixpoint_sat(Lam('s', BVar('a')), depth=4)
+        assert r.remainder_active is False        # stabilized
+        assert r.decision.status == 'SAT'
+
+    def test_absorption_stabilizes(self):
+        # λs. a ∧ (a ∨ s) = a  (absorption) -- independent of the tail: ε = 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BAnd, BOr
+        r = fixpoint_sat(Lam('s', BAnd(BVar('a'), BOr(BVar('a'), BVar('s')))),
+                         depth=3)
+        assert r.remainder_active is False
+
+    def test_boundary_keeps_remainder_active(self):
+        # λs. a ∨ s  -- depth-k truth depends on the tail boundary: ε > 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BOr
+        r = fixpoint_sat(Lam('s', BOr(BVar('a'), BVar('s'))), depth=3)
+        assert r.remainder_active is True
+
+    def test_mobius_never_stabilizes(self):
+        # λs. ¬s  -- the Möbius fixpoint: remainder eternally nonzero at any depth
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BNot
+        for k in range(1, 6):
+            r = fixpoint_sat(Lam('s', BNot(BVar('s'))), depth=k)
+            assert r.remainder_active is True     # ε > 0 for all k
+
+    def test_unroll_depth_shapes_the_term(self):
+        from backend.lambda_sat import unroll_fix, Lam, BNot, BVar, beta_normalize, FIX_TAIL
+        # ¬ applied k times to the tail
+        u = beta_normalize(unroll_fix(Lam('s', BNot(BVar('s'))), depth=2))
+        # ¬¬tail == tail as a Boolean function
+        from backend.lambda_sat import eval_bool
+        assert eval_bool(u, {FIX_TAIL: True}) is True
+        assert eval_bool(u, {FIX_TAIL: False}) is False

@@ -374,3 +374,54 @@ def lambda_sat(term: BExpr, max_free: int = 20) -> LambdaSatResult:
     if cnf.num_vars <= 22:
         faithful = (_brute_cnf_sat(cnf) == (status == 'SAT'))
     return LambdaSatResult(status, witness, fv, 'direct', cnf, remainder, faithful)
+
+
+# --------------------------------------------------------------------------
+# The Y-combinator spine: bounded fixpoint unrolling, and the living remainder
+# --------------------------------------------------------------------------
+# Full Y (`Y f = f (Y f)`) is undecidable -- a certificate cannot exist for the
+# general fixpoint. Its decidable spine is *bounded* unrolling: expand the
+# fixpoint of `lam = λs. body` to depth k, leaving the un-reached tail as a free
+# variable. That tail is the operator's remainder made literal: if the depth-k
+# decision still depends on the tail, the fixpoint has NOT been pinned down --
+# ε > 0, the remainder is active. If it is independent of the tail, the fixpoint
+# stabilized by depth k -- ε = 0. The pure self-negation `λs. ¬s` (the Möbius
+# fixpoint: traverse once, return flipped) never stabilizes: its remainder is
+# eternally nonzero.
+
+FIX_TAIL = "__fix_tail__"
+
+
+def unroll_fix(lam: "Lam", depth: int, tail_name: str = FIX_TAIL) -> BExpr:
+    """Unroll the fixpoint of `λs. body` to `depth`, with the un-reached tail as
+    the free variable `tail_name`: body[s := body[s := ... [s := tail]]]."""
+    if not isinstance(lam, Lam):
+        raise TypeError("unroll_fix expects a Lam (λs. body)")
+    result: BExpr = BVar(tail_name)
+    for _ in range(depth):
+        result = _subst(lam.body, lam.param, result)
+    return result
+
+
+@dataclass
+class FixResult:
+    depth: int
+    tail: str
+    remainder_active: bool               # ε > 0 : the depth-k truth depends on the tail
+    decision: LambdaSatResult            # decision of the unrolled Boolean term
+
+
+def fixpoint_sat(lam: "Lam", depth: int, max_free: int = 20) -> FixResult:
+    """Decide the depth-`depth` unrolling of a Boolean fixpoint and measure
+    whether its remainder (the tail boundary) is still active (ε > 0)."""
+    tail = FIX_TAIL
+    unrolled = beta_normalize(unroll_fix(lam, depth, tail))
+    others = sorted(free_vars(unrolled) - {tail})
+    active = False
+    for bits in product([False, True], repeat=len(others)):
+        a = dict(zip(others, bits))
+        if eval_bool(unrolled, {**a, tail: False}) != \
+                eval_bool(unrolled, {**a, tail: True}):
+            active = True          # flipping the boundary changes the truth
+            break
+    return FixResult(depth, tail, active, lambda_sat(unrolled, max_free=max_free))

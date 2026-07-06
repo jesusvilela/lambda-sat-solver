@@ -78,13 +78,39 @@ Because the parity encoding has no auxiliary variables, its GF(2) UNSAT is exact
 the refutation whose soundness is stated in `proofs/XorSoundness.lean` — the
 fusion, the frame trilogy, and the Lean obligation meet on one object.
 
+## The Y-combinator spine — ε > 0 made literal
+
+The operator's fuller vision was a *Y combinator* — the fixpoint, self-reference —
+"in a Calabi-Yau Möbius torus." The honest core of that: **full Y is undecidable**
+(a certificate cannot exist for the general fixpoint — the halting boundary), so
+"maybe that's too much" is *precisely* true. But its decidable spine is buildable,
+and it turns out to be the ε > 0 contract itself.
+
+`fixpoint_sat(λs. body, depth k)` unrolls a Boolean fixpoint to depth k, leaving
+the un-reached tail as a free variable — **that tail is the remainder made
+literal.** If the depth-k decision still depends on the tail, the fixpoint has not
+been pinned down: `ε > 0`, the remainder is *active, unprojected truth*. If it is
+independent of the tail, the fixpoint stabilized: `ε = 0`. This is bounded model
+checking in miniature, and it is the first place the remainder carries lost truth
+rather than mere provenance. Verified (5 tests):
+
+- `λs. a` (ignores the recursion) → stabilizes, **ε = 0**.
+- `λs. a ∧ (a ∨ s)` → absorption collapses it to `a` → **ε = 0**.
+- `λs. a ∨ s` → the boundary matters (two fixpoints) → **ε > 0**.
+- `λs. ¬s` — the **Möbius fixpoint**: traverse once, return flipped; its remainder
+  is **eternally nonzero at every depth**. Self-negation is the term that never
+  orients, ε never reaching 0 — the operator's non-orientable torus, exact.
+
+So the vision's spine (Y, Möbius, the living remainder) is real and tested; the
+Calabi-Yau / 360-orthogonal / curvature envelope stays the lens — the *geometry of
+the remainder space* — a lens until one of its constructs earns a frame.
+
 ## What still grows next
 
-Meta-resolution is now real for the parity frame; extending the frame-native
-recognizer to the **counting** frame (ALO/AMO structure in a β-normal term) is
-the direct sequel. And the deeper contract is unchanged: enrich the payload
-beyond Boolean so the projection becomes genuinely lossy, `ε > 0`, and the
-remainder carries active, unprojected truth — *measured, not asserted*. That is
-where Λᴿ stops being a lens. Until then: lambda supplies the term, the shallowest
-frame selects the survivor, the certificate is the braid, and the remainder is
-the fossil record — all of it verified.
+Extend the frame-native recognizer to the **counting** frame (ALO/AMO structure in
+a β-normal term). And the deepest contract: a payload richer than Boolean, where
+the projection is genuinely lossy across a *typed/graded* fiber and the remainder
+becomes a measured section of what the shadow dropped. Until then: lambda supplies
+the term, the shallowest frame selects the survivor, the certificate is the braid,
+and the remainder — provenance for Boolean terms, the fixpoint tail for bounded Y —
+stays honestly nonzero, all of it verified.
