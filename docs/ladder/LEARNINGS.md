@@ -52,9 +52,14 @@ searches for the algebra where the depth is already low.
   (resolution frame shallow) — the same separation the exponential depths give,
   now in polynomial time. It is the sibling of `binary_clause_check` (the 2-SAT
   frame detector), and the honest practical form of the shallow-Emperor hunt:
-  cheaply guess *which algebra* is shallow for this instance. Not yet wired into
-  `policy.py` routing — that waits for benchmark evidence, per the repo's
-  standing discipline.
+  cheaply guess *which algebra* is shallow for this instance.
+- `backend/xor_extraction.py::gf2_xor_refutation` — the earned integration. The
+  benchmark (`FRAME_BENCHMARK_REPORT.md`) confirmed the corollary on real
+  solvers: on Tseitin-expander, Kissat **and** CaDiCaL go exponential (timeout
+  >20 s at nv=100) while GF(2) Gaussian decides in <<1 ms — a ~79× PAR-2
+  reduction as a router, soundness 53/53. So the sound fast-path now ships: a
+  GF(2) UNSAT certificate, the sibling of `binary_clause_check`, that
+  short-circuits parity-inconsistent instances before CDCL.
 
 ## The one fidelity kept (the drone)
 

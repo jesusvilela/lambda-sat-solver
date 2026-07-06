@@ -79,3 +79,51 @@ def extract_xors(formula: CNFFormula, max_arity: int = 6) -> XORExtractionResult
     total = len(formula.clauses)
     fraction = num_xor_clauses / total if total else 0.0
     return XORExtractionResult(xors, num_xor_clauses, fraction)
+
+
+@dataclass
+class XORRefutation:
+    refuted: bool                # True => formula is UNSAT (sound certificate)
+    num_xors: int
+    decides_fully: bool          # recovered XORs cover the whole formula
+
+
+def gf2_xor_refutation(formula: CNFFormula, max_arity: int = 6) -> XORRefutation:
+    """Sound partial UNSAT certificate from the XOR/parity clauses, via Gaussian
+    elimination over GF(2). The algebraic sibling of `binary_clause_check` (which
+    refutes from the 2-SAT clauses): both are cheap, engine-independent fast paths
+    that decide exactly the fragment where their frame is shallow.
+
+    If `refuted` is True the formula is UNSAT -- the recovered XORs are logically
+    entailed (each is the exact CNF encoding of its parity constraint), so an
+    inconsistent XOR subsystem refutes the whole formula. If `refuted` is False,
+    this is inconclusive (fall through to CDCL) unless `decides_fully` is also
+    True, in which case the formula is SAT on its (all-parity) structure.
+
+    Benchmark (docs/ladder/FRAME_BENCHMARK_REPORT.md): on Tseitin-expander
+    instances this returns in << 1 ms where Kissat and CaDiCaL both time out.
+    """
+    res = extract_xors(formula, max_arity=max_arity)
+    n = formula.num_vars
+    pivots: Dict[int, int] = {}
+    refuted = False
+    for x in res.xors:
+        row = 0
+        for v in x.variables:
+            row |= (1 << (v - 1))
+        if x.rhs:
+            row |= (1 << n)
+        cur = row
+        while cur:
+            lead = (cur & -cur).bit_length() - 1
+            if lead == n:                # reduced to 0 = 1
+                refuted = True
+                break
+            if lead in pivots:
+                cur ^= pivots[lead]
+            else:
+                pivots[lead] = cur
+                break
+        if refuted:
+            break
+    return XORRefutation(refuted, len(res.xors), res.xor_clause_fraction >= 0.999)

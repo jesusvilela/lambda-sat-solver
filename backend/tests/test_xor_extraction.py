@@ -59,3 +59,29 @@ class TestXORExtraction:
         f = CNFFormula(num_vars=3,
                        clauses=[[1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3]])
         assert extract_xors(f, max_arity=2).xors == []
+
+
+class TestGF2Refutation:
+    def test_tseitin_refuted_fast(self):
+        from backend.xor_extraction import gf2_xor_refutation
+        r = gf2_xor_refutation(_tseitin_k4())
+        assert r.refuted is True and r.decides_fully is True
+
+    def test_satisfiable_xor_not_refuted(self):
+        from backend.xor_extraction import gf2_xor_refutation
+        # x1 ^ x2 = 0  is satisfiable -> not refuted, but fully decided (all parity)
+        f = CNFFormula(num_vars=2, clauses=[[1, -2], [-1, 2]])
+        r = gf2_xor_refutation(f)
+        assert r.refuted is False and r.decides_fully is True
+
+    def test_no_xor_structure_inconclusive(self):
+        from backend.xor_extraction import gf2_xor_refutation
+        php, _ = pigeonhole(3)
+        r = gf2_xor_refutation(php)
+        assert r.refuted is False and r.decides_fully is False
+
+    def test_soundness_agrees_with_inconsistent_system(self):
+        from backend.xor_extraction import gf2_xor_refutation
+        # x1^x2=0 AND x1^x2=1  -> inconsistent -> refuted
+        f = CNFFormula(num_vars=2, clauses=[[1, -2], [-1, 2], [1, 2], [-1, -2]])
+        assert gf2_xor_refutation(f).refuted is True

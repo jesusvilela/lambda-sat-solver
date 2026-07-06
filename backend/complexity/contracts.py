@@ -214,6 +214,27 @@ REGISTRY: List[InvariantContract] = [
         verdict=STRUCTURE,
     ),
     InvariantContract(
+        name="xor_extraction.gf2_xor_refutation (sound fast-path)",
+        target="backend.xor_extraction.gf2_xor_refutation",
+        cost="poly-time (XOR recovery + GF(2) Gaussian elimination)",
+        input_domain="any CNFFormula",
+        invariant="refuted = the recovered XOR subsystem is inconsistent over "
+                  "GF(2) (=> formula UNSAT, a sound certificate); decides_fully "
+                  "= the XORs cover the whole formula",
+        action="engine-independent UNSAT fast-path in the algebraic frame, "
+                "sibling of binary_clause_check (the 2-SAT-frame fast-path); "
+                "run before CDCL to short-circuit parity-inconsistent instances",
+        benchmark="FRAME_BENCHMARK_REPORT: on Tseitin-expander returns UNSAT in "
+                  "<<1ms where Kissat AND CaDiCaL time out (>20s at nv=100); "
+                  "PAR-2 2.858s -> 0.036s as a router; soundness 53/53 vs Kissat",
+        proven="recovered XORs are logically entailed (exact CNF encodings), so "
+               "an inconsistent XOR subsystem soundly refutes the whole formula; "
+               "Tseitin resolution width is Omega(n) (BSW) hence CDCL-exponential",
+        limit="only refutes via the parity fragment -- inconclusive on formulas "
+              "whose contradiction is not in the XOR core (falls through to CDCL)",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",
