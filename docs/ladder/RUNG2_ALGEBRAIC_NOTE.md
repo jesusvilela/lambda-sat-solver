@@ -5,10 +5,12 @@ directional collapse" insight into a computable intrinsic invariant and
 shows it is the algebraic sibling of the resolution refutation width from
 `RUNG2_REPORT.md`.** Where Rung 2 named the sheaf-obstruction as *bounded
 resolution width* (local sections that cannot glue), this note names its
-algebraic twin: the **Nullstellensatz / Polynomial-Calculus degree over
-GF(2)** — the least degree at which the constant `1` becomes reachable in
-the span of the clause-violation polynomials, i.e. the least degree at
-which the generators stop being rank-deficient with respect to `1`.
+algebraic twin: the **Nullstellensatz degree over GF(2)** — the least degree
+at which the constant `1` becomes reachable in the span of the
+clause-violation polynomials, i.e. the least degree at which the generators
+stop being rank-deficient with respect to `1`. (It is the *static*
+Nullstellensatz measure, not Polynomial-Calculus degree — see the two
+corrections below; the distinction matters and an earlier draft blurred it.)
 
 ## The reframe (the operator's, and it is exactly right)
 
@@ -55,12 +57,21 @@ it must carry information width does not, or it is decoration. It does:
 - **Scaling families track.** Implication chains: width stays 2, NS degree
   climbs 2 → 3 as the chain lengthens. Both are monotone obstruction
   levels of the same instances.
-- **NS degree ≥ width on every instance tested**, and **PHP separates them
-  cleanly**: PHP(3→2) has all-width-2 clauses (resolution width 2) yet
-  **NS degree 4**. This is the theoretically expected gap — the
-  pigeonhole principle is the canonical family where the algebraic degree
-  obstruction sits strictly above the resolution width obstruction. The
-  zero-divisor lift is a genuinely distinct measurement, not a copy.
+- **NS degree and width are INCOMPARABLE — a correction to an earlier
+  overclaim.** An earlier draft here said "NS ≥ width on every instance
+  tested." That was true only of the narrow family first tried (random
+  3-SAT, PHP, chains). It is *false in general*, and Tseitin is the witness:
+  - **PHP(3→2)**: width 2, **NS degree 4** — algebra sits *above* width
+    (the pigeonhole principle is hard for low-degree algebra).
+  - **Tseitin on K₄** (6 vars, odd charge): width 4, **NS degree 3** —
+    algebra sits *below* width, because the parity structure is exactly
+    Gaussian elimination, which lives at low degree over GF(2) while
+    resolution needs large width.
+
+  So neither dominates: they obstruct in *different proof systems*, and each
+  is the canonical hard case for the other. That incomparability is the real
+  content — the zero-divisor lift is not a refinement of width, it is an
+  orthogonal obstruction.
 - **Homogeneous small random 3-SAT does *not* spread them.** On 40 UNSAT
   instances at n=8, α=5.5 (`docs/ladder/scripts/ns_degree_vs_width.py`),
   width is constant (3) and NS degree is near-constant (4, one 5). The
@@ -70,15 +81,31 @@ it must carry information width does not, or it is decoration. It does:
   offset* (NS ≈ width + 1 here, +2 on PHP), not a within-ensemble
   correlation.
 
-## Why this is a hardness carrier (a theorem, same shape as width's)
+## What it is a carrier *for* (precisely — a second correction)
 
-NS/PC degree lower-bounds **Polynomial-Calculus refutation size**
-(Clegg–Edmonds–Impagliazzo 1996; Impagliazzo–Pudlák–Sgall 1999) exactly as
-Ben-Sasson–Wigderson width lower-bounds resolution size. So the algebraic
-face is a real lower-bound instrument on its own proof system, not a
-heuristic correlate — and PC can be *strictly stronger* than resolution on
-families like PHP, which is why having both obstruction levels is worth
-the cost.
+An earlier draft claimed this "lower-bounds Polynomial-Calculus refutation
+size." That conflated two distinct systems and is **wrong as stated**. Being
+precise:
+
+- What we compute is the **Nullstellensatz degree** (static: the least `d`
+  with `Σ gᵢ vᵢ = 1`, `deg ≤ d`) — the complexity measure of the
+  Nullstellensatz proof system (Beame–Impagliazzo–Krajíček–Pitassi–Pudlák).
+  A large NS degree means the formula is hard *for Nullstellensatz*. That is
+  a genuine, if weak, proof-complexity carrier — for its own system.
+- **Polynomial Calculus is strictly stronger**, and `PC degree ≤ NS degree`
+  always (NS is the static special case of PC). So our number *upper-bounds*
+  PC degree — it does **not** lower-bound it, and therefore does **not** by
+  itself yield a PC size bound via the Impagliazzo–Pudlák–Sgall degree–size
+  tradeoff (that tradeoff needs a PC-degree *lower* bound).
+- And, per Tseitin above, it does not lower-bound *resolution*/CDCL cost
+  either — it can be strictly below width.
+
+So the honest verdict: NS degree is the exact obstruction level of the
+Nullstellensatz system and the precise executable form of the
+zero-divisor/rank-deficiency insight, but it is **not** a certified lower
+bound for the CDCL-relevant (resolution) or the stronger algebraic (PC)
+system. It is an orthogonal intrinsic invariant, not a universal hardness
+carrier.
 
 ## The honest limitation (same as its sibling, and the same point)
 

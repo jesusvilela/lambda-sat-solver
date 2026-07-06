@@ -112,19 +112,27 @@ REGISTRY: List[InvariantContract] = [
              "guarded by dmax/max_vars)",
         input_domain="UNSAT CNFFormula, num_vars <= max_vars (0 if empty "
                      "clause; None if satisfiable)",
-        invariant="Nullstellensatz/Polynomial-Calculus degree over GF(2) = "
-                  "least d at which 1 enters the GF(2)-span of "
-                  "{monomial * clause-violation-poly}; the rank-deficiency "
-                  "(cokernel of M_d) obstruction — the zero-divisor lift",
-        action="lower-bounds Polynomial-Calculus refutation size; the algebraic "
-                "sibling of resolution width",
+        invariant="Nullstellensatz degree over GF(2) (static: least d with "
+                  "Sum g_i v_i = 1, deg <= d) = least d at which 1 enters the "
+                  "GF(2)-span of {monomial * clause-violation-poly}; the "
+                  "rank-deficiency (cokernel of M_d) obstruction — the "
+                  "zero-divisor lift",
+        action="measures the degree complexity of the (static) Nullstellensatz "
+                "proof system; the executable form of the zero-divisor = "
+                "rank-deficiency insight. Note PC degree <= NS degree, so this "
+                "UPPER-bounds PC degree — it does NOT lower-bound PC/resolution "
+                "size on its own",
         benchmark="unit fixtures (unit-contra 1 / chain 2 / PHP(3->2) 4 / "
-                  "SAT None / empty 0); NS >= width on every tested instance; "
-                  "PHP separates them (NS 4 vs width 2)",
-        proven="Clegg-Edmonds-Impagliazzo'96 / Impagliazzo-Pudlak-Sgall'99: "
-               "PC degree lower-bounds PC size",
-        limit="exponential; the clean G2/symmetry channel reduction that would "
-              "cheapen it is char-2 obstructed over GF(2) (RUNG2_LIE_TELOS)",
+                  "SAT None / empty 0). NS and width are INCOMPARABLE: NS > "
+                  "width on PHP (4 vs 2), NS < width on Tseitin K4 (3 vs 4) — "
+                  "orthogonal obstructions in different proof systems",
+        proven="NS degree is the complexity measure of the Nullstellensatz "
+               "system (Beame-Impagliazzo-Krajicek-Pitassi-Pudlak); high NS "
+               "degree = hard for Nullstellensatz. It does NOT certify a PC or "
+               "resolution size bound (PC degree <= NS degree; Tseitin < width)",
+        limit="a carrier for its OWN (weak, static) system only — incomparable "
+              "to resolution width, not a CDCL/PC hardness bound; exponential; "
+              "the G2/symmetry channel reduction is char-2 obstructed (LIE_TELOS)",
         verdict=CARRIER,
     ),
     InvariantContract(

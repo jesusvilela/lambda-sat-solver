@@ -19,8 +19,10 @@ and every rung says so.
   transition (Rung 1 / connection-Laplacian addendum).
 - **The operator's geometric program, made executable and unified.** The
   sheaf-obstruction *is* bounded resolution width (Rung 2); the zero-divisor =
-  rank-deficiency instinct *is* the Nullstellensatz/PC degree
-  (RUNG2_ALGEBRAIC); the Lie telos *is* 𝔤₂ = Der(𝕆) / Moreno's G₂ zero-divisor
+  rank-deficiency instinct *is* the Nullstellensatz degree
+  (RUNG2_ALGEBRAIC — corrected: a carrier for its *own* static system only,
+  **incomparable** to resolution width, PHP 4>2 vs Tseitin K4 3<4); the Lie
+  telos *is* 𝔤₂ = Der(𝕆) / Moreno's G₂ zero-divisor
   space, real over ℝ (symmetry-adapted SOS) but char-2 obstructed over GF(2)
   (RUNG2_LIE_TELOS); the braid-theta engine / star of closure is the dynamical
   face of the same object — topological QC = BQP, which is *not* believed to
@@ -54,10 +56,11 @@ out. Contracts cannot silently rot:
 |---|---|
 | `RUNG1_PLAN.md`, `RUNG1_REPORT.md` | cheap graph invariants do NOT carry hardness (the negative) |
 | `RUNG2_REPORT.md` | sheaf-obstruction = min resolution refutation width; connection-Laplacian addendum |
-| `RUNG2_ALGEBRAIC_NOTE.md` | zero-divisor = rank-deficiency = Nullstellensatz/PC degree (the algebraic sibling) |
+| `RUNG2_ALGEBRAIC_NOTE.md` | zero-divisor = rank-deficiency = Nullstellensatz degree (incomparable to width: PHP 4>2, Tseitin 3<4) |
 | `RUNG2_LIE_TELOS_NOTE.md` | 𝔤₂ = Der(𝕆) / G₂ symmetry; real over ℝ, char-2 obstructed over GF(2) |
 | `RUNG2_BRAID_THETA_NOTE.md` | braid-theta engine / star of closure = dynamical face; braiding = BQP, not a SAT route |
 | `RUNG_SADDLE_NOTE.md` | energy-landscape saddle/barrier structure; ruggedness ≠ hardness, the gate is the separator |
+| `HYPERCOMPLEX_DESIGNS_REVIEW.md` | honest review of the operator's computer designs (Berry-braid, symplectic RAM, orbifold, sedenion clock, VDIS channels) + two bridges into the ladder |
 
 ## Reproducible experiments
 

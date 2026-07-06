@@ -78,19 +78,42 @@ SAT_DISJ = CNFFormula(num_vars=2, clauses=[[1, 2]])
 PHP32, _ = pigeonhole(3)  # 3 pigeons, 2 holes, 6 vars
 
 
+def _tseitin_k4():
+    """Tseitin on K4 with one odd vertex -> UNSAT; 6 edge-variables."""
+    from itertools import combinations, product
+    edges = list(combinations(range(4), 2))
+    edge_var = {e: i + 1 for i, e in enumerate(edges)}
+    charge = {0: 1, 1: 0, 2: 0, 3: 0}  # total charge odd
+    clauses = []
+    for v in range(4):
+        inc = [edge_var[e] for e in edges if v in e]
+        for bits in product([0, 1], repeat=len(inc)):
+            if sum(bits) % 2 != charge[v]:
+                clauses.append([(lit if b else -lit)
+                                for lit, b in zip(inc, bits)])
+    return CNFFormula(num_vars=6, clauses=clauses)
+
+
 class TestCarrierClaims:
-    def test_width_and_ns_agree_on_easy_and_separate_on_php(self):
-        # both carriers agree on the trivial obstructions ...
+    def test_width_and_ns_agree_on_easy(self):
+        # both carriers agree on the trivial obstructions
         assert min_refutation_width(UNIT_CONTRA) == 1
         assert nullstellensatz_degree(UNIT_CONTRA) == 1
         assert min_refutation_width(CHAIN) == 2
         assert nullstellensatz_degree(CHAIN) == 2
-        # ... and the algebraic sibling is STRICTLY larger where theory says so
-        w = min_refutation_width(PHP32, wmax=4)
-        d = nullstellensatz_degree(PHP32, dmax=6)
-        assert w == 2 and d == 4
-        assert d >= w, "contract: NS degree >= resolution width on UNSAT"
-        assert d > w, "PHP must separate the algebraic and resolution obstructions"
+
+    def test_ns_and_width_are_incomparable(self):
+        # the contracted claim: NS degree and resolution width are ORTHOGONAL
+        # obstructions -- neither dominates. (Corrects an earlier "NS >= width"
+        # overclaim; Tseitin is the witness the other way.)
+        w_php = min_refutation_width(PHP32, wmax=4)
+        d_php = nullstellensatz_degree(PHP32, dmax=6)
+        assert (w_php, d_php) == (2, 4)          # NS ABOVE width
+        tse = _tseitin_k4()
+        w_tse = min_refutation_width(tse, wmax=6, max_closure=300000)
+        d_tse = nullstellensatz_degree(tse, dmax=6)
+        assert (w_tse, d_tse) == (4, 3)          # NS BELOW width
+        assert d_php > w_php and d_tse < w_tse    # incomparable, both directions
 
     def test_carriers_return_none_on_satisfiable(self):
         # no refutation obstruction exists for a SAT formula
