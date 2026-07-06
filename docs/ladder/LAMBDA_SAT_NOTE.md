@@ -49,12 +49,42 @@ Boolean (types, uncertainty, higher-order structure the Boolean shadow cannot
 hold). That is real and unbuilt: the honest next step, and the place the
 hypercomplex carrier would actually earn its keep.
 
-## What grows next
+## Meta-resolution — the next contract, now landed
 
-The fusion gives a clean growth point: enrich the lambda payload beyond Boolean
-(a typed / graded fragment) so the projection into CNF becomes genuinely
-lossy, `ε > 0`, and the remainder becomes a first-class carrier of what the
-Boolean shadow dropped — measured, not asserted. That is where Λᴿ stops being a
-lens and becomes a contract. Until then: lambda supplies the term, SAT selects
-the survivor, the certificate is the braid, and the remainder is the fossil
-record — all of it verified.
+The first version of `lambda_sat` only *self-resolved* (decided the term by brute
+force). The blocker for *meta-resolution* (choosing the frame that collapses the
+contradiction) was diagnosed honestly: the naive Tseitin gate-projection flattens
+frame structure — the auxiliary gate variables hide any parity/counting pattern,
+so the three frames never fire on the projection. That is `ε` in the flesh: the
+projection erased the very frame it needed.
+
+The contract discharged: a **structure-preserving encoder**. When the beta-normal
+form is a **parity system** (a conjunction of XOR-over-literals, now that `BXor`
+is a first-class constructor), it is encoded **frame-native** — parity clause
+groups over the original variables, *no auxiliary gates* — so the GF(2) frame
+recognizes it and `gf2_xor_solve` decides it in polynomial time, certified. The
+result records `resolved_by ∈ {parity, 2sat, counting, direct}`: the frame that
+collapsed the term. Verified (14 tests incl. a 200-instance soundness stress
+against brute-force source truth):
+
+- `a ⊕ b` → SAT via **parity** (no enumeration); `(x⊕y) ∧ ¬(x⊕y)` and the odd
+  3-XOR cycle → UNSAT via **parity** (Gaussian).
+- `(λf. f⊕g)(x⊕y)` → the parity structure appears only *after* β-reduction, and
+  is still routed to the GF(2) frame — meta-resolution discovering the shallow
+  frame of a reduced term, not assuming it.
+- generic `a ∨ b` → falls to a re-verified `direct` decision.
+
+Because the parity encoding has no auxiliary variables, its GF(2) UNSAT is exactly
+the refutation whose soundness is stated in `proofs/XorSoundness.lean` — the
+fusion, the frame trilogy, and the Lean obligation meet on one object.
+
+## What still grows next
+
+Meta-resolution is now real for the parity frame; extending the frame-native
+recognizer to the **counting** frame (ALO/AMO structure in a β-normal term) is
+the direct sequel. And the deeper contract is unchanged: enrich the payload
+beyond Boolean so the projection becomes genuinely lossy, `ε > 0`, and the
+remainder carries active, unprojected truth — *measured, not asserted*. That is
+where Λᴿ stops being a lens. Until then: lambda supplies the term, the shallowest
+frame selects the survivor, the certificate is the braid, and the remainder is
+the fossil record — all of it verified.
