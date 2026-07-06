@@ -173,6 +173,27 @@ REGISTRY: List[InvariantContract] = [
         verdict=STRUCTURE,
     ),
     InvariantContract(
+        name="cross_algebra_depth",
+        target="cross_algebra_depth",
+        cost="exact, exponential (runs both width and NS-degree)",
+        input_domain="UNSAT CNFFormula within both invariants' guards",
+        invariant="obstruction depth in each proof algebra we can measure "
+                  "(resolution width, GF(2) Nullstellensatz degree) and the "
+                  "minimum over them -- the 'shallow-Emperor' depth",
+        action="makes the portfolio principle intrinsic: since the two depths "
+                "are incomparable, best = min(...) beats either algebra alone "
+                "on a mixed workload -- why portfolio solvers win",
+        benchmark="PHP best = width 2 (< NS 4); Tseitin K4 best = NS 3 "
+                  "(< width 4); on the pair the portfolio (2,3) strictly beats "
+                  "width-only (2,4) and NS-only (4,3)",
+        proven="the incomparability itself (NS vs width) is verified; portfolio "
+               "= min is elementary",
+        limit="a DEMONSTRATOR, not a fast router -- both depths are exponential "
+              "to compute; the practical shadow is the solver's real "
+              "portfolio/restart/heuristic switching",
+        verdict=STRUCTURE,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

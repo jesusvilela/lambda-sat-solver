@@ -430,6 +430,40 @@ def signed_laplacian_frustration(formula: CNFFormula) -> float:
 # is the SAT phase transition (Mezard-Parisi-Zecchina). Exact, small n.
 
 @dataclass
+class CrossAlgebraDepth:
+    resolution_width: Optional[int]      # obstruction depth in resolution
+    nullstellensatz_degree: Optional[int]  # obstruction depth in GF(2) NS
+    best: Optional[int]                  # min over the algebras we can measure
+
+
+def cross_algebra_depth(formula: CNFFormula, wmax: int = 8,
+                        dmax: int = 6, max_vars: int = 22,
+                        max_closure: int = 200000) -> CrossAlgebraDepth:
+    """The 'shallow-Emperor' depth: the obstruction level of an UNSAT formula
+    in EACH proof algebra we can measure (resolution width, GF(2)
+    Nullstellensatz degree), and the minimum over them.
+
+    This is the portfolio principle made intrinsic. We proved these two depths
+    are INCOMPARABLE (PHP: width 2 < NS 4; Tseitin K4: NS 3 < width 4), so
+    neither algebra dominates and `best = min(...)` is strictly better than
+    either alone on a mixed workload -- exactly why a portfolio SAT solver
+    (which runs several engines and takes the winner) beats any single engine.
+
+    Honest label: this is a DEMONSTRATOR, not a fast router. Both depths are
+    exponential to compute, so you would never call this to *route* a solver;
+    it exists to make the cross-algebra structure explicit and testable. The
+    practical shadow of the same principle is the solver's real portfolio /
+    restart / heuristic switching -- searching for the frame in which this
+    instance's obstruction is shallowest.
+    """
+    w = min_refutation_width(formula, wmax=wmax, max_closure=max_closure)
+    d = nullstellensatz_degree(formula, dmax=dmax, max_vars=max_vars)
+    present = [x for x in (w, d) if x is not None]
+    best = min(present) if present else None
+    return CrossAlgebraDepth(w, d, best)
+
+
+@dataclass
 class SaddleStats:
     satisfiable: bool
     num_solution_basins: int   # solution clusters at E=0 (Hamming-1)

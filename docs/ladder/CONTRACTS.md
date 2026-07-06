@@ -51,6 +51,17 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **benchmark:** unit fixtures (connected basin barrier 0 / xor 2 basins barrier 1 / unsat ground 1); RUNG_SADDLE_NOTE (+0.40 vs +0.20 at n=18)
 - **limit:** ruggedness is NOT the P/NP separator — XOR is rugged yet in P via Gaussian elimination; the separator is algebraic (Schaefer / the gate), not landscape barrier height
 
+### cross_algebra_depth
+
+- **binds:** `cross_algebra_depth`
+- **cost:** exact, exponential (runs both width and NS-degree)
+- **input:** UNSAT CNFFormula within both invariants' guards
+- **invariant:** obstruction depth in each proof algebra we can measure (resolution width, GF(2) Nullstellensatz degree) and the minimum over them -- the 'shallow-Emperor' depth
+- **action:** makes the portfolio principle intrinsic: since the two depths are incomparable, best = min(...) beats either algebra alone on a mixed workload -- why portfolio solvers win
+- **benchmark:** PHP best = width 2 (< NS 4); Tseitin K4 best = NS 3 (< width 4); on the pair the portfolio (2,3) strictly beats width-only (2,4) and NS-only (4,3)
+- **proven:** the incomparability itself (NS vs width) is verified; portfolio = min is elementary
+- **limit:** a DEMONSTRATOR, not a fast router -- both depths are exponential to compute; the practical shadow is the solver's real portfolio/restart/heuristic switching
+
 ## Scoped negatives (measured NOT to carry hardness)
 
 ### mean_var_degree / var_degree_entropy / spectral_gap

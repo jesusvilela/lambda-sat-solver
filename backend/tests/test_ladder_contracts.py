@@ -119,6 +119,21 @@ class TestCarrierClaims:
         # no refutation obstruction exists for a SAT formula
         assert nullstellensatz_degree(SAT_DISJ) is None
 
+    def test_cross_algebra_portfolio_beats_either_alone(self):
+        # the corollary made executable: neither algebra dominates, so the
+        # min-over-algebras (portfolio) is strictly better on a mixed pair.
+        from backend.complexity.invariants import cross_algebra_depth
+        php = cross_algebra_depth(PHP32, wmax=4, dmax=6)
+        assert (php.resolution_width, php.nullstellensatz_degree) == (2, 4)
+        assert php.best == 2                      # resolution is the shallow frame here
+        tse = cross_algebra_depth(_tseitin_k4(), wmax=6, dmax=6,
+                                  max_closure=300000)
+        assert (tse.resolution_width, tse.nullstellensatz_degree) == (4, 3)
+        assert tse.best == 3                      # GF(2) is the shallow frame here
+        # portfolio total strictly below either single-algebra total
+        assert php.best + tse.best < 2 + 4        # < width-only
+        assert php.best + tse.best < 4 + 3        # < NS-only
+
 
 class TestScopedNegatives:
     def test_spectral_gap_is_monotone_in_density_not_a_peak(self):
