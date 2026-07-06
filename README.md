@@ -55,7 +55,7 @@ So a wrong answer from the solver is caught, not trusted.
 
 ```bash
 cd backend
-pip install -r requirements.txt          # Python 3.11+, numpy
+pip install -r requirements.txt          # Python 3.11+ (CI-tested on 3.11 & 3.12), numpy
 # install Kissat and drat-trim — see BACKEND_README.md
 
 python -m backend.cli examples/simple_sat.cnf --heuristic aggressive

@@ -51,7 +51,7 @@ A math-aligned λ-logic middleware that transforms formulas into CNF, solves wit
 
 ### Prerequisites
 
-- Python 3.11+
+- Python 3.11+ (tested on 3.11 and 3.12 in CI)
 - Kissat SAT solver
 - drat-trim proof checker
 - (Optional) lrat-check for LRAT proofs

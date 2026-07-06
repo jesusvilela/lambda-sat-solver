@@ -1,6 +1,14 @@
 """
-Lambda DSL for SAT solver middleware
-Implements a typed lambda calculus with effect tracking
+Lambda DSL for SAT solver middleware — the *pipeline* language.
+
+Implements a typed lambda calculus with effect tracking, used to compose
+solve/verify *pipelines* (see `middleware.py`). This is the orchestration DSL.
+
+Not to be confused with `lambda_sat.py`, the *object-level* Lambda ⊗ SAT fusion,
+where a Boolean lambda term is itself the thing being decided. Neither module is
+on the critical solving path — both are research artifacts — but they are
+distinct: this one describes *how to run* a solve; `lambda_sat` treats a lambda
+term *as* a SAT instance.
 """
 
 from dataclasses import dataclass
