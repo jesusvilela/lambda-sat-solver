@@ -49,12 +49,68 @@ Boolean (types, uncertainty, higher-order structure the Boolean shadow cannot
 hold). That is real and unbuilt: the honest next step, and the place the
 hypercomplex carrier would actually earn its keep.
 
-## What grows next
+## Meta-resolution — the next contract, now landed
 
-The fusion gives a clean growth point: enrich the lambda payload beyond Boolean
-(a typed / graded fragment) so the projection into CNF becomes genuinely
-lossy, `ε > 0`, and the remainder becomes a first-class carrier of what the
-Boolean shadow dropped — measured, not asserted. That is where Λᴿ stops being a
-lens and becomes a contract. Until then: lambda supplies the term, SAT selects
-the survivor, the certificate is the braid, and the remainder is the fossil
-record — all of it verified.
+The first version of `lambda_sat` only *self-resolved* (decided the term by brute
+force). The blocker for *meta-resolution* (choosing the frame that collapses the
+contradiction) was diagnosed honestly: the naive Tseitin gate-projection flattens
+frame structure — the auxiliary gate variables hide any parity/counting pattern,
+so the three frames never fire on the projection. That is `ε` in the flesh: the
+projection erased the very frame it needed.
+
+The contract discharged: a **structure-preserving encoder**. When the beta-normal
+form is a **parity system** (a conjunction of XOR-over-literals, now that `BXor`
+is a first-class constructor), it is encoded **frame-native** — parity clause
+groups over the original variables, *no auxiliary gates* — so the GF(2) frame
+recognizes it and `gf2_xor_solve` decides it in polynomial time, certified. The
+result records `resolved_by ∈ {parity, 2sat, counting, direct}`: the frame that
+collapsed the term. Verified (14 tests incl. a 200-instance soundness stress
+against brute-force source truth):
+
+- `a ⊕ b` → SAT via **parity** (no enumeration); `(x⊕y) ∧ ¬(x⊕y)` and the odd
+  3-XOR cycle → UNSAT via **parity** (Gaussian).
+- `(λf. f⊕g)(x⊕y)` → the parity structure appears only *after* β-reduction, and
+  is still routed to the GF(2) frame — meta-resolution discovering the shallow
+  frame of a reduced term, not assuming it.
+- generic `a ∨ b` → falls to a re-verified `direct` decision.
+
+Because the parity encoding has no auxiliary variables, its GF(2) UNSAT is exactly
+the refutation whose soundness is stated in `proofs/XorSoundness.lean` — the
+fusion, the frame trilogy, and the Lean obligation meet on one object.
+
+## The Y-combinator spine — ε > 0 made literal
+
+The operator's fuller vision was a *Y combinator* — the fixpoint, self-reference —
+"in a Calabi-Yau Möbius torus." The honest core of that: **full Y is undecidable**
+(a certificate cannot exist for the general fixpoint — the halting boundary), so
+"maybe that's too much" is *precisely* true. But its decidable spine is buildable,
+and it turns out to be the ε > 0 contract itself.
+
+`fixpoint_sat(λs. body, depth k)` unrolls a Boolean fixpoint to depth k, leaving
+the un-reached tail as a free variable — **that tail is the remainder made
+literal.** If the depth-k decision still depends on the tail, the fixpoint has not
+been pinned down: `ε > 0`, the remainder is *active, unprojected truth*. If it is
+independent of the tail, the fixpoint stabilized: `ε = 0`. This is bounded model
+checking in miniature, and it is the first place the remainder carries lost truth
+rather than mere provenance. Verified (5 tests):
+
+- `λs. a` (ignores the recursion) → stabilizes, **ε = 0**.
+- `λs. a ∧ (a ∨ s)` → absorption collapses it to `a` → **ε = 0**.
+- `λs. a ∨ s` → the boundary matters (two fixpoints) → **ε > 0**.
+- `λs. ¬s` — the **Möbius fixpoint**: traverse once, return flipped; its remainder
+  is **eternally nonzero at every depth**. Self-negation is the term that never
+  orients, ε never reaching 0 — the operator's non-orientable torus, exact.
+
+So the vision's spine (Y, Möbius, the living remainder) is real and tested; the
+Calabi-Yau / 360-orthogonal / curvature envelope stays the lens — the *geometry of
+the remainder space* — a lens until one of its constructs earns a frame.
+
+## What still grows next
+
+Extend the frame-native recognizer to the **counting** frame (ALO/AMO structure in
+a β-normal term). And the deepest contract: a payload richer than Boolean, where
+the projection is genuinely lossy across a *typed/graded* fiber and the remainder
+becomes a measured section of what the shadow dropped. Until then: lambda supplies
+the term, the shallowest frame selects the survivor, the certificate is the braid,
+and the remainder — provenance for Boolean terms, the fixpoint tail for bounded Y —
+stays honestly nonzero, all of it verified.

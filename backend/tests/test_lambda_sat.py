@@ -57,3 +57,104 @@ class TestLambdaSat:
         cnf, remainder, free_ids = tseitin_encode(n)
         # p True, q True satisfies p ∧ (q ∨ ¬p)
         assert eval_bool(n, {'p': True, 'q': True})
+
+
+class TestMetaResolution:
+    def test_parity_sat_resolved_by_gf2_frame(self):
+        from backend.lambda_sat import BXor, BVar
+        r = lambda_sat(BXor(BVar('a'), BVar('b')))   # a⊕b=1
+        assert r.status == 'SAT' and r.resolved_by == 'parity'
+        assert eval_bool(BXor(BVar('a'), BVar('b')), r.witness)
+
+    def test_parity_unsat_resolved_by_gf2_frame(self):
+        from backend.lambda_sat import BXor, BVar, BAnd, BNot
+        # (x⊕y) ∧ ¬(x⊕y): inconsistent parity system
+        t = BAnd(BXor(BVar('x'), BVar('y')), BNot(BXor(BVar('x'), BVar('y'))))
+        r = lambda_sat(t)
+        assert r.status == 'UNSAT' and r.resolved_by == 'parity' and r.witness is None
+
+    def test_odd_cycle_xor_unsat(self):
+        from backend.lambda_sat import BXor, BVar, BAnd
+        # x⊕y=1, y⊕z=1, x⊕z=1 -> sum gives 0=1 -> UNSAT (Gaussian)
+        t = BAnd(BAnd(BXor(BVar('x'), BVar('y')), BXor(BVar('y'), BVar('z'))),
+                 BXor(BVar('x'), BVar('z')))
+        r = lambda_sat(t)
+        assert r.status == 'UNSAT' and r.resolved_by == 'parity'
+
+    def test_reduction_reveals_parity_frame(self):
+        # (λf. f⊕g)(x⊕y) β-reduces to (x⊕y)⊕g -> parity only after reduction
+        from backend.lambda_sat import BXor, BVar, Lam, App
+        r = lambda_sat(App(Lam('f', BXor(BVar('f'), BVar('g'))),
+                           BXor(BVar('x'), BVar('y'))))
+        assert r.status == 'SAT' and r.resolved_by == 'parity'
+        assert sorted(r.free_vars) == ['g', 'x', 'y']
+
+    def test_generic_term_falls_to_direct(self):
+        r = lambda_sat(BOr(BVar('a'), BVar('b')))
+        assert r.status == 'SAT' and r.resolved_by == 'direct'
+
+    def test_parity_frame_verdicts_are_sound(self):
+        # every parity-frame verdict must match brute-force source evaluation
+        import random
+        from itertools import product as iproduct
+        from backend.lambda_sat import BXor, BVar, BNot, BAnd
+        rng = random.Random(0)
+        names = ['a', 'b', 'c', 'd']
+
+        def rand_xor(depth):
+            if depth == 0 or rng.random() < 0.3:
+                v = BVar(rng.choice(names))
+                return BNot(v) if rng.random() < 0.5 else v
+            return BXor(rand_xor(depth - 1), rand_xor(depth - 1))
+
+        for _ in range(200):
+            k = rng.randint(1, 3)
+            term = rand_xor(2)
+            for _ in range(k - 1):
+                term = BAnd(term, rand_xor(2))
+            r = lambda_sat(term)
+            assert r.resolved_by == 'parity'
+            fv = r.free_vars
+            brute = any(eval_bool(beta_normalize(term), dict(zip(fv, bits)))
+                        for bits in iproduct([False, True], repeat=len(fv)))
+            assert (r.status == 'SAT') == brute
+            if r.status == 'SAT':
+                assert eval_bool(beta_normalize(term), r.witness)
+
+
+class TestBoundedFixpoint:
+    def test_stabilizes_when_body_ignores_recursion(self):
+        # λs. a  -- the fixpoint does not depend on the tail: ε = 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar
+        r = fixpoint_sat(Lam('s', BVar('a')), depth=4)
+        assert r.remainder_active is False        # stabilized
+        assert r.decision.status == 'SAT'
+
+    def test_absorption_stabilizes(self):
+        # λs. a ∧ (a ∨ s) = a  (absorption) -- independent of the tail: ε = 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BAnd, BOr
+        r = fixpoint_sat(Lam('s', BAnd(BVar('a'), BOr(BVar('a'), BVar('s')))),
+                         depth=3)
+        assert r.remainder_active is False
+
+    def test_boundary_keeps_remainder_active(self):
+        # λs. a ∨ s  -- depth-k truth depends on the tail boundary: ε > 0
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BOr
+        r = fixpoint_sat(Lam('s', BOr(BVar('a'), BVar('s'))), depth=3)
+        assert r.remainder_active is True
+
+    def test_mobius_never_stabilizes(self):
+        # λs. ¬s  -- the Möbius fixpoint: remainder eternally nonzero at any depth
+        from backend.lambda_sat import fixpoint_sat, Lam, BVar, BNot
+        for k in range(1, 6):
+            r = fixpoint_sat(Lam('s', BNot(BVar('s'))), depth=k)
+            assert r.remainder_active is True     # ε > 0 for all k
+
+    def test_unroll_depth_shapes_the_term(self):
+        from backend.lambda_sat import unroll_fix, Lam, BNot, BVar, beta_normalize, FIX_TAIL
+        # ¬ applied k times to the tail
+        u = beta_normalize(unroll_fix(Lam('s', BNot(BVar('s'))), depth=2))
+        # ¬¬tail == tail as a Boolean function
+        from backend.lambda_sat import eval_bool
+        assert eval_bool(u, {FIX_TAIL: True}) is True
+        assert eval_bool(u, {FIX_TAIL: False}) is False
