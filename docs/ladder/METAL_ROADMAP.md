@@ -1,0 +1,144 @@
+# Geometry → metal: optimizing computation in our spaces, honestly
+
+*How the hyperbolic / hypercomplex / hyperdimensional program we built maps to
+CPU and GPU — with the one measurement that reframes the whole question.*
+
+## The core insight: understanding wants curvature, computation wants flatness
+
+The whole ladder was a search for **where hardness hides** — and it hides in rich,
+curved structure (the shallow-Emperor frame, the G₂ symmetry, the sheaf
+obstruction). But optimization runs the *opposite* direction. The place a problem
+is **fast to compute** is the flattest algebra it fits in: **characteristic 2 —
+GF(2)** — where addition is XOR (its own inverse, no carries), multiplication is
+AND, and there is no rounding, no curvature to carry.
+
+The frame router is the bridge between the two:
+
+> The curved, hypercomplex space is where you **find** the frame.
+> The flat GF(2) shadow is where you **compute** it.
+> Metal accelerates the flat part.
+
+And the deep fact that makes this more than a metaphor: **silicon has spent 15
+years building characteristic-2 hardware** — `PCLMULQDQ` (carry-less multiply,
+2010), `GFNI` (Galois-Field New Instructions, AVX-512, 2018) — because
+cryptography (AES, CRC, Reed–Solomon) needed exactly this algebra. **The flat
+frames our geometry lands in are the ones the metal already accelerates
+natively.** We are not asking the hardware for a favor; we are landing where it is
+fastest.
+
+## The measurement that reframes it (do not skip this)
+
+Before proposing any rewrite, the honest question: *where does the time actually
+go?* Measured, GF(2) row-reduction of a 700×700 system:
+
+| approach | time |
+|---|---|
+| Python-loop over **bigint** rows (what `xor_extraction` does now) | **13 ms** |
+| naive numpy `uint64`-packed, elimination vectorized | 27 ms (**0.5×, slower**) |
+
+**Python bigints are already bit-packed and XOR at C speed.** The naive numpy
+rewrite is *slower*, because it trades one fast C-level XOR-of-a-word-array for a
+per-column Python loop (argmax, masking) that the interpreter pays for. This is
+the Charter applied to performance: *measure before you "optimize."* At our
+current research scale (hundreds of variables, frames already ~1 ms) the metal win
+is **negligible** — the geometry is already so metal-friendly that a builtin
+suffices.
+
+So the metal roadmap is **not** "port to Rust for its own sake." It matters in
+exactly three regimes, each with the *right* primitive:
+
+## Where metal actually wins, per frame
+
+### 1. Parity / GF(2) — the flat core
+
+- **Scale (algorithmic):** at thousands+ of variables the win is the **Method of
+  Four Russians (M4RI)** — precompute a Gray-code table of all 2ᵏ combinations of k
+  rows (built by incremental XOR) and eliminate k columns per pass, turning
+  O(n³) into O(n³/log n). This is the SOTA for dense GF(2) linear algebra and is
+  cache- and SIMD-shaped. *That* is the real algorithmic optimization — not
+  changing the storage.
+- **Compiled inner loop:** when the frame becomes a hot pre-pass inside a real
+  solver loop (called millions of times), the Python *dispatch* (not the XOR)
+  dominates. A Rust/`PyO3` core removes it — packed `u64` limbs, `xor` over slices
+  auto-vectorizes to AVX2/AVX-512 (512 GF(2) coordinates per instruction).
+- **GPU (batch):** the SIMT win is **batching** — reduce thousands of independent
+  GF(2) systems at once (one warp per system, bit-packed rows), or one huge system
+  with a parallel M4RI. GF(2) matrices are the ideal GPU payload: no floats, no
+  divergence in the XOR, pure bit-parallelism.
+
+### 2. Counting / cardinality — ℤ, but still bit-shaped
+
+The pigeonhole counting bound is `POPCNT` (population count) + a prefix sum over
+group memberships — both single-instruction / warp-parallel. The union-find over
+the exclusion graph is pointer-chasing (CPU-friendly, not GPU); keep it on CPU.
+
+### 3. Implication / 2-SAT — leave it on the CPU
+
+SCC over the implication graph is pointer-chasing and branch-heavy — genuinely
+*not* SIMD/GPU shaped, and small. Don't force it onto the wrong metal.
+
+### 4. Verification (the TCB) — fast *and* trusted
+
+`verify_model` is, per clause, "is ≥1 literal true" = a bitwise OR-reduction over
+the packed assignment; whole-formula model checking is AND/OR bit reductions —
+SIMD-native. This is the one place to make fast *and* keep in the trusted base.
+
+## The hypercomplex bridge — real, and mostly already in the silicon
+
+- **GF(2ᵏ) is "hypercomplex over the Booleans."** The Cayley–Dickson doubling
+  ladder (ℝ→ℂ→ℍ→𝕆→𝕊, dims 1,2,4,8,16) is *the same power-of-two ladder* as SIMD
+  register lane counts (a quaternion = one 128-bit register; a sedenion = one
+  AVX-512 register). For **floats**, hypercomplex arithmetic is SIMD-native by
+  construction (this is why game engines do quaternion math in SSE) — real
+  hardware, but a **lens for SAT** (our floats-hypercomplex work did not decide
+  SAT; it stays a lens until it earns a frame).
+- **The on-path version is GF(2ᵏ):** finite-field extensions of our GF(2) frame,
+  with **dedicated instructions** — `PCLMULQDQ` for the multiply, `GFNI` for
+  GF(2⁸) matrix/affine ops in a single AVX-512 instruction. If a future frame
+  wants field structure over the parity core (Reed–Solomon-style, or GF(2ᵏ)
+  Gaussian), the metal already has the ops. This is the genuine, on-topic
+  hypercomplex-to-metal bridge.
+
+## Hyperdimensional — the continuous next frame
+
+Hyperdimensional Computing / Vector-Symbolic Architectures (Kanerva) represent
+symbols as ~10⁴-dimensional **binary** vectors, with **binding = XOR**, bundling =
+majority, permutation = rotation. Binary HDC *is our parity algebra at scale* —
+10⁴-bit GF(2) vectors, XOR-bound — and it is explicitly built for SIMD / GPU /
+processing-in-memory. It is the most credible "hyperdimensional" bridge to metal
+and a real future frame candidate for **encoding formula structure** as
+hypervectors (variable = hypervector; a clause = a bound bundle). Contract before
+celebration: it earns a place only if such an encoding *decides* or *accelerates*,
+measured — not asserted.
+
+## Hyperbolic — honest lens
+
+Hyperbolic geometry's genuine computational edge is **hierarchical / tree data**
+(exponential volume ⇒ trees embed with low distortion), and the Lorentz model's
+Minkowski inner product is a cheap signed dot product (GPU-friendly). SAT search
+*is* tree-shaped, so a hyperbolic branching/decomposition heuristic is conceivable
+— but Rung 1 showed geometric embeddings do not carry hardness, so this stays a
+**lens** until one earns a frame. No metal work is justified here yet.
+
+## The roadmap (prioritized, contracted)
+
+1. **Do nothing at research scale.** The frames are ~1 ms; Python bigints already
+   XOR at C speed; a naive rewrite measured *slower*. (Verified above.)
+2. **When scaling up:** implement **M4RI** for the GF(2) frame (algorithmic
+   O(n³/log n)); contract = identical verdicts to the current code on a
+   differential test, faster only above a measured crossover size.
+3. **When embedding as a solver pre-pass:** a Rust/`PyO3` `gf2` core (packed `u64`,
+   auto-vectorized XOR, `PCLMULQDQ`/`GFNI` where present) to remove interpreter
+   dispatch. Keep the TCB pieces (parser, `verify_model`, the refutations) in this
+   fast, *verified* core — differential-tested against the Python reference.
+4. **For throughput:** a GPU batched-GF(2) kernel (CUDA/`wgpu`) to reduce many
+   instances at once — the SIMT-natural payload.
+5. **Never:** claim we out-engineer CDCL. The metal win is making the **sound
+   frames and the certification layer** run at silicon speed so the middleware's
+   overhead vanishes and the frames become a genuinely *free* pre-pass. That, and
+   only that, is the honest target.
+
+The unifying line: **our geometry's job is to find the flat frame; the metal's job
+is to XOR it.** We chased curvature to understand hardness; we collapse to
+characteristic 2 to compute it; and characteristic 2 is the one algebra the
+hardware already loves.
