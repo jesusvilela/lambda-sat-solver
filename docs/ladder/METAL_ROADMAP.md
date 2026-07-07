@@ -44,6 +44,36 @@ current research scale (hundreds of variables, frames already ~1 ms) the metal w
 is **negligible** — the geometry is already so metal-friendly that a builtin
 suffices.
 
+### The frame-router scaling probe (what "prototype and benchmark" surfaced)
+
+Crystallizing the three frames into one call (`backend/frame_solver.py`) and then
+scaling it on Tseitin exposed the *real* cost split — and a free win that has
+nothing to do with metal (reproduce: `python -m
+docs.ladder.scripts.frame_router_scaling`):
+
+| stage (Tseitin, 4500 vars / 12000 clauses) | time |
+|---|---|
+| 2-SAT scan | 5.5 ms |
+| XOR parsing (`extract_xors`) | 28 ms |
+| **sound GF(2) refutation** (`gf2_xor_refutation`) | **30 ms** |
+| full GF(2) **solve** (RREF + model rebuild, `gf2_xor_solve`) | **1149 ms** |
+| **router, refute-first** (`frame_solve`) | **41 ms** |
+
+The refutation triangularizes until a row hits `0 = 1` — **near-linear**, and
+parsing dominates it. The full *solve* keeps every basis row mutually reduced
+(reduced row-echelon) to reconstruct a model — **superlinear** (~O(pivots²)). The
+router therefore **refutes before it reconstructs**: UNSAT (the common case for
+the hard families) stays linear, and the RREF cost is paid *only* when a
+satisfying model is actually needed. That ordering — not any kernel change — took
+the UNSAT path from 1149 ms to 41 ms at 4500 vars (**~28×**), in pure Python.
+
+The lesson the benchmark taught, and the honest survivor of the whole
+metal-optimization thread: **the win was algorithmic (do the cheap sound test
+first), not silicon.** The Gaussian core is already near-free at research scale;
+M4RI and a compiled rewrite remain premature until a measured crossover
+(below), because nothing here is Gaussian-bound yet — it is *parse*-bound, and
+the refutation is faster than the parsing that feeds it.
+
 So the metal roadmap is **not** "port to Rust for its own sake." It matters in
 exactly three regimes, each with the *right* primitive:
 

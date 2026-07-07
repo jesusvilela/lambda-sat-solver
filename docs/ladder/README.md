@@ -74,4 +74,6 @@ out. Contracts cannot silently rot:
 invariants), `ns_degree_vs_width.py` (algebraic vs resolution obstruction),
 `symmetry_channel_ns.py` (the char-2 fork), `saddle_ruggedness_vs_gate.py`
 (ruggedness vs the algebraic separator), `fano_braid_associator.py` (the
-octonion substrate).
+octonion substrate), `frame_router_scaling.py` (the crystallized
+`backend/frame_solver.py` scaled on Tseitin: near-linear refute-first UNSAT,
+superlinear full-solve — why the router refutes before it reconstructs).
