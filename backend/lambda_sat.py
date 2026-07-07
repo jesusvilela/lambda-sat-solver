@@ -104,7 +104,18 @@ def free_vars(e: BExpr) -> Set[str]:
     raise TypeError(e)
 
 
+def _fresh(base: str, avoid: Set[str]) -> str:
+    """A variable name not in `avoid`, derived from `base` by priming."""
+    cand = base
+    while cand in avoid:
+        cand += "'"
+    return cand
+
+
 def _subst(e: BExpr, name: str, val: BExpr) -> BExpr:
+    """Capture-AVOIDING substitution [name := val]. When descending under a binder
+    whose parameter occurs free in `val`, alpha-rename the binder first, so a free
+    variable of `val` is never captured (e.g. (λx. λy. x) y -> λy'. y, not λy. y)."""
     if isinstance(e, BVar):
         return val if e.name == name else e
     if isinstance(e, BConst):
@@ -118,7 +129,14 @@ def _subst(e: BExpr, name: str, val: BExpr) -> BExpr:
     if isinstance(e, BXor):
         return BXor(_subst(e.l, name, val), _subst(e.r, name, val))
     if isinstance(e, Lam):
-        return e if e.param == name else Lam(e.param, _subst(e.body, name, val))
+        if e.param == name:
+            return e                              # name is bound here: no free occ
+        if e.param in free_vars(val):             # would capture -> alpha-rename
+            fresh = _fresh(e.param,
+                           free_vars(val) | free_vars(e.body) | {name})
+            body = _subst(e.body, e.param, BVar(fresh))
+            return Lam(fresh, _subst(body, name, val))
+        return Lam(e.param, _subst(e.body, name, val))
     if isinstance(e, App):
         return App(_subst(e.fn, name, val), _subst(e.arg, name, val))
     raise TypeError(e)

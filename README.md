@@ -51,6 +51,15 @@ per-invariant promises.
 
 So a wrong answer from the solver is caught, not trusted.
 
+> **Strict certification depends on external proof tools being installed.** The
+> three sound frames (implication / parity / counting) are self-certifying with no
+> external dependency, but the **CDCL fallback's UNSAT certificate requires
+> `drat-trim`** (DRAT; LRAT optional). The middleware enforces the presence of
+> Kissat + a DRAT checker at startup in strict mode; without them, frame verdicts
+> stay sound but the fallback certification degrades to best-effort. See
+> `PUBLIC_RESEARCH_CLAIMS.md` for the full proven / measured / speculative ledger
+> and the exact TCB boundary.
+
 ## Quick start
 
 ```bash
