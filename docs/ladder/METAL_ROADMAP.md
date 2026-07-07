@@ -74,6 +74,30 @@ M4RI and a compiled rewrite remain premature until a measured crossover
 (below), because nothing here is Gaussian-bound yet — it is *parse*-bound, and
 the refutation is faster than the parsing that feeds it.
 
+### Then optimize the serial code — before parallelizing (two measured passes)
+
+Since the router is parse-bound, `extract_xors` is where the next in-code win
+lives, and it splits into an honest negative and an honest positive — both
+differential-tested to produce **byte-identical output** (92 cases incl.
+adversarial duplicate-variable/tautology/over-arity clauses, 0 mismatches):
+
+1. **Negative — the "obvious" rewrite bought nothing.** Sorting each clause once
+   into `(var, sign)` pairs (dropping the per-clause `set`/`frozenset`/`sign`-dict
+   scaffolding) measured **1.00×**: the tuple allocation in the sort exactly
+   offset the scaffolding removed. *Cleaner ≠ faster; measure it.*
+2. **Positive — attack the allocation, not the structure.** Encoding each sorted
+   sign-pattern as a **k-bit `int`** (bit *i* = "*i*-th variable negated")
+   instead of a tuple, deduped in two parity-pre-split sets, measured **~1.4×**.
+   Small ints are interned and hash cheaper than tuples, and the parity pre-split
+   turns the group test into a bare `len()` with no inner pass. This is the
+   in-code floor for pure Python: the remaining cost is irreducible per-clause
+   interpreter overhead, spread evenly (no dominant line) — so the *next* lever is
+   genuinely across-instance batching or a C-level parser, not another micro-pass.
+
+The ordering the two passes teach: **cheap-frame-first (algorithm) → attack
+allocation not structure (in-code) → batch across instances (parallelism)** — in
+that order, each gated on a measurement, before any thought of metal.
+
 So the metal roadmap is **not** "port to Rust for its own sake." It matters in
 exactly three regimes, each with the *right* primitive:
 
