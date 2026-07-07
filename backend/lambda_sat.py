@@ -33,7 +33,7 @@ from typing import Dict, List, Optional, Set, Tuple
 from .binary_clause_check import check_binary_clauses
 from .cardinality_check import pigeonhole_counting_refutation
 from .cnf_utils import CNFFormula, verify_model
-from .xor_extraction import gf2_xor_refutation, gf2_xor_solve
+from .xor_extraction import _rref_gf2, gf2_xor_refutation
 
 
 # --------------------------------------------------------------------------
@@ -232,6 +232,32 @@ def _parity_clauses(vs: List[int], rhs: int) -> List[List[int]]:
     return out
 
 
+#: budget on the *materialized* frame-native parity CNF kept for provenance. The
+#: parity decision itself runs on GF(2) rows (polynomial, any arity); we only
+#: build the 2^(k-1)-clause shadow for the ghost fiber when it stays this small.
+_PARITY_CNF_BUDGET = 4096
+
+
+def _parity_provenance_cnf(atoms: List[ParityAtom], var_id: Dict[str, int],
+                           n: int) -> Tuple[CNFFormula, Dict[int, str]]:
+    """Frame-native parity CNF (clause index -> "parity") for the ghost fiber,
+    but only when the total 2^(k-1) blow-up stays within `_PARITY_CNF_BUDGET`.
+    Beyond it the algebraic object is the GF(2) rows, not their exponential CNF
+    shadow, so we return an empty projection rather than materialize it."""
+    total = sum(1 << (len(vs) - 1) for vs, _ in atoms if vs)
+    if total > _PARITY_CNF_BUDGET:
+        return CNFFormula(num_vars=n, clauses=[]), {}
+    clauses: List[List[int]] = []
+    remainder: Dict[int, str] = {}
+    for varset, rhs in atoms:
+        if not varset:
+            continue
+        for cl in _parity_clauses(sorted(var_id[v] for v in varset), rhs):
+            remainder[len(clauses)] = "parity"
+            clauses.append(cl)
+    return CNFFormula(num_vars=n, clauses=clauses), remainder
+
+
 # --------------------------------------------------------------------------
 # Gate (Tseitin) projection with a remainder, for non-parity terms
 # --------------------------------------------------------------------------
@@ -328,34 +354,43 @@ def lambda_sat(term: BExpr, max_free: int = 20) -> LambdaSatResult:
     # ---- meta-resolution 1: the parity frame (frame-native, no aux gates) ----
     atoms = _as_parity_atoms(normal)
     if atoms is not None:
-        clauses: List[List[int]] = []
-        remainder: Dict[int, str] = {}
+        n = len(fv)
+        # Decide the parity system DIRECTLY as GF(2) rows over the free-var ids:
+        # each atom (varset, rhs) is one row (bit per variable, rhs at bit n).
+        # No 2^(k-1) CNF materialization and no arity cap -- this is what makes
+        # the parity frame actually polynomial (a single k-XOR is ONE row, not
+        # its 2^(k-1)-clause shadow re-extracted through a max_arity filter).
+        rows: List[int] = []
         immediate_unsat = False
         for varset, rhs in atoms:
             if not varset:                          # 0 = rhs
                 if rhs == 1:
                     immediate_unsat = True
                 continue
-            for cl in _parity_clauses(sorted(var_id[v] for v in varset), rhs):
-                remainder[len(clauses)] = "parity"
-                clauses.append(cl)
-        cnf = CNFFormula(num_vars=len(fv), clauses=clauses)
+            row = 0
+            for v in varset:
+                row |= 1 << (var_id[v] - 1)
+            if rhs:
+                row |= 1 << n
+            rows.append(row)
+
+        cnf, remainder = _parity_provenance_cnf(atoms, var_id, n)  # ghost fiber
         if immediate_unsat:
             return LambdaSatResult('UNSAT', None, fv, 'parity', cnf,
                                    remainder, True)
-        sol = gf2_xor_solve(cnf) if clauses else None
-        if sol is not None and sol.status == 'SAT':
-            witness = {v: bool(sol.model[var_id[v]]) for v in fv}
-            assert eval_bool(normal, witness)       # verify, don't trust
-            return LambdaSatResult('SAT', witness, fv, 'parity', cnf,
-                                   remainder, True)
-        if sol is not None and sol.status == 'UNSAT':
+
+        basis = _rref_gf2(rows, n)                   # tested GF(2) elimination
+        if basis is None:
             return LambdaSatResult('UNSAT', None, fv, 'parity', cnf,
                                    remainder, True)
-        # no constraints (e.g. term == True): trivially SAT
-        witness = direct_witness()
-        return LambdaSatResult('SAT' if witness is not None else 'UNSAT',
-                               witness, fv, 'parity', cnf, remainder, True)
+        # consistent: free vars := False, pivot vars := their reduced rhs bit
+        assign = {c: False for c in range(n)}
+        for pivot_col, row in basis.items():
+            assign[pivot_col] = bool((row >> n) & 1)
+        witness = {v: assign[var_id[v] - 1] for v in fv}
+        assert eval_bool(normal, witness)            # verify, don't trust
+        return LambdaSatResult('SAT', witness, fv, 'parity', cnf,
+                               remainder, True)
 
     # ---- otherwise: gate projection + try the sound frames, else direct ----
     cnf, remainder, _ = tseitin_encode(normal)
