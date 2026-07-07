@@ -10,7 +10,11 @@ from itertools import combinations, product
 
 from backend.cnf_utils import CNFFormula, verify_model
 from backend.eval.generators import pigeonhole
-from backend.frame_solver import frame_solve, frame_solve_guided
+from backend.frame_solver import (
+    frame_solve,
+    frame_solve_coupled,
+    frame_solve_guided,
+)
 
 
 def _tseitin_k4():
@@ -141,6 +145,63 @@ class TestGuidedRouter:
         # Tseitin still decided in the parity frame (refute-first preserved)
         r = frame_solve_guided(_tseitin_k4())
         assert r.status == "UNSAT" and r.resolved_by == "parity"
+
+
+class TestCoupledTriple:
+    """The coupled three-frame router: exchanges entailed literals across the
+    frames (Nelson-Oppen) to decide instances no single frame decides alone."""
+
+    # parity x1^x2^x3=1 (SAT alone) + units forcing all three to 0 (SAT alone):
+    # jointly UNSAT only once the units are substituted into the parity system.
+    _COUPLED_UNSAT = CNFFormula(num_vars=3, clauses=[
+        [1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3],   # x1^x2^x3 = 1
+        [-1], [-2], [-3]])                                   # x1=x2=x3=0
+
+    def test_frame_solve_punts_but_coupling_refutes(self):
+        assert frame_solve(self._COUPLED_UNSAT).status == "CDCL_NEEDED"
+        r = frame_solve_coupled(self._COUPLED_UNSAT)
+        assert r.status == "UNSAT" and r.resolved_by == "coupled"
+        assert r.certified and _has_model(self._COUPLED_UNSAT) is False
+
+    def test_coupling_finds_sat_with_verified_model(self):
+        # parity x1^x2^x3=1 + units x1=1, x2=0  -> parity pins x3=0 -> SAT
+        f = CNFFormula(num_vars=3, clauses=[
+            [1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3], [1], [-2]])
+        assert frame_solve(f).status == "CDCL_NEEDED"
+        r = frame_solve_coupled(f)
+        assert r.status == "SAT" and r.resolved_by == "coupled"
+        assert verify_model(f, r.model)
+
+    def test_single_frame_verdicts_pass_through_unchanged(self):
+        # when a single frame decides, coupled == frame_solve, no extra rounds
+        for f in (_tseitin_k4(), pigeonhole(5)[0]):
+            base = frame_solve(f)
+            r = frame_solve_coupled(f)
+            assert (r.status, r.resolved_by) == (base.status, base.resolved_by)
+            assert r.rounds == 0
+
+    def test_soundness_vs_brute_force_on_random_mixed(self):
+        # every non-CDCL coupled verdict must match brute force; SAT verifies
+        import random
+        from itertools import product
+        rng = random.Random(7)
+        decided = 0
+        for _ in range(150):
+            nv = rng.randint(3, 6)
+            vs = rng.sample(range(1, nv + 1), 3)
+            rhs = rng.randint(0, 1)
+            cl = [[(v if b == 0 else -v) for v, b in zip(vs, bits)]
+                  for bits in product([0, 1], repeat=3) if sum(bits) % 2 != rhs]
+            for _ in range(rng.randint(1, 4)):
+                cl.append([rng.choice([-1, 1]) * rng.randint(1, nv)])
+            f = CNFFormula(num_vars=nv, clauses=cl)
+            r = frame_solve_coupled(f)
+            if r.status != "CDCL_NEEDED":
+                decided += 1
+                assert (r.status == "SAT") == _has_model(f)
+                if r.status == "SAT":
+                    assert verify_model(f, r.model)
+        assert decided > 100          # the coupling decides the large majority
 
 
 def _has_model(f: CNFFormula) -> bool:

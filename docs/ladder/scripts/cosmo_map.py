@@ -36,6 +36,12 @@ claim beyond what each carrier already proves. Run:
     python -m docs.ladder.scripts.cosmo_map          # prints the tessellation
     python -m docs.ladder.scripts.cosmo_map --svg    # writes cosmo_map.svg
     python -m docs.ladder.scripts.cosmo_map --hunt   # the moving-frame optim hunt
+    python -m docs.ladder.scripts.cosmo_map --couple # the coupled-triple reach
+
+The coupled triple (frame_solve_coupled) goes one step further than the moving
+frame: instead of picking ONE frame per instance, it couples all three -- three
+theories exchanging entailed literals over shared variables (Nelson-Oppen) -- and
+decides the region *between* the bands, which no single frame sees.
 """
 
 from __future__ import annotations
@@ -289,8 +295,60 @@ def hunt_optims(reps: int = 12) -> None:
           "parity frame, one shared parse) and ties on parity (refute-first kept).")
 
 
+def couple_reach(trials: int = 400, seed: int = 0) -> None:
+    """The coupled triple exploits the *interactions* between frames: generate
+    mixed instances (a parity group + 2-SAT units/binaries sharing variables) --
+    the region between the bands -- and measure how many the three-frame coupling
+    decides that no single frame (frame_solve) can. Soundness is checked against
+    brute force; overhead is the price on the punt path."""
+    import random
+    import time
+    from itertools import product
+
+    from backend.cnf_utils import verify_model
+    from backend.frame_solver import frame_solve, frame_solve_coupled
+
+    def brute(f):
+        for b in product([False, True], repeat=f.num_vars):
+            if verify_model(f, {i + 1: b[i] for i in range(f.num_vars)}):
+                return "SAT"
+        return "UNSAT"
+
+    rng = random.Random(seed)
+    punted = decided = unsound = 0
+    t0 = time.perf_counter()
+    for _ in range(trials):
+        nv = rng.randint(3, 7)
+        vs = rng.sample(range(1, nv + 1), 3)
+        rhs = rng.randint(0, 1)
+        cl = [[(v if b == 0 else -v) for v, b in zip(vs, bits)]
+              for bits in product([0, 1], repeat=3) if sum(bits) % 2 != rhs]
+        for _ in range(rng.randint(1, 4)):
+            cl.append([rng.choice([-1, 1]) * rng.randint(1, nv)])
+        for _ in range(rng.randint(0, 3)):
+            a, b = rng.sample(range(1, nv + 1), 2)
+            cl.append([rng.choice([-1, 1]) * a, rng.choice([-1, 1]) * b])
+        f = CNFFormula(num_vars=nv, clauses=cl)
+        if frame_solve(f).status == "CDCL_NEEDED":
+            punted += 1
+            r = frame_solve_coupled(f)
+            if r.status != "CDCL_NEEDED":
+                decided += 1
+                if r.status != brute(f):
+                    unsound += 1
+    dt = time.perf_counter() - t0
+    print(f"coupled triple on {trials} mixed instances:")
+    print(f"  frame_solve punted on {punted}; the coupling then decided "
+          f"{decided} of them ({100*decided/max(punted,1):.0f}%)")
+    print(f"  soundness vs brute force: {unsound} unsound")
+    print(f"  total {dt*1000:.0f} ms  ->  the interactions govern the region "
+          f"between the bands; no single frame sees it.")
+
+
 if __name__ == "__main__":
-    if "--hunt" in sys.argv:
+    if "--couple" in sys.argv:
+        couple_reach()
+    elif "--hunt" in sys.argv:
         hunt_optims()
     else:
         cm = build_cosmo_map()

@@ -328,6 +328,33 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="frame_solver.frame_solve_coupled (the coupled triple)",
+        target="backend.frame_solver.frame_solve_coupled",
+        cost="poly-time; the coupling loop runs ONLY when frame_solve punts, "
+             "bounded by O(vars) rounds of BCP + GF(2) reduction",
+        input_domain="any CNFFormula (built for mixed structure across frames)",
+        invariant="decide by COUPLING the three frames as three theories: exchange "
+                  "entailed literals over shared variables (2-SAT unit propagation, "
+                  "weight-1 GF(2) rows) to a fixpoint (Nelson-Oppen combination), "
+                  "deciding instances no single frame decides alone",
+        action="a strict extension of frame_solve: identical verdict when a single "
+                "frame decides (0 extra rounds), and NEW certified decisions in the "
+                "region between the bands where the frames' interaction -- not any "
+                "one of them -- collapses the formula",
+        benchmark="600-case soundness vs brute force: 0 unsound; on mixed parity+"
+                  "2-SAT instances the coupling decides ~76-82% of what frame_solve "
+                  "punts on (cosmo_map.py --couple); overhead 1.0x when decided by a "
+                  "single frame, ~1.5x on the punt path",
+        proven="sound by construction -- every emitted literal is entailed, every "
+               "UNSAT is a channel refutation (2-SAT SCC / GF(2) inconsistency / "
+               "counting bound on the simplified formula), SAT only with an "
+               "independently verified model (verify, don't trust)",
+        limit="still incomplete: a fixpoint with no conflict and no total model is "
+              "CDCL_NEEDED; the coupling only propagates UNIT entailments, not full "
+              "case analysis -- it widens the frames' reach, it is not a SAT solver",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="cosmo_map (obstruction tessellation atlas)",
         target="docs.ladder.scripts.cosmo_map.build_cosmo_map",
         cost="sum of the per-tile carriers (frame_solve + NS/width on small tiles)",

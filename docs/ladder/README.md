@@ -85,4 +85,7 @@ counting frame lives on, and the char-2 disanalogy for parity),
 obstruction signature, and draw the atlas — real-cone vs char-2 vs unstructured
 bands, the Tseitin↔PHP conjugate-dual edge; `--hunt` follows the *moving frame*
 and measures the optim the *rotor* `frame_solve_guided` finds, 1.5–1.75× on the
-unstructured/counting bands with identical verdicts).
+unstructured/counting bands with identical verdicts; `--couple` measures the
+*coupled triple* `frame_solve_coupled` — three frames as three theories exchanging
+entailed literals over shared variables (Nelson–Oppen), deciding ~76–82% of the
+mixed instances no single frame decides, 0 unsound vs brute force).
