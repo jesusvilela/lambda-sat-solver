@@ -416,6 +416,15 @@ class TestEffectArgumentTypeChecking:
         with pytest.raises(TypeError, match="Unknown effect"):
             self.tc.check(effect('notARealEffect', literal(1)))
 
+    def test_deep_nesting_fails_cleanly_not_recursionerror(self):
+        # regression: a pathologically deep composition must raise a clean
+        # TypeError (depth guard), never an uncatchable RecursionError.
+        expr = var('x')
+        for _ in range(5000):
+            expr = effect('readCNF', expr)   # [Any] -> CNF, nests arbitrarily
+        with pytest.raises(TypeError, match="nesting exceeds MAX_DEPTH"):
+            self.tc.check(expr)
+
 
 class TestAdaptivePipeline:
     """create_adaptive_pipeline(): profile -> select -> solve -> certify,

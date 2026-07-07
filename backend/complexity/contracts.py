@@ -304,6 +304,135 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="frame_solver.frame_solve_guided (the moving-frame router)",
+        target="backend.frame_solver.frame_solve_guided",
+        cost="poly-time; one shared XOR parse vs frame_solve's two on a miss",
+        input_domain="any CNFFormula",
+        invariant="the same certified verdict as frame_solve, reached by reading "
+                  "the local structure ONCE (the rotor) and pointing the trial "
+                  "order at it -- skip the parity frame when no XOR structure is "
+                  "present, keep refute-first on the parity band",
+        action="the map's moving frame made operational: route by the instance's "
+                "own signature instead of a fixed order, so the unstructured band "
+                "stops parsing twice for a parity structure that is not there",
+        benchmark="158-case differential vs frame_solve: 0 verdict mismatches, "
+                  "every SAT model re-verified; measured 1.5-1.75x on the "
+                  "counting/xorsat/unstructured bands, ~1.0x (no regression) on "
+                  "parity (docs/ladder/scripts/cosmo_map.py --hunt)",
+        proven="identical soundness to frame_solve (each branch theorem-backed); "
+               "the guided order only prunes frames whose structural precondition "
+               "is provably absent and reuses one parse -- verdict-preserving",
+        limit="same frame-coverage limit as frame_solve (CDCL_NEEDED off-frame); "
+              "the speedup is a constant factor on the pre-pass, not a complexity "
+              "change -- a routing heuristic, not a new carrier",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
+        name="frame_solver.frame_solve_coupled (the coupled triple)",
+        target="backend.frame_solver.frame_solve_coupled",
+        cost="poly-time; the coupling loop runs ONLY when frame_solve punts, "
+             "bounded by O(vars) rounds of BCP + GF(2) reduction",
+        input_domain="any CNFFormula (built for mixed structure across frames)",
+        invariant="decide by COUPLING the three frames as three theories: exchange "
+                  "entailed literals over shared variables (2-SAT unit propagation, "
+                  "weight-1 GF(2) rows) to a fixpoint (Nelson-Oppen combination), "
+                  "deciding instances no single frame decides alone",
+        action="a strict extension of frame_solve: identical verdict when a single "
+                "frame decides (0 extra rounds), and NEW certified decisions in the "
+                "region between the bands where the frames' interaction -- not any "
+                "one of them -- collapses the formula",
+        benchmark="600-case soundness vs brute force: 0 unsound; on mixed parity+"
+                  "2-SAT instances the coupling decides ~76-82% of what frame_solve "
+                  "punts on (cosmo_map.py --couple); overhead 1.0x when decided by a "
+                  "single frame, ~1.5x on the punt path",
+        proven="sound by construction -- every emitted literal is entailed, every "
+               "UNSAT is a channel refutation (2-SAT SCC / GF(2) inconsistency / "
+               "counting bound on the simplified formula), SAT only with an "
+               "independently verified model (verify, don't trust)",
+        limit="still incomplete: a fixpoint with no conflict and no total model is "
+              "CDCL_NEEDED; the coupling only propagates UNIT entailments, not full "
+              "case analysis -- it widens the frames' reach, it is not a SAT solver",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
+        name="observer.adjudicate + frame_ambiguity + ERRONEOUS_OBSERVERS",
+        target="backend.observer.adjudicate",
+        cost="poly-time (the sound frames + the coupled router underneath)",
+        input_domain="any CNFFormula",
+        invariant="the synthetic observer's hardening organs over the SAT-frame "
+                  "task class: C (frame_ambiguity) measures POLYSEMY -- how many "
+                  "sound frames independently decide an instance; E "
+                  "(ERRONEOUS_OBSERVERS) are unsound mock-frames; J (adjudicate) "
+                  "returns accept / repair / escalate; Gamma: sound frames never "
+                  "disagree (gluing_defect == 0)",
+        action="harden the certification layer: refuse premature single-frame "
+                "disambiguation of polysemous instances (C), and stay HARDER TO "
+                "FOOL than any seductive-but-unsound heuristic (E) -- the sound "
+                "adjudicator kills every mutant",
+        benchmark="test_observer: PHP is 2-frame polysemous, Tseitin 1-frame, "
+                  "random void; all 4 erroneous observers witnessed unsound and "
+                  "all killed by the adjudicator over 900 random instances vs "
+                  "brute force; gluing_defect == 0 across 500 instances",
+        proven="soundness of the underlying frames (2-SAT SCC / GF(2) / counting) "
+               "-- the adjudicator only ever emits a certified frame or coupling "
+               "verdict, so it can never agree with a mutant where the mutant is "
+               "wrong; sound frames cannot disagree (each entails the formula)",
+        limit="the observer's LOGICAL immune system only, over K = 'certify a SAT "
+              "verdict soundly'; it does not claim the full hypercomplex valuation "
+              "axes, world-contact, or boundary-at-infinity -- no universal human "
+              "replacement, only bounded bisimulation over this task class",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
+        name="cosmo_map (obstruction tessellation atlas)",
+        target="docs.ladder.scripts.cosmo_map.build_cosmo_map",
+        cost="sum of the per-tile carriers (frame_solve + NS/width on small tiles)",
+        input_domain="a parameter grid of instance families (the tessellation)",
+        invariant="every tile's obstruction signature (resolved_by frame, GF(2) "
+                  "NS degree, resolution width, xor fraction) laid out with the "
+                  "x-axis = the algebra it lives in (real cone | char-2 | "
+                  "unstructured), edges = size-adjacency + the Tseitin<->PHP "
+                  "conjugate dual",
+        action="an atlas over the tested carriers: shows the shallowest frame is "
+                "a FIELD over instance-space (the moving frame), that HP sees the "
+                "real-cone band and is blind to the char-2 band, and where the "
+                "rotor (frame_solve_guided) saves work",
+        benchmark="tiles land where their carrier says: implication->2sat, "
+                  "PHP(>=3 holes)->counting, Tseitin->parity (NS 3), random->"
+                  "CDCL_NEEDED; render_svg is well-formed (test_cosmo_map)",
+        proven="",
+        limit="a visualization/atlas over measured carriers, NOT a new hardness "
+              "claim or solver; the layout is a lens, the per-tile signatures are "
+              "the only load-bearing content",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
+        name="hyperbolic_frames (HP <-> frame-ladder bridge)",
+        target="docs.ladder.scripts.hyperbolic_frames.hyperbolic_eigenvalues",
+        cost="poly per point (interpolate degree-d restriction + root-find)",
+        input_domain="a hyperbolic polynomial p, points x and direction e in R^n",
+        invariant="the hyperbolic eigenvalues of x (roots of t->p(t*e-x)); the "
+                  "hyperbolicity cone Lambda_{p,e} where they are all >= 0. LP / "
+                  "SOCP / SDP are the cases p = x1..xn / r^2-||x||^2 / det(X)",
+        action="maps two of the three frames onto the hyperbolic-programming "
+                "special-case ladder: implication/2-SAT at the orthant (LP) "
+                "vertex, counting/cardinality on the elementary-symmetric "
+                "derivative relaxations orthant=Lambda(e_n) subset .. subset "
+                "Lambda(e_1); the parity/GF(2) frame has NO real cone (char-2)",
+        benchmark="det recovers matrix eigenvalues (SDP); e_k real-rooted for "
+                  "all tested n,k (hyperbolic, Branden spectrahedral); a point "
+                  "in Lambda(e_1)\\orthant witnesses strict relaxation nesting",
+        proven="Garding (cones convex); Guler (-log p self-concordant barrier); "
+               "Branden (e_k hyperbolicity cones are spectrahedral); Renegar "
+               "(derivative relaxations). These are theorems the demo computes "
+               "against, NOT a claim that HP decides SAT",
+        limit="lens/substrate, not a solver route: deciding hyperbolicity is "
+              "co-NP-hard (Saunderson) and the SOS/hyperbolic certificates are "
+              "exponential-degree proof objects -- cousins of nullstellensatz_"
+              "degree, not a poly-time frame; the parity frame is out of scope",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

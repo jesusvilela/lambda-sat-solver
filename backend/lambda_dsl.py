@@ -128,10 +128,21 @@ class TypeChecker:
     #: with anything that only wants the return type.
     EFFECT_TYPES = {name: sig[1] for name, sig in EFFECT_SIGNATURES.items()}
 
-    def check(self, expr: LambdaExpr, env: Optional[TypeEnv] = None) -> str:
+    #: nesting cap for `check`, well below CPython's recursion limit, so a
+    #: pathologically deep composition fails with a clean TypeError instead of
+    #: an uncatchable RecursionError / stack overflow (latent until a
+    #: same-type-chainable effect signature is added; guarded now regardless).
+    MAX_DEPTH = 400
+
+    def check(self, expr: LambdaExpr, env: Optional[TypeEnv] = None,
+              _depth: int = 0) -> str:
         """Type check an expression and return its type"""
         if env is None:
             env = TypeEnv()
+        if _depth > self.MAX_DEPTH:
+            raise TypeError(
+                f"expression nesting exceeds MAX_DEPTH ({self.MAX_DEPTH})")
+        _depth += 1
 
         if isinstance(expr, Var):
             typ = env.lookup(expr.name)
@@ -142,12 +153,12 @@ class TypeChecker:
         elif isinstance(expr, Abs):
             # Assume CNF input for simplicity
             new_env = env.extend(expr.param, 'CNF')
-            body_type = self.check(expr.body, new_env)
+            body_type = self.check(expr.body, new_env, _depth)
             return f"CNF -> {body_type}"
 
         elif isinstance(expr, App):
-            func_type = self.check(expr.func, env)
-            arg_type = self.check(expr.arg, env)
+            func_type = self.check(expr.func, env, _depth)
+            arg_type = self.check(expr.arg, env, _depth)
 
             # Parse function type
             if ' -> ' in func_type:
@@ -180,7 +191,8 @@ class TypeChecker:
             # selectHeuristic/solveWithConfig): certify expects 'Result',
             # profileCNF produces 'Profile', mismatch, rejected below.
             for arg, expected in zip(expr.args, expected_arg_types):
-                actual = self.check(arg, env) if isinstance(arg, LambdaExpr) else 'Any'
+                actual = (self.check(arg, env, _depth)
+                          if isinstance(arg, LambdaExpr) else 'Any')
                 if expected != 'Any' and actual != 'Any' and actual != expected:
                     raise TypeError(
                         f"Effect {expr.name!r}: argument type mismatch - "

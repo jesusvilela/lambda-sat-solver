@@ -93,6 +93,34 @@ class TestMetaResolution:
         r = lambda_sat(BOr(BVar('a'), BVar('b')))
         assert r.status == 'SAT' and r.resolved_by == 'direct'
 
+    def test_large_arity_xor_is_polynomial(self):
+        # regression: a single k-XOR must decide on GF(2) rows directly, NOT
+        # materialize its 2^(k-1)-clause shadow (which was exponential and, past
+        # max_arity=6, silently fell through to brute force). 18 vars would be
+        # 2^17 clauses the old way; here it is one row, instant and 'parity'.
+        import time
+        from backend.lambda_sat import BXor, BVar, eval_bool, beta_normalize
+        term = BVar('v0')
+        for i in range(1, 18):
+            term = BXor(term, BVar(f'v{i}'))
+        t = time.perf_counter()
+        r = lambda_sat(term)
+        elapsed = time.perf_counter() - t
+        assert r.status == 'SAT' and r.resolved_by == 'parity'
+        assert elapsed < 0.1                       # was ~seconds pre-fix
+        assert len(r.cnf.clauses) == 0             # no exponential materialization
+        assert eval_bool(beta_normalize(term), r.witness)
+
+    def test_large_arity_xor_unsat_is_polynomial(self):
+        # XOR(v0..v9)=1 AND XOR(v0..v9)=0 -> inconsistent, decided on rows
+        from backend.lambda_sat import BXor, BVar, BAnd, BNot
+        chain = BVar('v0')
+        for i in range(1, 10):
+            chain = BXor(chain, BVar(f'v{i}'))
+        r = lambda_sat(BAnd(chain, BNot(chain)))
+        assert r.status == 'UNSAT' and r.resolved_by == 'parity'
+        assert r.witness is None
+
     def test_parity_frame_verdicts_are_sound(self):
         # every parity-frame verdict must match brute-force source evaluation
         import random
