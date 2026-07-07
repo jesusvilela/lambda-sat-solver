@@ -142,3 +142,60 @@ The unifying line: **our geometry's job is to find the flat frame; the metal's j
 is to XOR it.** We chased curvature to understand hardness; we collapse to
 characteristic 2 to compute it; and characteristic 2 is the one algebra the
 hardware already loves.
+
+## GPU via CuPy — and where a substrate fabric fits (addendum)
+
+[CuPy](https://github.com/cupy/cupy) is the natural GPU vehicle: a drop-in
+NumPy/SciPy for CUDA/ROCm, so the same code runs on device via the standard
+`xp = cupy if available else numpy` swap, with `cupy.RawKernel`/`RawModule` for
+custom CUDA when a hot loop needs it.
+
+**But the two measurements above and below are the honest guardrail, and they say
+the same thing twice:**
+
+| op | Python | naive array rewrite |
+|---|---|---|
+| single GF(2) 700×700 reduce | 13 ms (bigint) | 27 ms numpy (**0.5×**) |
+| batch model-check 4000×800 | 12 ms | 9 ms numpy (**~1.4×**) |
+
+**CuPy does not fix a Python control loop.** Both naive rewrites kept a Python
+loop over columns/clauses, so the interpreter dispatch (and, on GPU, per-op
+host↔device sync) dominates and the "acceleration" evaporates — a swap of the
+array library changes nothing. The GPU win requires *eliminating the loop first*:
+
+- **Loop-free / array-native form** — express the whole op as a handful of dense
+  tensor ops with no Python iteration. This is where CuPy is a genuine, clean win,
+  and it is exactly the shape of a **KNN distance sweep**: the split-signature
+  `(2,2)` metric `⟨q,d⟩ = (q₀d₀+q₁d₁) − (q₂d₂+q₃d₃)` over a whole dataset is a
+  single signed matmul — no inner loop — so it maps to one CuPy call and scales
+  to GPU trivially. (Our clean targets: batched GF(2) matrix products, the TCB
+  model-verify as packed AND/OR reductions, M4RI Gray-code table builds.)
+- **`RawKernel`** — for genuinely data-dependent loops (per-system Gaussian
+  pivoting), one-system-per-thread-block CUDA, where SIMT tolerates the
+  divergence. That is the honest path for batched frame-solving of many instances.
+
+### The substrate layer (external prior art, not vendored)
+
+The complementary question — *where do the bit-matrices live and how do they
+reach the GPU at scale* — is a **data-movement / memory-tier** problem, distinct
+from compute. The operator's own **NNN Hyperbolic Semantic Memory Fabric**
+(© Jesús Vilela Jato, all rights reserved — *referenced, not included*) is a
+directly relevant design here: a tiered, geometry-addressed substrate
+(RAM/tmpfs → NVMe-ZNS → GPU KV-cache → CXL) behind one Geometric Memory Protocol,
+with an honest split between a C++ "simulation profile" core and Python
+orchestration (its GPU tier is explicitly flagged `_EMULATED`, which is the right
+discipline). Its live idea for *us*: **geometry-aware placement** — shard the
+GF(2) row-blocks / clause sets by a locality metric so the pieces a frame needs
+are co-resident before the kernel launches (the GPUDirect-Storage / CXL path).
+Substrate = data movement; CuPy = compute; our frames = what runs. Three layers,
+kept separate and each honest.
+
+### Honest boundary
+
+None of the GPU numbers above exist yet — there is **no GPU in this environment**,
+so the CuPy path is *designed and CPU-validated via numpy*, pending hardware, and
+should be treated like the Lean obligation: a written contract, not a measured
+result, until a device runs it. The first real experiment when a GPU is available:
+a loop-free CuPy `(2,2)`-distance KNN (clean win, expected) and a `RawKernel`
+batched GF(2) reduce (the real test), each differential-tested against the Python
+reference.
