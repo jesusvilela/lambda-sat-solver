@@ -92,6 +92,55 @@ class TestOrbifoldCharts:
         assert colour_of[1] == colour_of[2]        # 1,2 are automorphic
 
 
+class TestExactSymmetry:
+    def test_exact_matches_brute_force(self):
+        import random
+        rng = random.Random(11)
+        for _ in range(120):
+            nv = rng.randint(2, 7)
+            f = CNFFormula(nv, [[rng.choice([-1, 1]) * v
+                                 for v in rng.sample(range(1, nv + 1),
+                                                     rng.randint(1, min(3, nv)))]
+                                for _ in range(rng.randint(1, 12))])
+            order, ok = __import__("backend.orbifold", fromlist=["x"]) \
+                .automorphism_group_order(f)
+            if ok:
+                assert order == round(2 ** _true_aut_log2(f))
+
+    def test_exact_matches_pigeonhole_closed_form(self):
+        from backend.orbifold import automorphism_group_order
+        for n in (3, 4, 5):
+            order, ok = automorphism_group_order(pigeonhole(n)[0],
+                                                 node_budget=400_000)
+            assert ok and order == math.factorial(n) * math.factorial(n - 1)
+
+    def test_exact_lies_within_the_bracket(self):
+        from backend.orbifold import exact_symmetry_log2
+        for f in (pigeonhole(4)[0], CNFFormula(3, [[1, 2], [2, 3], [1, 3]])):
+            lo = verified_symmetry(f)[1]
+            up = symmetry_log2_upper(f)
+            ex = exact_symmetry_log2(f, node_budget=400_000)
+            assert ex is not None and lo - 1e-9 <= ex <= up + 1e-9
+
+
+class TestHyperbolicPlacement:
+    def test_rigid_instances_approach_the_boundary(self):
+        # non-Euclidean anisomorphic placement: rigid, frame-void instances -> the
+        # boundary at infinity (large hyperbolic depth); symmetric ones -> center.
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                               / "docs/ladder/scripts"))
+        from frame_benchmark import random_3sat
+        from backend.orbifold import hyperbolic_depth, poincare_radius
+        sym = pigeonhole(5)[0]
+        rigid = random_3sat(30, round(4.26 * 30), 3)
+        assert poincare_radius(sym) < 0.2                 # symmetric -> center
+        assert poincare_radius(rigid) > 0.9               # rigid -> boundary
+        assert hyperbolic_depth(rigid) > hyperbolic_depth(sym) + 5.0
+        assert 0.0 < poincare_radius(sym) <= 1.0
+
+
 class TestSignature:
     def test_recovers_classical_bit(self):
         for f, bit in [(pigeonhole(4)[0], "UNSAT"),

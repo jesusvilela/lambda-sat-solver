@@ -180,11 +180,11 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **binds:** `backend.orbifold.satisfiability_signature`
 - **cost:** poly-time (adjudicate + 1-WL color refinement + verified swaps)
 - **input:** any CNFFormula
-- **invariant:** the un-projected satisfiability verdict as an ORBIFOLD chart: certified status/tier + polysemy (C) + open remainder + the instance's isotropy (CNF automorphism group), BRACKETED lower <= |Aut| <= upper. The classical SAT bit is pi_truth of it
-- **action:** lift satisfiability from a bit to a symmetry-carrying object and explain the frames from the isotropy side: the counting frame is quotient-computation on a high-symmetry orbifold (PHP log2|Aut| grows with size; random-3SAT is rigid)
-- **benchmark:** test_orbifold: the bracket contains brute-force |Aut| on small instances; verified transpositions map models to models; PHP high-isotropy, random trivial; the signature recovers the classical bit; color partition is a sound orbit over-approx
-- **proven:** automorphic variables share a 1-WL color (Aut subset of the class-wise symmetric group -> sound upper bound); a verified transposition is a real automorphism, and within a class generates S_k -> sound lower bound; a symmetry maps models to models
-- **limit:** the bracket is not exact -- color refinement over-approximates orbits, single transpositions miss block symmetry (PHP lower bound is 0). No real symmetry engine (nauty/saucy) is vendored; this is a dependency-free skeleton, not industrial symmetry breaking
+- **invariant:** the un-projected satisfiability verdict as an ORBIFOLD chart: certified status/tier + polysemy (C) + open remainder + the instance's isotropy (CNF automorphism group), computed EXACT when tractable (orbit-stabilizer / Schreier-Sims) and otherwise BRACKETED lower <= |Aut| <= upper. Classical SAT = pi_truth of it
+- **action:** lift satisfiability from a bit to a symmetry-carrying object and explain the frames from the isotropy side: the counting frame is quotient-computation on a high-symmetry orbifold (PHP |Aut| = n!*(n-1)! exact; random-3SAT is rigid, |Aut| = 1)
+- **benchmark:** test_orbifold: exact |Aut| matches brute force over 500+ random instances and the PHP closed form n!*(n-1)! through PHP(6); the bracket contains the exact value; verified transpositions map models to models; the signature recovers the classical bit
+- **proven:** orbit-stabilizer: |Aut| = prod |orbit of b_i under the stabilizer of b_1..b_{i-1}|, each orbit found by constrained automorphism search (exact); automorphic variables share a 1-WL color (sound candidate restriction); a symmetry maps models to models
+- **limit:** exact only within a node budget (very large symmetry groups, e.g. PHP(7)+, fall back to the bracket -- honestly labeled); no external symmetry engine (nauty/saucy) is vendored, this is a dependency-free implementation, not industrial symmetry breaking
 
 ### cosmo_map (obstruction tessellation atlas)
 

@@ -50,7 +50,15 @@ def symmetry_partition(formula: CNFFormula) -> List[List[int]]:
     n = formula.num_vars
     if n == 0:
         return []
-    clauses = [list(c) for c in formula.clauses]
+    # dedup to the clause SET: automorphisms act on the set, and duplicate/raw
+    # clauses would spuriously refine (separate) genuinely-symmetric variables.
+    seen: set = set()
+    clauses = []
+    for c in formula.clauses:
+        fc = frozenset(c)
+        if fc not in seen:
+            seen.add(fc)
+            clauses.append(sorted(fc, key=abs))
     occ: Dict[int, List[Tuple[int, int]]] = defaultdict(list)
     for ci, c in enumerate(clauses):
         for lit in c:
@@ -134,6 +142,131 @@ def verified_symmetry(formula: CNFFormula) -> Tuple[List[List[int]], float]:
 
 
 # --------------------------------------------------------------------------
+# EXACT isotropy: refinement-pruned automorphism enumeration
+# --------------------------------------------------------------------------
+def _var_order(n: int, clauses, cand) -> List[int]:
+    """Order variables so clauses close early (max pruning): BFS over the
+    clause-adjacency graph, seeded at the most-constrained variable."""
+    adj: Dict[int, set] = {v: set() for v in range(1, n + 1)}
+    for c in clauses:
+        vs = [abs(l) for l in c]
+        for a in vs:
+            adj[a].update(vs)
+    seen: set = set()
+    order: List[int] = []
+    for seed in sorted(range(1, n + 1), key=lambda v: (len(cand[v]), v)):
+        if seed in seen:
+            continue
+        stack = [seed]
+        while stack:
+            v = stack.pop()
+            if v in seen:
+                continue
+            seen.add(v)
+            order.append(v)
+            for w in sorted(adj[v] - seen, key=lambda u: (len(cand[u]), u)):
+                stack.append(w)
+    return order
+
+
+class _Over(Exception):
+    pass
+
+
+def _exists_automorphism(clause_set, cand, cls_of, order_vars, forced,
+                         budget, nodes) -> bool:
+    """Is there a sign-preserving automorphism fixing the clause set that extends
+    the partial map `forced` (var -> image)? A single pruned backtracking SEARCH
+    (find one), not an enumeration -- this is what makes the order computation
+    scale past |Aut|."""
+    assign = dict(forced)
+    used = set(assign.values())
+
+    def closes_ok(v: int) -> bool:
+        for c in cls_of[v]:
+            if all(abs(l) in assign for l in c):
+                img = frozenset(assign[abs(l)] if l > 0 else -assign[abs(l)]
+                                for l in c)
+                if img not in clause_set:
+                    return False
+        return True
+
+    for v in list(assign):                     # forced part must be consistent
+        if not closes_ok(v):
+            return False
+    remaining = [v for v in order_vars if v not in assign]
+
+    def bt(i: int) -> bool:
+        nodes[0] += 1
+        if nodes[0] > budget:
+            raise _Over()
+        if i == len(remaining):
+            return True
+        v = remaining[i]
+        for w in cand[v]:
+            if w in used:
+                continue
+            assign[v] = w
+            used.add(w)
+            if closes_ok(v) and bt(i + 1):
+                return True
+            del assign[v]
+            used.discard(w)
+        return False
+
+    return bt(0)
+
+
+def automorphism_group_order(formula: CNFFormula,
+                             node_budget: int = 80_000):
+    """EXACT |Aut| by orbit-stabilizer (Schreier-Sims): |Aut| = product over a
+    base b1,b2,... of |orbit of bi under the group fixing b1..b_{i-1}|, where each
+    orbit is found by constrained automorphism SEARCHES (not enumeration), so it
+    scales far past |Aut|. Returns (order, True), or (None, False) if the node
+    budget is exceeded. Verified against brute force and the PHP closed form
+    n!*(n-1)! in test_orbifold."""
+    n = formula.num_vars
+    if n == 0:
+        return 1, True
+    clause_set = frozenset(frozenset(c) for c in formula.clauses)
+    cand = {v: list(cls) for cls in symmetry_partition(formula) for v in cls}
+    clauses = [list(c) for c in clause_set]           # deduped
+    cls_of: Dict[int, List[List[int]]] = {v: [] for v in range(1, n + 1)}
+    for c in clauses:
+        for lit in c:
+            cls_of[abs(lit)].append(c)
+    order_vars = _var_order(n, clauses, cand)
+    nodes = [0]
+    total = 1
+    forced: Dict[int, int] = {}                # pointwise-stabilized base points
+    fixed_images = set()
+    try:
+        for b in order_vars:
+            orbit = 1                          # b -> b (identity in the stabilizer)
+            for target in cand[b]:
+                if target == b or target in fixed_images:
+                    continue
+                probe = dict(forced)
+                probe[b] = target
+                if _exists_automorphism(clause_set, cand, cls_of, order_vars,
+                                        probe, node_budget, nodes):
+                    orbit += 1
+            total *= orbit
+            forced[b] = b                      # fix b pointwise for later levels
+            fixed_images.add(b)
+        return total, True
+    except _Over:
+        return None, False
+
+
+def exact_symmetry_log2(formula: CNFFormula,
+                        node_budget: int = 80_000) -> Optional[float]:
+    """Exact log2|Aut| when tractable within budget, else None (use the bracket)."""
+    order, ok = automorphism_group_order(formula, node_budget)
+    return math.log2(order) if ok and order else (0.0 if ok else None)
+
+
+# --------------------------------------------------------------------------
 # The orbifold satisfiability signature (the un-projected verdict)
 # --------------------------------------------------------------------------
 @dataclass
@@ -149,11 +282,36 @@ class SatSignature:
     symmetry_classes: List[List[int]]      # the isotropy skeleton (upper)
     symmetry_log2_upper: float             # log2 |Aut| upper bound
     symmetry_log2_lower: float             # log2 |Aut| verified lower bound
+    symmetry_log2_exact: Optional[float]   # EXACT log2 |Aut| when tractable
 
     @property
     def classical_bit(self) -> str:
         """pi_truth: the one-bit shadow this whole object extends."""
         return self.status
+
+
+def poincare_radius(formula: CNFFormula, node_budget: int = 80_000) -> float:
+    """Non-Euclidean placement: the Poincare-disk radius of an instance. A
+    STRUCTURE score = log2|Aut| (exact or bracketed) + a bonus if a frame decides
+    it; radius = 1/(1+score) in (0,1]. Highly symmetric / frame-decidable
+    instances sit near the center; RIGID, frame-void (CDCL) instances approach
+    the boundary at infinity d_infinity -- the observer's asymptotic region, where
+    no frame reaches. The tessellation is thus anisomorphic and hyperbolic: the
+    exponential family of hard instances has infinite room out at the boundary."""
+    sym = exact_symmetry_log2(formula, node_budget)
+    if sym is None:
+        sym = symmetry_log2_upper(formula)
+    decided = adjudicate(formula).status != "CDCL_NEEDED"
+    score = sym + (4.0 if decided else 0.0)
+    return 1.0 / (1.0 + score)
+
+
+def hyperbolic_depth(formula: CNFFormula, node_budget: int = 80_000) -> float:
+    """artanh(radius): hyperbolic distance from the center. Diverges as an
+    instance approaches the rigid/frame-void boundary d_infinity -- so rigidity is
+    literally an infinite hyperbolic distance, not a bounded Euclidean one."""
+    r = min(poincare_radius(formula, node_budget), 1.0 - 1e-12)
+    return math.atanh(r)
 
 
 def satisfiability_signature(formula: CNFFormula) -> SatSignature:
@@ -173,4 +331,5 @@ def satisfiability_signature(formula: CNFFormula) -> SatSignature:
         symmetry_classes=upper_classes,
         symmetry_log2_upper=sum(_log2_factorial(len(g)) for g in upper_classes),
         symmetry_log2_lower=log2_lb,
+        symmetry_log2_exact=exact_symmetry_log2(formula),
     )
