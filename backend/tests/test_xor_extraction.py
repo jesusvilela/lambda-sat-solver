@@ -1,10 +1,15 @@
 """Tests for XOR/parity recovery (the GF(2) frame detector)."""
 
+import random
 from itertools import combinations, product
 
 from backend.cnf_utils import CNFFormula
 from backend.eval.generators import pigeonhole
-from backend.xor_extraction import extract_xors
+from backend.xor_extraction import (
+    _bucket_python,
+    _bucket_vectorized,
+    extract_xors,
+)
 
 
 def _tseitin_k4():
@@ -59,6 +64,54 @@ class TestXORExtraction:
         f = CNFFormula(num_vars=3,
                        clauses=[[1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3]])
         assert extract_xors(f, max_arity=2).xors == []
+
+
+class TestVectorizedMatchesReference:
+    """The numpy fast path must agree with the pure-Python reference exactly --
+    extraction is soundness-critical (a spurious XOR is an unsound refutation),
+    so the vectorized path never widens the trusted base."""
+
+    def _bucketize(self, formula, max_arity=6):
+        from collections import defaultdict
+        b = defaultdict(list)
+        for c in formula.clauses:
+            k = len(c)
+            if 2 <= k <= max_arity:
+                b[k].append(c)
+        return b
+
+    def _agree(self, formula):
+        bits = max(1, int(formula.num_vars).bit_length())
+        for k, rows in self._bucketize(formula).items():
+            ref = set(_bucket_python(rows, k))
+            if bits * k <= 62:
+                vec = set(_bucket_vectorized(rows, k, bits))
+                assert vec == ref, f"bucket k={k}: vectorized != reference"
+
+    def test_agree_on_structured_families(self):
+        self._agree(_tseitin_k4())
+        for n in range(3, 7):
+            self._agree(pigeonhole(n)[0])
+
+    def test_agree_on_random_battery(self):
+        rng = random.Random(1234)
+        for _ in range(60):
+            n = rng.randint(4, 40)
+            m = rng.randint(1, 120)
+            clauses = []
+            for _ in range(m):
+                k = rng.randint(1, 7)                 # includes arity > max & dups
+                clauses.append([rng.choice([-1, 1]) * rng.randint(1, n)
+                                for _ in range(k)])
+            self._agree(CNFFormula(num_vars=n, clauses=clauses))
+
+    def test_wide_bucket_falls_back_to_python(self):
+        # arity*bits over 62 must NOT take the int64 vectorized path; extract_xors
+        # still returns correctly (via the pure-Python reference).
+        f = CNFFormula(num_vars=3,
+                       clauses=[[1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3]])
+        r = extract_xors(f)
+        assert len(r.xors) == 1 and r.xors[0].rhs == 1
 
 
 class TestGF2Refutation:

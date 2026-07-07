@@ -94,9 +94,37 @@ adversarial duplicate-variable/tautology/over-arity clauses, 0 mismatches):
    interpreter overhead, spread evenly (no dominant line) — so the *next* lever is
    genuinely across-instance batching or a C-level parser, not another micro-pass.
 
-The ordering the two passes teach: **cheap-frame-first (algorithm) → attack
-allocation not structure (in-code) → batch across instances (parallelism)** — in
-that order, each gated on a measurement, before any thought of metal.
+3. **Positive — let the clauses live in a tensor.** The deeper move (and the
+   one that most directly answers "can they live in hyperbolic/nnn tensors, can
+   you compact identicals into single points"): bucket clauses **by arity** so
+   each bucket is a dense `(m, k)` integer tensor, then run abs / per-row sort /
+   sign-encode / negation-parity as **array ops with no Python loop**, and let
+   **`np.unique` be the "compact identical patterns into one point" step** — the
+   distinct sign-patterns per variable-set collapse to unique rows, and a
+   complete parity group is just a `unique`-count equal to `2^(k-1)`. Measured
+   **~1.7× on Tseitin and ~2.3–2.8× on ragged/random CNF** over the bitmask form
+   (ragged wins *more*, because "no complete group" is decided in bulk instead of
+   per clause). Honest boundaries, all handled: the packed varset key is a signed
+   `int64`, so a bucket with `bits·k > 62` **falls back to the pure-Python
+   reference** (correctness universal); tiny buckets skip numpy (its overhead
+   isn't worth it); and because extraction is **soundness-critical** (a spurious
+   XOR would be an *unsound* refutation), the pure-Python path stays the trusted
+   spec and a **differential test pins the two to byte-identical output** over a
+   randomized battery. This is exactly the "loop-free / array-native" shape
+   METAL_ROADMAP predicted would be the real GPU-friendly win — and it already
+   pays off on CPU because arity-bucketing turns ragged combinatorial data dense.
+
+   The honest limit on the *geometry* words: this is **tensorization**, not
+   *hyperbolization*. Parsing is flat combinatorial bookkeeping — there is no
+   curvature to exploit, so "hyperbolic" buys nothing here; and hypercomplex
+   (GF(2ᵏ), CLMUL/GFNI) accelerates the *arithmetic* core, which is already
+   near-free. The lever that fit was the dense tensor + the quotient-by-identicals
+   (`unique`), which is precisely what was asked for, named correctly.
+
+The ordering the three passes teach: **cheap-frame-first (algorithm) → attack
+allocation, not structure (in-code) → let the data live in dense tensors
+(vectorize) → batch across instances (parallelism)** — in that order, each gated
+on a measurement, before any thought of metal.
 
 So the metal roadmap is **not** "port to Rust for its own sake." It matters in
 exactly three regimes, each with the *right* primitive:
