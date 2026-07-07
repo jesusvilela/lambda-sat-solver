@@ -150,9 +150,9 @@ def main():
     ks, kp = total('kissat'); cs, cp = total('cadical'); ms, mp = total('middleware')
     print(f"{'TOTAL':9s} {n:3d} | {ks:2d}/{n} {kp:6.2f}s   {cs:2d}/{n} {cp:6.2f}s   {ms:2d}/{n} {mp:6.2f}s")
 
-    # honesty accounting
-    by_fastpath = sum(1 for r in rows
-                      if r['solved_by'] in ('binary_clause', 'gf2', 'counting'))
+    # honesty accounting: anything the coupled router decided without CDCL
+    # (2sat / parity / counting / coupled) -- not the certified-Kissat fallback.
+    by_fastpath = sum(1 for r in rows if r['solved_by'] != 'kissat')
     solved = sum(1 for r in rows if r['middleware'] in ('SAT', 'UNSAT'))
     certified = sum(1 for r in rows
                     if r['middleware'] in ('SAT', 'UNSAT') and r['verified'])
