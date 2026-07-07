@@ -355,6 +355,33 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="lambda_bridge (lambda's CONTRIBUTION to the mesh)",
+        target="backend.lambda_bridge.lambda_contribution",
+        cost="poly-time (beta-normalize + project + lambda_sat routing)",
+        input_domain="a Boolean lambda term (BExpr)",
+        invariant="lambda's contribution over its CNF shadow -- NOT equivalence: "
+                  "equisatisfiable projection (the trusted ground) PLUS what the "
+                  "flat frames cannot express: composition (motion vs rest), an "
+                  "epsilon>0 dynamic remainder (a self-referential term never "
+                  "stabilizes), and meta-routing to a frame",
+        action="make a lambda term a first-class member of the frame/observer/"
+                "orbifold mesh (lambda_signature projects it to a full orbifold "
+                "chart) while crediting the generative axes it adds -- valued by "
+                "contribution and metaphor, not by sameness",
+        benchmark="test_lambda_bridge: the projection is sound (decides => agrees "
+                  "with ground truth); a Moebius fixpoint has an active remainder "
+                  "no frame can hold; a redex reveals a parity frame only after "
+                  "reduction; a lambda term acquires an orbifold signature",
+        proven="the Tseitin projection is equisatisfiable (sound shared ground); "
+               "the epsilon>0 remainder is decided by bounded fixpoint unrolling "
+               "(lambda_sat.fixpoint_sat) -- a satisfiability mode outside the "
+               "flat-frame vocabulary, so the contribution is real, not asserted",
+        limit="a bare abstraction has no CNF shadow (its contribution is purely "
+              "dynamic); this credits contribution, it does not claim lambda "
+              "decides more SAT instances than the frames it routes to",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
         name="observer.adjudicate + frame_ambiguity + ERRONEOUS_OBSERVERS",
         target="backend.observer.adjudicate",
         cost="poly-time (the sound frames + the coupled router underneath)",
