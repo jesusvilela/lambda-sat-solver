@@ -64,14 +64,22 @@ hints):
 
 Read this honestly, both directions. The win over **pure-CDCL** (Kissat, CaDiCaL)
 is real and decisive — neither has parity reasoning, even in the newest release.
-But CryptoMiniSat *already* embodies the same principle, in C, as a *general*
-solver: it solves these in ~1 s while also handling everything outside the parity
-fragment. Our router is **faster on pure parity** (direct Gaussian, no CDCL
-machinery) but strictly **narrower** — it decides only when the instance lives
-inside a recognized frame (the SAT side needs `decides_fully`), and falls back to
-Kissat otherwise. So: a correct, sound, fast re-derivation of a known production
-idea, and a genuine win against the pure-CDCL baseline the repo benchmarks — not a
-new capability beyond CryptoMiniSat.
+And on **parity**, CryptoMiniSat *already* embodies the same principle, in C, as a
+*general* solver: it solves these in ~1 s. Our router is faster on pure parity
+(direct Gaussian, no CDCL machinery) but on that fragment it is a **sound
+re-derivation of a known production idea**, not a new capability.
+
+**But there is a genuinely different fragment, and it is measured**
+(`BEYOND_CDCL_NOTE.md`, `scripts/beyond_cdcl.py`). CryptoMiniSat's XOR+Gaussian is
+blind to **counting**: pigeonhole has no XOR structure, so CMS faces the same
+exponential resolution wall as pure CDCL and **times out even earlier than Kissat**
+(php10: Kissat 403 ms, CMS *timeout*; php12: both timeout) — the XOR preprocessing
+becomes pure overhead. The counting frame refutes php12 in **4 ms**. So the
+contribution is **not** the parity fragment (CryptoMiniSat owns that) but the
+**counting/cardinality fragment plus the cross-frame coupling** (Nelson–Oppen
+across implication/parity/counting), which neither Kissat, CaDiCaL, nor
+CryptoMiniSat performs. Honest scope: a measured fragment-coverage result on
+structured instances, not a general SAT-competition victory.
 
 ## Honest scope — still not a new CDCL engine
 
