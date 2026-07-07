@@ -355,6 +355,35 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="observer.adjudicate + frame_ambiguity + ERRONEOUS_OBSERVERS",
+        target="backend.observer.adjudicate",
+        cost="poly-time (the sound frames + the coupled router underneath)",
+        input_domain="any CNFFormula",
+        invariant="the synthetic observer's hardening organs over the SAT-frame "
+                  "task class: C (frame_ambiguity) measures POLYSEMY -- how many "
+                  "sound frames independently decide an instance; E "
+                  "(ERRONEOUS_OBSERVERS) are unsound mock-frames; J (adjudicate) "
+                  "returns accept / repair / escalate; Gamma: sound frames never "
+                  "disagree (gluing_defect == 0)",
+        action="harden the certification layer: refuse premature single-frame "
+                "disambiguation of polysemous instances (C), and stay HARDER TO "
+                "FOOL than any seductive-but-unsound heuristic (E) -- the sound "
+                "adjudicator kills every mutant",
+        benchmark="test_observer: PHP is 2-frame polysemous, Tseitin 1-frame, "
+                  "random void; all 4 erroneous observers witnessed unsound and "
+                  "all killed by the adjudicator over 900 random instances vs "
+                  "brute force; gluing_defect == 0 across 500 instances",
+        proven="soundness of the underlying frames (2-SAT SCC / GF(2) / counting) "
+               "-- the adjudicator only ever emits a certified frame or coupling "
+               "verdict, so it can never agree with a mutant where the mutant is "
+               "wrong; sound frames cannot disagree (each entails the formula)",
+        limit="the observer's LOGICAL immune system only, over K = 'certify a SAT "
+              "verdict soundly'; it does not claim the full hypercomplex valuation "
+              "axes, world-contact, or boundary-at-infinity -- no universal human "
+              "replacement, only bounded bisimulation over this task class",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="cosmo_map (obstruction tessellation atlas)",
         target="docs.ladder.scripts.cosmo_map.build_cosmo_map",
         cost="sum of the per-tile carriers (frame_solve + NS/width on small tiles)",
