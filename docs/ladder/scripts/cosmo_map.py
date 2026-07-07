@@ -62,6 +62,7 @@ from backend.complexity.invariants import (  # noqa: E402
 )
 from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.frame_solver import frame_solve, frame_solve_guided  # noqa: E402
+from backend.orbifold import symmetry_log2_upper  # noqa: E402
 from backend.xor_extraction import extract_xors  # noqa: E402
 
 
@@ -104,6 +105,7 @@ class Tile:
     ns_degree: Optional[int]      # GF(2) NS degree (None if SAT/too big/not found)
     width: Optional[int]          # resolution refutation width (None if SAT/too big)
     xor_fraction: float
+    symmetry_log2: float = 0.0    # isotropy: log2 |Aut| upper bound (the orbifold)
     x: float = 0.0
     y: float = 0.0
     node_id: str = ""
@@ -140,7 +142,8 @@ def build_cosmo_map() -> CosmoMap:
         for s in sizes:
             f = gen(s)
             status, rb, ns, width, xf = _signature(f)
-            tiles.append(Tile(name, band, s, status, rb, ns, width, xf,
+            sym = symmetry_log2_upper(f)              # the tile's isotropy
+            tiles.append(Tile(name, band, s, status, rb, ns, width, xf, sym,
                               node_id=f"{name}:{s}"))
     _layout(tiles)
     edges = _edges(tiles)
@@ -259,11 +262,14 @@ def render_svg(cm: CosmoMap, width: int = 900, height: int = 560) -> str:
 
 def _print(cm: CosmoMap) -> None:
     print(f"{'tile':<16}{'band':<14}{'status':<13}{'frame':<10}"
-          f"{'NS':>3}{'width':>6}{'xor':>6}")
+          f"{'NS':>3}{'width':>6}{'xor':>6}{'log2|Aut|':>10}")
     for t in cm.tiles:
         print(f"{t.node_id:<16}{t.band:<14}{t.status:<13}{t.resolved_by:<10}"
               f"{'' if t.ns_degree is None else t.ns_degree:>3}"
-              f"{'' if t.width is None else t.width:>6}{t.xor_fraction:>6.2f}")
+              f"{'' if t.width is None else t.width:>6}{t.xor_fraction:>6.2f}"
+              f"{t.symmetry_log2:>10.1f}")
+    print("\neach tile is an orbifold chart: verdict + isotropy (log2|Aut| upper); "
+          "the mesh is these charts glued by the size/dual edges.")
     print(f"\n{len(cm.tiles)} tiles, {len(cm.edges)} edges "
           f"({sum(1 for e in cm.edges if e[2]=='conjugate-dual')} cross-band dual)")
 

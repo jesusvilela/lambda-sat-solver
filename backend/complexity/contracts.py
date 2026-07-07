@@ -384,6 +384,33 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="orbifold.satisfiability_signature (the un-projected verdict)",
+        target="backend.orbifold.satisfiability_signature",
+        cost="poly-time (adjudicate + 1-WL color refinement + verified swaps)",
+        input_domain="any CNFFormula",
+        invariant="the un-projected satisfiability verdict as an ORBIFOLD chart: "
+                  "certified status/tier + polysemy (C) + open remainder + the "
+                  "instance's isotropy (CNF automorphism group), BRACKETED "
+                  "lower <= |Aut| <= upper. The classical SAT bit is pi_truth of it",
+        action="lift satisfiability from a bit to a symmetry-carrying object and "
+                "explain the frames from the isotropy side: the counting frame is "
+                "quotient-computation on a high-symmetry orbifold (PHP log2|Aut| "
+                "grows with size; random-3SAT is rigid)",
+        benchmark="test_orbifold: the bracket contains brute-force |Aut| on small "
+                  "instances; verified transpositions map models to models; PHP "
+                  "high-isotropy, random trivial; the signature recovers the "
+                  "classical bit; color partition is a sound orbit over-approx",
+        proven="automorphic variables share a 1-WL color (Aut subset of the "
+               "class-wise symmetric group -> sound upper bound); a verified "
+               "transposition is a real automorphism, and within a class generates "
+               "S_k -> sound lower bound; a symmetry maps models to models",
+        limit="the bracket is not exact -- color refinement over-approximates "
+              "orbits, single transpositions miss block symmetry (PHP lower bound "
+              "is 0). No real symmetry engine (nauty/saucy) is vendored; this is a "
+              "dependency-free skeleton, not industrial symmetry breaking",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
         name="cosmo_map (obstruction tessellation atlas)",
         target="docs.ladder.scripts.cosmo_map.build_cosmo_map",
         cost="sum of the per-tile carriers (frame_solve + NS/width on small tiles)",
