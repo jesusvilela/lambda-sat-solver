@@ -308,3 +308,82 @@ def frame_solve_coupled(formula: CNFFormula, max_rounds: int = 64) -> CoupledRes
     if verify_model(formula, model):                 # sound completion attempt
         return CoupledResult('SAT', 'coupled', True, model, rounds, len(fixed))
     return CoupledResult('CDCL_NEEDED', 'none', False, None, rounds, len(fixed))
+
+
+# --------------------------------------------------------------------------
+# The bordon made dynamical: the coupling BREATHES (propagates round by round)
+# and RESONATES (settles to a fixpoint). The one sustained tone -- a remainder
+# that never settles, epsilon>0 -- lives in the self-referential lambda layer
+# (lambda_sat.fixpoint_sat, the Moebius drone), not in any finite CNF, whose
+# coupling is monotone and always resonates to rest.
+# --------------------------------------------------------------------------
+@dataclass
+class BreathTrace:
+    breath: list                      # |fixed| after each coupling round (inhale)
+    rounds: int
+    amplitude: int                    # deepest single-round intake
+    settled: bool                     # reached a fixpoint/conflict (resonant rest)
+    verdict: str                      # 'SAT' | 'UNSAT' | 'CDCL_NEEDED'
+
+
+def coupling_breath(formula: CNFFormula, max_rounds: int = 64) -> BreathTrace:
+    """Instrument the coupled router as a dynamical system: record the breath
+    (the count of entailed literals after each propagation round -- the inhale)
+    and whether it settles to a fixpoint (resonance to rest). A single frame that
+    decides immediately is a 0-round rest; an instance that needs several rounds
+    of cross-frame exchange breathes visibly before settling."""
+    base = frame_solve(formula)
+    if base.status != 'CDCL_NEEDED':
+        return BreathTrace([], 0, 0, True, base.status)
+
+    n = formula.num_vars
+    le2 = [c for c in formula.clauses if len(c) <= 2]
+    xr = extract_xors(formula)
+    xor_rows = []
+    for x in xr.xors:
+        row = 0
+        for v in x.variables:
+            row |= 1 << (v - 1)
+        if x.rhs:
+            row |= 1 << n
+        xor_rows.append(row)
+
+    fixed: Dict[int, bool] = {}
+    breath: list = []
+    rounds = 0
+    verdict = 'CDCL_NEEDED'
+    settled = False
+    while rounds < max_rounds:
+        rounds += 1
+        ok, bcp_changed = _bcp(le2, fixed)
+        if not ok:
+            breath.append(len(fixed))
+            verdict, settled = 'UNSAT', True
+            break
+        pres = _parity_propagate(xor_rows, n, fixed)
+        if pres == 'CONFLICT':
+            breath.append(len(fixed))
+            verdict, settled = 'UNSAT', True
+            break
+        parity_changed = False
+        for v, b in pres.items():
+            if v not in fixed:
+                fixed[v] = b
+                parity_changed = True
+        breath.append(len(fixed))
+        simp = _simplify(formula, fixed)
+        if any(len(c) == 0 for c in simp.clauses) or \
+                pigeonhole_counting_refutation(simp).refuted:
+            verdict, settled = 'UNSAT', True
+            break
+        if not (bcp_changed or parity_changed):
+            settled = True
+            break
+
+    if verdict == 'CDCL_NEEDED':
+        model = {v: fixed.get(v, False) for v in range(1, n + 1)}
+        if verify_model(formula, model):
+            verdict = 'SAT'
+    amplitude = max((breath[i] - (breath[i - 1] if i else 0)
+                     for i in range(len(breath))), default=0)
+    return BreathTrace(breath, rounds, amplitude, settled, verdict)

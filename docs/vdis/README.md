@@ -12,6 +12,23 @@ If you are here to understand how the solver works, you are in the wrong place �
 go to `docs/ladder/README.md` (the research that landed as tested code) and the
 top-level `README.md` (the solver). This folder is the compost, not the crop.
 
+## Keep-or-drop verdict: KEEP, valued by CONTRIBUTION (not equivalence)
+
+The question was posed as "lift VDIS to semantic equivalence, or drop it." The
+honest answer is that neither the drop nor the equivalence-lift is right, because
+**equivalence is the wrong test.** VDIS is a bed of *generative heuristics and
+metaphors*; a heuristic is never "semantically equivalent" to a sound frame, so
+that test would condemn every generative idea by construction. The test that
+matters is **contribution** — and VDIS's contribution is already banked and
+tested: the shallow-frame metaphor became the three sound frames; the
+fixpoint/self-reference thread became `lambda_sat.fixpoint_sat`; the
+connection/signed-Laplacian became a tested (and honestly scoped-out) carrier.
+Metaphor is a first-class contributing quality — it generates the reframings that
+later earn frames — so VDIS is **kept as the labeled generative archive it is**,
+not deleted. `backend/vdis/` stays isolated (nothing in core imports it) and
+tested; every live claim still links to a passing test, everything else is
+labelled lens. Compost has value precisely because the crop grew from it.
+
 ## What graduated from here into tested code
 
 - **the shallow-frame idea** → the three sound frames

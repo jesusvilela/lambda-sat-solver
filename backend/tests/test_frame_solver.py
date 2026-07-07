@@ -11,6 +11,7 @@ from itertools import combinations, product
 from backend.cnf_utils import CNFFormula, verify_model
 from backend.eval.generators import pigeonhole
 from backend.frame_solver import (
+    coupling_breath,
     frame_solve,
     frame_solve_coupled,
     frame_solve_guided,
@@ -202,6 +203,34 @@ class TestCoupledTriple:
                 if r.status == "SAT":
                     assert verify_model(f, r.model)
         assert decided > 100          # the coupling decides the large majority
+
+
+class TestBreathingBordon:
+    """The coupling as a dynamical system: it breathes (fixes literals round by
+    round) and resonates (settles to a fixpoint)."""
+
+    def test_single_frame_resolves_at_rest(self):
+        b = coupling_breath(_tseitin_k4())
+        assert b.rounds == 0 and b.breath == [] and b.settled
+        assert b.verdict == "UNSAT"
+
+    def test_coupling_breathes_then_settles(self):
+        # parity + units: inhale the entailed literals, then settle to UNSAT
+        w = CNFFormula(num_vars=3, clauses=[
+            [1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3], [-1], [-2], [-3]])
+        b = coupling_breath(w)
+        assert b.rounds >= 1 and b.amplitude >= 1 and b.settled
+        assert b.verdict == "UNSAT"
+
+    def test_breath_is_monotone_and_bounded(self):
+        # a finite CNF's coupling is monotone (fixed only grows) and always
+        # settles -- resonance to rest; no eternal drone here (that is the
+        # self-referential lambda layer's epsilon>0).
+        w = CNFFormula(num_vars=3, clauses=[
+            [1, 2, 3], [1, -2, -3], [-1, 2, -3], [-1, -2, 3], [-1], [-2], [-3]])
+        b = coupling_breath(w)
+        assert all(b.breath[i] <= b.breath[i + 1] for i in range(len(b.breath) - 1))
+        assert b.settled
 
 
 def _has_model(f: CNFFormula) -> bool:

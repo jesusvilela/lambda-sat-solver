@@ -54,6 +54,36 @@ adjudicator never emits that verdict (it gives the truth or escalates). This is
 mutation testing with a brute-force truth oracle: the observer is validated by
 the false worlds it refuses.
 
+## Valuation: contribution over equivalence (Θ's generative axes)
+
+A late, load-bearing refinement. When a component (the lambda layer, the VDIS
+archive) is judged against the rest of the system, the tempting test is
+*equivalence* — "is it the same as the sound frames?" That test is wrong, and it
+is wrong in a way that matters for **cognitive and mathematical performance**: a
+generative component (a metaphor, a reframing, a dynamic mode) is *never*
+equivalent to a settled procedure — equivalence would condemn exactly the parts
+that produce new structure. The right test is **contribution**: what does it add
+that nothing else expresses?
+
+This is what Θ (the hypercomplex valuation) was for all along — truth is one axis;
+**relevance, novelty, generativity, and metaphor are the others**, and they are
+not decoration. The evidence is the whole ladder: metaphors ("zero-divisor
+annihilation," "the shallow Emperor," "computation as motion") were *not* true or
+false — they were **contributions** that later earned frames (`nullstellensatz_
+degree`, the frame trilogy, `lambda_sat`). So:
+
+- **lambda** is valued by its contribution (composition, the ε>0 dynamic
+  remainder, meta-routing), not by being equisatisfiable to a CNF — see
+  `backend/lambda_bridge.py`, `Contribution`.
+- **VDIS** is kept by the same test (`docs/vdis/README.md`): its metaphors already
+  contributed the frames; a heuristic is never equivalent to a sound frame, and
+  demanding that it be would discard the generative source itself.
+
+The principle: **measure a component by what it contributes, and count metaphor
+as a contribution** — because the reframing that has no truth value today is often
+the frame that earns one tomorrow. This is the imaginer half of the Charter's
+imaginer+skeptic, made into a valuation rule.
+
 ## Status (Charter labels)
 
 - **Measured / tested** (`test_observer.py`): C's polysemy on PHP/Tseitin/void;

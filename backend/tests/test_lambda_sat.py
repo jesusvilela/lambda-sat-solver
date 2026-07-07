@@ -21,6 +21,22 @@ class TestBetaAndEval:
         assert beta_normalize(App(Lam('x', Lam('x', BVar('x'))), BConst(True))) \
             == Lam('x', BVar('x'))
 
+    def test_substitution_is_capture_avoiding(self):
+        # (λx. λy. x) y  ->  λy'. y  : the free y must NOT be captured by the
+        # inner binder. (Naive substitution wrongly yields λy. y.)
+        n = beta_normalize(App(Lam('x', Lam('y', BVar('x'))), BVar('y')))
+        assert isinstance(n, Lam)
+        assert n.param != 'y'                 # inner binder alpha-renamed
+        assert n.body == BVar('y')            # the ORIGINAL free y survives
+
+    def test_capture_avoidance_preserves_semantics(self):
+        # K = λx. λy. x ; (K a) b  must be a (free), never b -- a semantic check
+        # that alpha-renaming kept the right variable free.
+        from backend.lambda_sat import App as _A
+        k_a = beta_normalize(App(Lam('x', Lam('y', BVar('x'))), BVar('a')))
+        applied = beta_normalize(_A(k_a, BVar('b')))
+        assert applied == BVar('a')           # (λy. a) b = a, not b
+
 
 class TestLambdaSat:
     def test_sat_with_certified_witness(self):

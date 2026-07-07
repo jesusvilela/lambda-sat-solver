@@ -355,6 +355,33 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="lambda_bridge (lambda's CONTRIBUTION to the mesh)",
+        target="backend.lambda_bridge.lambda_contribution",
+        cost="poly-time (beta-normalize + project + lambda_sat routing)",
+        input_domain="a Boolean lambda term (BExpr)",
+        invariant="lambda's contribution over its CNF shadow -- NOT equivalence: "
+                  "equisatisfiable projection (the trusted ground) PLUS what the "
+                  "flat frames cannot express: composition (motion vs rest), an "
+                  "epsilon>0 dynamic remainder (a self-referential term never "
+                  "stabilizes), and meta-routing to a frame",
+        action="make a lambda term a first-class member of the frame/observer/"
+                "orbifold mesh (lambda_signature projects it to a full orbifold "
+                "chart) while crediting the generative axes it adds -- valued by "
+                "contribution and metaphor, not by sameness",
+        benchmark="test_lambda_bridge: the projection is sound (decides => agrees "
+                  "with ground truth); a Moebius fixpoint has an active remainder "
+                  "no frame can hold; a redex reveals a parity frame only after "
+                  "reduction; a lambda term acquires an orbifold signature",
+        proven="the Tseitin projection is equisatisfiable (sound shared ground); "
+               "the epsilon>0 remainder is decided by bounded fixpoint unrolling "
+               "(lambda_sat.fixpoint_sat) -- a satisfiability mode outside the "
+               "flat-frame vocabulary, so the contribution is real, not asserted",
+        limit="a bare abstraction has no CNF shadow (its contribution is purely "
+              "dynamic); this credits contribution, it does not claim lambda "
+              "decides more SAT instances than the frames it routes to",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
         name="observer.adjudicate + frame_ambiguity + ERRONEOUS_OBSERVERS",
         target="backend.observer.adjudicate",
         cost="poly-time (the sound frames + the coupled router underneath)",
@@ -382,6 +409,34 @@ REGISTRY: List[InvariantContract] = [
               "axes, world-contact, or boundary-at-infinity -- no universal human "
               "replacement, only bounded bisimulation over this task class",
         verdict=CARRIER,
+    ),
+    InvariantContract(
+        name="orbifold.satisfiability_signature (the un-projected verdict)",
+        target="backend.orbifold.satisfiability_signature",
+        cost="poly-time (adjudicate + 1-WL color refinement + verified swaps)",
+        input_domain="any CNFFormula",
+        invariant="the un-projected satisfiability verdict as an ORBIFOLD chart: "
+                  "certified status/tier + polysemy (C) + open remainder + the "
+                  "instance's isotropy (CNF automorphism group), computed EXACT "
+                  "when tractable (orbit-stabilizer / Schreier-Sims) and otherwise "
+                  "BRACKETED lower <= |Aut| <= upper. Classical SAT = pi_truth of it",
+        action="lift satisfiability from a bit to a symmetry-carrying object and "
+                "explain the frames from the isotropy side: the counting frame is "
+                "quotient-computation on a high-symmetry orbifold (PHP |Aut| = "
+                "n!*(n-1)! exact; random-3SAT is rigid, |Aut| = 1)",
+        benchmark="test_orbifold: exact |Aut| matches brute force over 500+ random "
+                  "instances and the PHP closed form n!*(n-1)! through PHP(6); the "
+                  "bracket contains the exact value; verified transpositions map "
+                  "models to models; the signature recovers the classical bit",
+        proven="orbit-stabilizer: |Aut| = prod |orbit of b_i under the stabilizer "
+               "of b_1..b_{i-1}|, each orbit found by constrained automorphism "
+               "search (exact); automorphic variables share a 1-WL color (sound "
+               "candidate restriction); a symmetry maps models to models",
+        limit="exact only within a node budget (very large symmetry groups, e.g. "
+              "PHP(7)+, fall back to the bracket -- honestly labeled); no external "
+              "symmetry engine (nauty/saucy) is vendored, this is a dependency-free "
+              "implementation, not industrial symmetry breaking",
+        verdict=SUBSTRATE,
     ),
     InvariantContract(
         name="cosmo_map (obstruction tessellation atlas)",

@@ -9,6 +9,12 @@ where a Boolean lambda term is itself the thing being decided. Neither module is
 on the critical solving path — both are research artifacts — but they are
 distinct: this one describes *how to run* a solve; `lambda_sat` treats a lambda
 term *as* a SAT instance.
+
+Honest scope of the type system: this is a **guarded orchestration checker**, not
+a general typed lambda calculus. Abstraction parameters are assumed to be `CNF`
+(the only argument type a pipeline ever binds), and the effect signatures do the
+real work of catching mis-composed stages. It validates pipelines; it is not a
+polymorphic type inferencer, and it does not claim to be.
 """
 
 from dataclasses import dataclass

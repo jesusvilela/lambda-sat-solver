@@ -32,6 +32,12 @@ So hyperbolic programming illuminates two of our three frames (implication at th
 LP vertex, counting on the derivative-relaxation ladder) and structurally cannot
 see the third -- which is exactly why the frame trilogy needed a char-2 member.
 
+The tower is CONTINUOUS/INFINITESIMAL, not a set of isolated tiles: the
+directional derivative `D_1` is its infinitesimal generator, with the exact
+identity `D_1 e_k = (n-k+1) e_{k-1}` (see `directional_derivative`,
+`sum_partials_e_k`) -- one cheap operator generates the whole derivative-
+relaxation ladder that the counting frame lives on.
+
 Run:  python -m docs.ladder.scripts.hyperbolic_frames
 """
 
@@ -86,6 +92,20 @@ def max_imag_over_samples(k: int, n: int, trials: int, seed: int = 0) -> float:
         ev = hyperbolic_eigenvalues(e_k_poly(k), x, e, k)
         worst = max(worst, float(np.max(np.abs(ev.imag))))
     return worst
+
+
+def directional_derivative(p: Callable[[np.ndarray], float], x: np.ndarray,
+                           e: np.ndarray, h: float = 1e-5) -> float:
+    """The infinitesimal generator D_e p (x) = d/dt p(x + t e)|_0 -- Renegar's
+    derivative-relaxation operator, the tangent that connects one tile of the
+    tessellation to the next (central difference)."""
+    return (p(x + h * e) - p(x - h * e)) / (2.0 * h)
+
+
+def sum_partials_e_k(x: np.ndarray, k: int) -> float:
+    """sum_i d/dx_i e_k(x) = D_1 e_k(x), the infinitesimal step down the tower."""
+    e = np.ones(len(x))
+    return directional_derivative(lambda z: elementary_symmetric(z, k), x, e)
 
 
 def _demo() -> None:

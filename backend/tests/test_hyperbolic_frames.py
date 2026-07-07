@@ -10,9 +10,11 @@ import numpy as np
 
 from docs.ladder.scripts.hyperbolic_frames import (
     e_k_poly,
+    elementary_symmetric,
     hyperbolic_eigenvalues,
     in_hyperbolicity_cone,
     max_imag_over_samples,
+    sum_partials_e_k,
 )
 
 
@@ -42,6 +44,18 @@ class TestHyperbolicFrames:
         x = np.array([1.0, 1.0, -1.0])            # sum 1 >= 0, but has a negative
         assert in_hyperbolicity_cone(e_k_poly(1), x, e, 1)        # halfspace: in
         assert not in_hyperbolicity_cone(e_k_poly(n), x, e, n)    # orthant: out
+
+    def test_infinitesimal_generator_of_the_tower(self):
+        # D_1 e_k = (n-k+1) e_{k-1}: the derivative operator is the infinitesimal
+        # generator connecting one tile of the tessellation to the next.
+        rng = np.random.default_rng(0)
+        for n in (4, 5, 6):
+            for k in range(1, n):
+                for _ in range(20):
+                    x = rng.standard_normal(n) * rng.uniform(1, 4)
+                    lhs = sum_partials_e_k(x, k)
+                    rhs = (n - k + 1) * elementary_symmetric(x, k - 1)
+                    assert abs(lhs - rhs) <= 1e-4 * (abs(rhs) + 1.0)
 
     def test_orthant_point_in_every_relaxation(self):
         # a strictly-positive point is in the orthant, hence in all relaxations

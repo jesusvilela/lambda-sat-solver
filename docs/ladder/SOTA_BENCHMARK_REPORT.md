@@ -3,29 +3,35 @@
 **Question:** subjected to a SAT-competition-style mix, does the frame-aware
 middleware (sound algebraic frames → certified CDCL fallback) beat raw SOTA CDCL,
 and where does it *not*? Engines: **Kissat 4.0.4** and **CaDiCaL** (both raw),
-and the **middleware** = three sound poly-time frames —
-`check_binary_clauses` (implication/2-SAT), `gf2_xor_solve` (parity/GF(2)),
-`pigeonhole_counting_refutation` (counting/cardinality) — then a **DRAT- and
-model-certified Kissat fallback**. 40 instances, 5 families, 20 s timeout.
-Harness `docs/ladder/scripts/sota_benchmark.py`; raw rows
-`sota_benchmark_results.json`.
+and the **middleware** = the **coupled ("breathing") frame router**
+(`frame_solve_coupled`): three sound poly-time frames — implication/2-SAT
+(`check_binary_clauses`), parity/GF(2) (`gf2_xor_refutation`/`gf2_xor_solve`),
+counting/cardinality (`pigeonhole_counting_refutation`) — run as three theories
+that exchange entailed literals to a fixpoint (inhale/propagate → resonate/settle),
+then a **DRAT- and model-certified Kissat fallback** only when the coupling
+escalates. 40 instances, 5 families, 20 s timeout. Harness
+`docs/ladder/scripts/sota_benchmark.py`; raw rows `sota_benchmark_results.json`.
 
 ## Results — solved-count / PAR-2 by family
 
 | family | n | Kissat | CaDiCaL | Middleware |
 |---|---|---|---|---|
-| random3 (α=4.26) | 9 | 9/9 · 0.10 s | 9/9 · 0.11 s | 9/9 · 0.22 s |
-| **tseitin** (parity) | 9 | 5/9 · 18.83 s | 5/9 · 18.75 s | **9/9 · 0.00 s** |
+| random3 (α=4.26) | 9 | 9/9 · 0.11 s | 9/9 · 0.12 s | 9/9 · 0.25 s |
+| **tseitin** (parity) | 9 | 5/9 · 18.95 s | 5/9 · 18.77 s | **9/9 · 0.00 s** |
 | xorsat | 12 | 12/12 · 0.00 s | 12/12 · 0.00 s | 12/12 · 0.00 s |
-| **php** (counting) | 4 | 3/4 · 10.67 s | 4/4 · 0.10 s | **4/4 · 0.00 s** |
+| **php** (counting) | 4 | 3/4 · 10.71 s | 4/4 · 0.11 s | **4/4 · 0.00 s** |
 | mixed | 6 | 6/6 · 0.00 s | 6/6 · 0.00 s | 6/6 · 0.00 s |
-| **TOTAL** | **40** | **35/40 · 5.33 s** | **36/40 · 4.26 s** | **40/40 · 0.05 s** |
+| **TOTAL** | **40** | **35/40 · 5.36 s** | **36/40 · 4.26 s** | **40/40 · 0.06 s** |
 
-The middleware solves **40/40 at PAR-2 0.05 s** — ~100× better PAR-2 than raw
-Kissat and ~85× than CaDiCaL — with **26/40 decided by a sound algebraic frame
-with no solver at all**, and **40/40 verdicts certified** (fast-path sound by
-construction, or Kissat-UNSAT verified by drat-trim, or Kissat-SAT verified by
-model replay).
+The middleware solves **40/40 at PAR-2 0.06 s** — ~90× better PAR-2 than raw
+Kissat and ~70× than CaDiCaL — with **26/40 decided by a sound algebraic frame
+with no solver at all** (22 parity, 4 counting), and **40/40 verdicts certified**
+(fast-path sound by construction, or Kissat-UNSAT verified by drat-trim, or
+Kissat-SAT verified by model replay). Re-run with the *coupled/breathing* router
+(`frame_solve_coupled`): the dynamical upgrade holds the result — it is a sound
+superset of the static fixed-order router, so it matches on these families and
+adds reach only on the parity+units *mixed-UNSAT* instances this suite does not
+include (see `frame_solve_coupled`, `--couple`).
 
 ## How the three frames divide the work
 

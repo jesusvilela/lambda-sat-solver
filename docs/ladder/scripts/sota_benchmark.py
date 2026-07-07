@@ -26,6 +26,7 @@ from backend.binary_clause_check import check_binary_clauses
 from backend.cardinality_check import pigeonhole_counting_refutation
 from backend.cnf_utils import verify_model, write_dimacs
 from backend.eval.generators import pigeonhole
+from backend.frame_solver import frame_solve_coupled
 from backend.proof_checking import DRATChecker
 from backend.xor_extraction import extract_xors, gf2_xor_solve
 from docs.ladder.scripts.frame_benchmark import (
@@ -66,22 +67,20 @@ def _certified_kissat(formula, timeout_s):
 
 
 def middleware_solve(formula, timeout_s=TIMEOUT):
-    """Three sound algebraic frames, then a DRAT/model-certified CDCL fallback.
-    Returns (status, seconds, solved_by, verified). Every verdict is certified."""
+    """The breathing bordon: the COUPLED frame router (three frames as three
+    theories exchanging entailed literals to a fixpoint -- inhale/propagate,
+    resonate/settle), then a DRAT/model-certified CDCL fallback only when the
+    coupling escalates. Returns (status, seconds, solved_by, verified); every
+    frame/coupling verdict is certified (UNSAT sound, SAT model-verified)."""
     t0 = time.perf_counter()
-    # implication frame (2-SAT)
-    if not check_binary_clauses(formula).consistent:
-        return 'UNSAT', time.perf_counter() - t0, 'binary_clause', True
-    # parity frame (GF(2) Gaussian; SAT model verified inside)
-    xr = gf2_xor_solve(formula)
-    if xr.status == 'UNSAT':
-        return 'UNSAT', time.perf_counter() - t0, 'gf2', True
-    if xr.status == 'SAT' and verify_model(formula, xr.model):
-        return 'SAT', time.perf_counter() - t0, 'gf2', True
-    # counting frame (cardinality / pigeonhole)
-    if pigeonhole_counting_refutation(formula).refuted:
-        return 'UNSAT', time.perf_counter() - t0, 'counting', True
-    # certified CDCL fallback
+    r = frame_solve_coupled(formula)
+    if r.status == 'UNSAT':
+        return 'UNSAT', time.perf_counter() - t0, r.resolved_by, True
+    if r.status == 'SAT':
+        ok = verify_model(formula, r.model)
+        return ('SAT' if ok else 'UNKNOWN'), time.perf_counter() - t0, \
+            r.resolved_by, ok
+    # coupling escalated -> certified CDCL fallback
     elapsed = time.perf_counter() - t0
     status, kt, verified = _certified_kissat(formula, timeout_s - elapsed)
     return status, elapsed + kt, 'kissat', verified
@@ -151,9 +150,9 @@ def main():
     ks, kp = total('kissat'); cs, cp = total('cadical'); ms, mp = total('middleware')
     print(f"{'TOTAL':9s} {n:3d} | {ks:2d}/{n} {kp:6.2f}s   {cs:2d}/{n} {cp:6.2f}s   {ms:2d}/{n} {mp:6.2f}s")
 
-    # honesty accounting
-    by_fastpath = sum(1 for r in rows
-                      if r['solved_by'] in ('binary_clause', 'gf2', 'counting'))
+    # honesty accounting: anything the coupled router decided without CDCL
+    # (2sat / parity / counting / coupled) -- not the certified-Kissat fallback.
+    by_fastpath = sum(1 for r in rows if r['solved_by'] != 'kissat')
     solved = sum(1 for r in rows if r['middleware'] in ('SAT', 'UNSAT'))
     certified = sum(1 for r in rows
                     if r['middleware'] in ('SAT', 'UNSAT') and r['verified'])
