@@ -72,6 +72,17 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **proven:** each branch is theorem-backed and sound in isolation: 2-SAT unsatisfiability (Aspvall-Plass-Tarjan SCC), GF(2) linear algebra decides XOR-SAT, and the pigeonhole counting bound (k>m disjoint pigeons over holes); composition preserves soundness -- a frame verdict entails the whole formula
 - **limit:** decides only formulas that live in one of the three frames; it is NOT a general SAT algorithm -- CDCL_NEEDED is the honest majority verdict on unstructured instances
 
+### frame_solver.frame_solve_guided (the moving-frame router)
+
+- **binds:** `backend.frame_solver.frame_solve_guided`
+- **cost:** poly-time; one shared XOR parse vs frame_solve's two on a miss
+- **input:** any CNFFormula
+- **invariant:** the same certified verdict as frame_solve, reached by reading the local structure ONCE (the rotor) and pointing the trial order at it -- skip the parity frame when no XOR structure is present, keep refute-first on the parity band
+- **action:** the map's moving frame made operational: route by the instance's own signature instead of a fixed order, so the unstructured band stops parsing twice for a parity structure that is not there
+- **benchmark:** 158-case differential vs frame_solve: 0 verdict mismatches, every SAT model re-verified; measured 1.5-1.75x on the counting/xorsat/unstructured bands, ~1.0x (no regression) on parity (docs/ladder/scripts/cosmo_map.py --hunt)
+- **proven:** identical soundness to frame_solve (each branch theorem-backed); the guided order only prunes frames whose structural precondition is provably absent and reuses one parse -- verdict-preserving
+- **limit:** same frame-coverage limit as frame_solve (CDCL_NEEDED off-frame); the speedup is a constant factor on the pre-pass, not a complexity change -- a routing heuristic, not a new carrier
+
 ## Exact structural readouts
 
 ### solution_stats
@@ -141,6 +152,16 @@ Each row is a promise in the form **input -> invariant -> action -> benchmark**,
 - **limit:** polarity-awareness does NOT rescue a graph-spectral invariant as a hardness carrier; correctly scoped to XOR/2-SAT structure
 
 ## Research substrate (not a solver route)
+
+### cosmo_map (obstruction tessellation atlas)
+
+- **binds:** `docs.ladder.scripts.cosmo_map.build_cosmo_map`
+- **cost:** sum of the per-tile carriers (frame_solve + NS/width on small tiles)
+- **input:** a parameter grid of instance families (the tessellation)
+- **invariant:** every tile's obstruction signature (resolved_by frame, GF(2) NS degree, resolution width, xor fraction) laid out with the x-axis = the algebra it lives in (real cone | char-2 | unstructured), edges = size-adjacency + the Tseitin<->PHP conjugate dual
+- **action:** an atlas over the tested carriers: shows the shallowest frame is a FIELD over instance-space (the moving frame), that HP sees the real-cone band and is blind to the char-2 band, and where the rotor (frame_solve_guided) saves work
+- **benchmark:** tiles land where their carrier says: implication->2sat, PHP(>=3 holes)->counting, Tseitin->parity (NS 3), random->CDCL_NEEDED; render_svg is well-formed (test_cosmo_map)
+- **limit:** a visualization/atlas over measured carriers, NOT a new hardness claim or solver; the layout is a lens, the per-tile signatures are the only load-bearing content
 
 ### hyperbolic_frames (HP <-> frame-ladder bridge)
 

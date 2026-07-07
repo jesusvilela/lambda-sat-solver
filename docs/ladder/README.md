@@ -80,4 +80,9 @@ octonion substrate), `frame_router_scaling.py` (the crystallized
 superlinear full-solve — why the router refutes before it reconstructs),
 `hyperbolic_frames.py` (hyperbolic *programming* ↔ the frame ladder: det =
 matrix eigenvalues, `e_k` hyperbolic, the derivative-relaxation nesting the
-counting frame lives on, and the char-2 disanalogy for parity).
+counting frame lives on, and the char-2 disanalogy for parity),
+`cosmo_map.py` (tessellate instance-space into clause-ideals, tile each by its
+obstruction signature, and draw the atlas — real-cone vs char-2 vs unstructured
+bands, the Tseitin↔PHP conjugate-dual edge; `--hunt` follows the *moving frame*
+and measures the optim the *rotor* `frame_solve_guided` finds, 1.5–1.75× on the
+unstructured/counting bands with identical verdicts).

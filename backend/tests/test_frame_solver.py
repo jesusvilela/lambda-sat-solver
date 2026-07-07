@@ -10,7 +10,7 @@ from itertools import combinations, product
 
 from backend.cnf_utils import CNFFormula, verify_model
 from backend.eval.generators import pigeonhole
-from backend.frame_solver import frame_solve
+from backend.frame_solver import frame_solve, frame_solve_guided
 
 
 def _tseitin_k4():
@@ -98,6 +98,49 @@ class TestFrameSoundness:
         r = frame_solve(f)
         assert r.status == 'SAT' and r.certified
         assert verify_model(f, r.model)
+
+
+class TestGuidedRouter:
+    """The moving-frame router (frame_solve_guided): same certified verdicts as
+    frame_solve, reached by one shared parse + structure-directed order."""
+
+    def _battery(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                               / "docs/ladder/scripts"))
+        from frame_benchmark import random_3sat, random_xorsat, tseitin
+        cases = [_tseitin_k4()]
+        for s in (4, 6, 8):
+            cases.append(tseitin(s, seed=1))
+        for s in (3, 4, 5):
+            cases.append(pigeonhole(s)[0])
+        for s in range(25):
+            cases.append(random_xorsat(16, 16, s))
+            cases.append(random_3sat(20, 85, s))
+        return cases
+
+    def test_guided_matches_frame_solve(self):
+        # differential: identical status + resolved_by on every band; any SAT
+        # model the guided router returns must verify.
+        for f in self._battery():
+            a = frame_solve(f)
+            b = frame_solve_guided(f)
+            assert (a.status, a.resolved_by) == (b.status, b.resolved_by)
+            if b.status == "SAT":
+                assert b.certified and verify_model(f, b.model)
+
+    def test_guided_skips_parity_on_unstructured(self):
+        # a structureless 3-SAT is CDCL_NEEDED via the guided router too
+        f = CNFFormula(num_vars=4,
+                       clauses=[[1, 2, 3], [-1, 2, 4], [1, -3, 4], [2, 3, -4]])
+        r = frame_solve_guided(f)
+        assert r.status == "CDCL_NEEDED" and r.certified is False
+
+    def test_guided_parity_refute_first_no_regression(self):
+        # Tseitin still decided in the parity frame (refute-first preserved)
+        r = frame_solve_guided(_tseitin_k4())
+        assert r.status == "UNSAT" and r.resolved_by == "parity"
 
 
 def _has_model(f: CNFFormula) -> bool:
