@@ -42,6 +42,31 @@ Each family that is hard for CDCL is easy for exactly one frame:
   certified Kissat fallback; on these the middleware ties raw CDCL (the fallback
   is the same engine).
 
+## The honest comparison — CryptoMiniSat already does this in production
+
+The frame router is a *sound re-derivation of an idea that exists in production C
+solvers*. **CryptoMiniSat** recovers XOR constraints from CNF and runs Gaussian
+elimination on them — exactly the parity frame, built into a general solver.
+Measured on this repo's own Tseitin generator (pycryptosat 5.14.7, same CNF, no
+hints):
+
+| instance | Kissat 4.0.4 (pure CDCL) | CryptoMiniSat 5.14.7 | our GF(2) router |
+|---|---|---|---|
+| tseitin nv100 | **TIMEOUT** (>12 s) | UNSAT 1.16 s | UNSAT 1.3 ms |
+| tseitin nv150 | **TIMEOUT** | UNSAT 1.23 s | UNSAT 1.8 ms |
+| tseitin nv200 | **TIMEOUT** | UNSAT 1.11 s | UNSAT 3.4 ms |
+
+Read this honestly, both directions. The win over **pure-CDCL** (Kissat, CaDiCaL)
+is real and decisive — neither has parity reasoning, even in the newest release.
+But CryptoMiniSat *already* embodies the same principle, in C, as a *general*
+solver: it solves these in ~1 s while also handling everything outside the parity
+fragment. Our router is **faster on pure parity** (direct Gaussian, no CDCL
+machinery) but strictly **narrower** — it decides only when the instance lives
+inside a recognized frame (the SAT side needs `decides_fully`), and falls back to
+Kissat otherwise. So: a correct, sound, fast re-derivation of a known production
+idea, and a genuine win against the pure-CDCL baseline the repo benchmarks — not a
+new capability beyond CryptoMiniSat.
+
 ## Honest scope — still not a new CDCL engine
 
 The middleware does **not** improve CDCL search; it is a set of sound

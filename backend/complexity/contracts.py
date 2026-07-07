@@ -278,6 +278,32 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="frame_solver.frame_solve (the crystallized frame router)",
+        target="backend.frame_solver.frame_solve",
+        cost="poly-time (2-SAT SCC + GF(2) Gaussian + counting bound, in series)",
+        input_domain="any CNFFormula",
+        invariant="the single distilled procedure: decide the formula in the "
+                  "shallowest sound algebraic frame that collapses it -- "
+                  "implication (2-SAT), parity (GF(2)), or counting (Z) -- and "
+                  "report resolved_by; only what escapes all three is CDCL_NEEDED",
+        action="route a formula to its flat frame before any search: every "
+                "'SAT'/'UNSAT' it returns is certified (sound refutation, or a "
+                "verify_model-checked model); 'CDCL_NEEDED' is handed to Kissat",
+        benchmark="Tseitin -> UNSAT via 'parity'; PHP -> UNSAT via 'counting'; "
+                  "pure-XOR SAT -> 'SAT' via 'parity' with a verified model; a "
+                  "structureless random 3-SAT -> 'CDCL_NEEDED', uncertified. "
+                  "Measured linear to 3000 vars (~20ms), Gaussian core near-free",
+        proven="each branch is theorem-backed and sound in isolation: 2-SAT "
+               "unsatisfiability (Aspvall-Plass-Tarjan SCC), GF(2) linear "
+               "algebra decides XOR-SAT, and the pigeonhole counting bound "
+               "(k>m disjoint pigeons over holes); composition preserves "
+               "soundness -- a frame verdict entails the whole formula",
+        limit="decides only formulas that live in one of the three frames; it "
+              "is NOT a general SAT algorithm -- CDCL_NEEDED is the honest "
+              "majority verdict on unstructured instances",
+        verdict=CARRIER,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",

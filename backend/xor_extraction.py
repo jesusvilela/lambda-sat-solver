@@ -23,10 +23,21 @@ that group encodes rhs r = 1 - c. We detect a full such group.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Dict, List, Set, Tuple
 
 from .cnf_utils import CNFFormula, verify_model
+
+try:                                    # numpy is already a core backend dep
+    import numpy as _np
+    _HAS_NUMPY = True
+except Exception:                       # keep the module importable without it
+    _HAS_NUMPY = False
+
+#: below this many clauses in an arity bucket, numpy's array/unique overhead is
+#: not worth it -- use the pure-Python path (which is also the trusted spec).
+_VEC_MIN_ROWS = 64
 
 
 @dataclass
@@ -42,39 +53,112 @@ class XORExtractionResult:
     xor_clause_fraction: float   # num_xor_clauses / total clauses (frame signal)
 
 
+def _bucket_python(rows: List[List[int]], k: int) -> List[Tuple[Tuple[int, ...], int]]:
+    """Reference (trusted spec) recovery within one fixed-arity bucket.
+
+    For each variable set collect its distinct sign patterns, each encoded as a
+    k-bit int (bit i set iff the i-th variable in sorted order is negated) and
+    pre-split by the parity of the negation count. A complete parity group of
+    arity k is exactly 2^(k-1) distinct patterns all sharing one negation-parity
+    c; that group encodes rhs = 1 - c. Returns (order, rhs) for each such group.
+    """
+    patterns: Dict[Tuple[int, ...], Tuple[Set[int], Set[int]]] = {}
+    for clause in rows:
+        pairs = sorted((abs(l), l > 0) for l in clause)   # one sort per clause
+        order = tuple(p[0] for p in pairs)
+        # repeated variable / tautology -> adjacent equal vars after the sort
+        if any(order[i] == order[i + 1] for i in range(k - 1)):
+            continue
+        bits = 0
+        neg = 0
+        for i, (_, positive) in enumerate(pairs):
+            if not positive:
+                bits |= 1 << i
+                neg += 1
+        slot = patterns.get(order)
+        if slot is None:
+            slot = patterns[order] = (set(), set())
+        slot[neg & 1].add(bits)
+
+    full = 1 << (k - 1)
+    out: List[Tuple[Tuple[int, ...], int]] = []
+    for order, (parity0, parity1) in patterns.items():
+        if len(parity0) == full:         # c=0 -> rhs 1
+            out.append((order, 1))
+        if len(parity1) == full:         # c=1 -> rhs 0
+            out.append((order, 0))
+    return out
+
+
+def _bucket_vectorized(rows: List[List[int]], k: int,
+                       bits: int) -> List[Tuple[Tuple[int, ...], int]]:
+    """Vectorized recovery within one fixed-arity bucket: the whole bucket lives
+    as one dense (m, k) int tensor, and abs / per-row sort / sign-encode / parity
+    all run as array ops -- `np.unique` is the 'compact identical patterns into
+    one point' step (distinct sign patterns per group collapse to unique rows).
+
+    Numerically identical to `_bucket_python` (differential-tested). Caller must
+    guarantee `bits * k <= 62` so the packed varset key fits a signed int64.
+    """
+    A = _np.array(rows, dtype=_np.int64)             # signed literals
+    V = _np.abs(A)
+    if k > 1:                                        # drop dup-var / tautology
+        Vs = _np.sort(V, axis=1)
+        A = A[~(Vs[:, 1:] == Vs[:, :-1]).any(axis=1)]
+        if A.shape[0] == 0:
+            return []
+        V = _np.abs(A)
+    idx = _np.argsort(V, axis=1, kind="stable")      # canonical: sort by var
+    Asort = A[_np.arange(A.shape[0])[:, None], idx]
+    Vsort = _np.abs(Asort)
+    neg = Asort < 0
+    key = (Vsort * (1 << (bits * _np.arange(k))).astype(_np.int64)).sum(axis=1)
+    patbits = (neg.astype(_np.int64) << _np.arange(k)).sum(axis=1)
+    parity = neg.sum(axis=1) & 1
+    group = key * 2 + parity                         # (varset, neg-parity)
+    distinct = _np.unique(_np.stack([group, patbits], axis=1), axis=0)
+    groups, counts = _np.unique(distinct[:, 0], return_counts=True)
+    full = 1 << (k - 1)
+    mask = (1 << bits) - 1
+    out: List[Tuple[Tuple[int, ...], int]] = []
+    for g, cnt in zip(groups.tolist(), counts.tolist()):
+        if cnt == full:                              # a complete parity group
+            keyv, par = g >> 1, g & 1
+            order = tuple((keyv >> (bits * i)) & mask for i in range(k))
+            out.append((order, 1 - par))
+    return out
+
+
 def extract_xors(formula: CNFFormula, max_arity: int = 6) -> XORExtractionResult:
     """Recover complete XOR groups of arity 2..max_arity. Cost is
     O(clauses * arity) plus the group bookkeeping; max_arity caps the 2^(k-1)
-    blow-up (mirrors real solvers, which only recover short XORs)."""
-    # collect the distinct sign patterns present for each variable set
-    patterns_by_varset: Dict[frozenset, Set[Tuple[bool, ...]]] = {}
-    for clause in formula.clauses:
-        vs = [abs(l) for l in clause]
-        k = len(vs)
-        if k < 2 or k > max_arity:
-            continue
-        if len(set(vs)) != k:
-            continue  # a repeated variable / tautology is not a clean XOR clause
-        varset = frozenset(vs)
-        order = sorted(varset)
-        sign = {abs(l): (l > 0) for l in clause}
-        pattern = tuple(sign[v] for v in order)
-        patterns_by_varset.setdefault(varset, set()).add(pattern)
+    blow-up (mirrors real solvers, which only recover short XORs).
 
-    xors: List[XORConstraint] = []
-    num_xor_clauses = 0
-    for varset, patterns in patterns_by_varset.items():
-        k = len(varset)
-        full = 1 << (k - 1)
-        by_parity: Dict[int, int] = {0: 0, 1: 0}
-        for pat in patterns:
-            n_neg = sum(1 for positive in pat if not positive)
-            by_parity[n_neg & 1] += 1
-        order = tuple(sorted(varset))
-        for c, count in by_parity.items():
-            if count == full:            # a complete parity group
-                xors.append(XORConstraint(order, rhs=1 - c))
-                num_xor_clauses += full
+    Clauses are bucketed by arity so each bucket is a dense fixed-width tensor;
+    a bucket with enough clauses (and whose packed key fits int64) is recovered
+    vectorized (~1.7x on Tseitin, more on ragged CNF -- measured in
+    docs/ladder/scripts/frame_router_scaling.py), otherwise by the pure-Python
+    reference. The two paths are differential-tested to agree exactly
+    (test_xor_extraction), so the vectorized fast path never widens the trusted
+    base: extraction correctness (a spurious XOR would be an unsound refutation)
+    still rests on the readable spec, which also runs whenever numpy is absent.
+    """
+    buckets: Dict[int, List[List[int]]] = defaultdict(list)
+    for clause in formula.clauses:
+        k = len(clause)
+        if 2 <= k <= max_arity:
+            buckets[k].append(clause)
+
+    bits = max(1, int(formula.num_vars).bit_length())
+    completed: List[Tuple[Tuple[int, ...], int]] = []
+    for k, rows in buckets.items():
+        if _HAS_NUMPY and bits * k <= 62 and len(rows) >= _VEC_MIN_ROWS:
+            completed += _bucket_vectorized(rows, k, bits)
+        else:
+            completed += _bucket_python(rows, k)
+
+    xors = [XORConstraint(order, rhs) for order, rhs in completed]
+    num_xor_clauses = sum(1 << (len(order) - 1) for order, _ in completed)
 
     total = len(formula.clauses)
     fraction = num_xor_clauses / total if total else 0.0

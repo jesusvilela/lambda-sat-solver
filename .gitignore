@@ -34,3 +34,6 @@ pids
 .spark-workbench-id
 *.pyc
 __pycache__/
+
+# regenerable benchmark outputs (produced by docs/ladder/scripts/*.py)
+docs/ladder/scripts/*_results.json

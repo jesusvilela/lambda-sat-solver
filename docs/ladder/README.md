@@ -66,6 +66,7 @@ out. Contracts cannot silently rot:
 | `SOTA_BENCHMARK_REPORT.md` | frame-aware middleware vs raw SOTA CDCL across 5 families: **40/40 solved · PAR-2 0.05s** (Kissat 35/40 · 5.33s, CaDiCaL 36/40 · 4.26s), 40/40 DRAT/model-certified; three sound frames divide the CDCL-hard families |
 | `COUNTING_FRAME_NOTE.md` | what survives PHP's collapse against GF(2): the counting/ℤ frame (magnitude, not parity) — PHP as the char-0 dual of Tseitin; `cardinality_check` refutes php12 in 0.44ms |
 | `LAMBDA_SAT_NOTE.md` | clashing Lambda ⊗ SAT (Λᴿ): what survived into `lambda_sat.py` (β-reduce → CNF-with-remainder → certified decision) vs what stayed lens; the honest ε=0 scoping |
+| `METAL_ROADMAP.md` | geometry → metal: understanding wants curvature, computation wants flatness (GF(2)); measured (naive numpy rewrite is *slower*); M4RI / CLMUL·GFNI / GPU-batch roadmap, honestly scoped |
 
 ## Reproducible experiments
 
@@ -73,4 +74,6 @@ out. Contracts cannot silently rot:
 invariants), `ns_degree_vs_width.py` (algebraic vs resolution obstruction),
 `symmetry_channel_ns.py` (the char-2 fork), `saddle_ruggedness_vs_gate.py`
 (ruggedness vs the algebraic separator), `fano_braid_associator.py` (the
-octonion substrate).
+octonion substrate), `frame_router_scaling.py` (the crystallized
+`backend/frame_solver.py` scaled on Tseitin: near-linear refute-first UNSAT,
+superlinear full-solve — why the router refutes before it reconstructs).
