@@ -304,6 +304,32 @@ REGISTRY: List[InvariantContract] = [
         verdict=CARRIER,
     ),
     InvariantContract(
+        name="hyperbolic_frames (HP <-> frame-ladder bridge)",
+        target="docs.ladder.scripts.hyperbolic_frames.hyperbolic_eigenvalues",
+        cost="poly per point (interpolate degree-d restriction + root-find)",
+        input_domain="a hyperbolic polynomial p, points x and direction e in R^n",
+        invariant="the hyperbolic eigenvalues of x (roots of t->p(t*e-x)); the "
+                  "hyperbolicity cone Lambda_{p,e} where they are all >= 0. LP / "
+                  "SOCP / SDP are the cases p = x1..xn / r^2-||x||^2 / det(X)",
+        action="maps two of the three frames onto the hyperbolic-programming "
+                "special-case ladder: implication/2-SAT at the orthant (LP) "
+                "vertex, counting/cardinality on the elementary-symmetric "
+                "derivative relaxations orthant=Lambda(e_n) subset .. subset "
+                "Lambda(e_1); the parity/GF(2) frame has NO real cone (char-2)",
+        benchmark="det recovers matrix eigenvalues (SDP); e_k real-rooted for "
+                  "all tested n,k (hyperbolic, Branden spectrahedral); a point "
+                  "in Lambda(e_1)\\orthant witnesses strict relaxation nesting",
+        proven="Garding (cones convex); Guler (-log p self-concordant barrier); "
+               "Branden (e_k hyperbolicity cones are spectrahedral); Renegar "
+               "(derivative relaxations). These are theorems the demo computes "
+               "against, NOT a claim that HP decides SAT",
+        limit="lens/substrate, not a solver route: deciding hyperbolicity is "
+              "co-NP-hard (Saunderson) and the SOS/hyperbolic certificates are "
+              "exponential-degree proof objects -- cousins of nullstellensatz_"
+              "degree, not a poly-time frame; the parity frame is out of scope",
+        verdict=SUBSTRATE,
+    ),
+    InvariantContract(
         name="fano_braid_associator (substrate)",
         target="docs.ladder.scripts.fano_braid_associator.associator",
         cost="O(1) per triple (octonion arithmetic)",
