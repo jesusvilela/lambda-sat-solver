@@ -45,6 +45,11 @@ from .lambda_sat import (
     free_vars,
     tseitin_encode,
 )
+
+
+class NoProjection(ValueError):
+    """A bare abstraction has no Boolean CNF shadow -- its contribution is purely
+    dynamic (the fixpoint remainder); use lambda_contribution, not project."""
 from .observer import ObserverVerdict, adjudicate
 from .orbifold import SatSignature, satisfiability_signature
 
@@ -55,6 +60,10 @@ def project(term: BExpr) -> Tuple[CNFFormula, Dict[str, int]]:
     projection the frame router, observer and orbifold layers consume, so a
     lambda term becomes a first-class member of the mesh."""
     normal = beta_normalize(term)
+    if isinstance(normal, Lam):
+        raise NoProjection(
+            "a bare abstraction has no Boolean CNF projection; its contribution "
+            "is purely dynamic (see lambda_contribution / fixpoint_sat)")
     cnf, _remainder, free_ids = tseitin_encode(normal)
     return cnf, free_ids
 

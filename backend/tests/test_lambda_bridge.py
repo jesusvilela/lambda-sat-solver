@@ -41,6 +41,14 @@ class TestSoundProjection:
         cnf, ids = project(BAnd(BVar("a"), BVar("b")))
         assert cnf.num_vars >= 2 and len(cnf.clauses) >= 1
 
+    def test_bare_abstraction_raises_a_clear_error(self):
+        # a bare Lam has no CNF shadow; the error must say so, not leak an
+        # internal "not beta-normal" message from deep in tseitin_encode.
+        import pytest
+        from backend.lambda_bridge import NoProjection
+        with pytest.raises(NoProjection, match="no Boolean CNF projection"):
+            project(Lam("s", BNot(BVar("s"))))
+
 
 class TestContribution:
     def test_plain_term_adds_no_composition_or_dynamics(self):
