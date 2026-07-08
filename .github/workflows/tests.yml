@@ -45,10 +45,16 @@ jobs:
           pip install -r backend/requirements.txt
           pip install -e .[dev]
 
-      - name: Install SAT/proof tools
+      - name: Build SAT/proof tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y kissat drat-trim cadical
+          sudo apt-get install -y build-essential git
+          git clone --depth 1 https://github.com/arminbiere/kissat.git /tmp/kissat
+          make -C /tmp/kissat -j2
+          sudo cp /tmp/kissat/build/kissat /usr/local/bin/kissat
+          git clone --depth 1 https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          make -C /tmp/drat-trim -j2
+          sudo cp /tmp/drat-trim/drat-trim /usr/local/bin/drat-trim
           command -v kissat
           command -v drat-trim
 
