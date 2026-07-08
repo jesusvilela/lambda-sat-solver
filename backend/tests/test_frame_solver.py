@@ -256,6 +256,37 @@ class TestBreathingBordon:
         assert b.settled
 
 
+class TestDecidabilityFold:
+    """The escape field is a catastrophe fold, not a smooth Eikonal field: a
+    small amount of noise snaps a decided instance across the decidability cliff
+    to CDCL_NEEDED (U: finite -> infinite), with a near-empty far side."""
+
+    def test_escape_field_snaps_at_the_fold(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                               / "docs/ladder/scripts"))
+        from frame_benchmark import random_xorsat
+        from backend.orbifold import hyperbolic_depth
+        n = 26
+        core = random_xorsat(n, n, 2).clauses
+        decided = CNFFormula(num_vars=n, clauses=list(core))
+        bt0 = coupling_breath(decided)
+        assert bt0.verdict in ("SAT", "UNSAT")          # on the island: decided
+        assert hyperbolic_depth(decided) < 1.0          # near the center
+
+        import random
+        rng = random.Random(1010)
+        noisy = CNFFormula(num_vars=n, clauses=list(core) +
+                           [[rng.choice([-1, 1]) * rng.randint(1, n)
+                             for _ in range(3)] for _ in range(20)])
+        bt1 = coupling_breath(noisy)
+        assert bt1.verdict == "CDCL_NEEDED"             # snapped across the fold
+        assert hyperbolic_depth(noisy) > 5.0            # jumped toward the boundary
+        ent, _ = coupled_entailments(noisy)
+        assert len(ent) < n // 3                        # near-empty far side
+
+
 def _has_model(f: CNFFormula) -> bool:
     """Brute-force satisfiability check for small formulas (test oracle)."""
     n = f.num_vars
