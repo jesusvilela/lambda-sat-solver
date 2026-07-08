@@ -1,4 +1,4 @@
-# Edge-tail stress — the tails of the omni distributions
+# Edge-tail stress — the tails of the benchmark distributions
 
 *After the tock/fix cycle (2300+ fuzzed instances + a degenerate corpus: 0
 crashes, 0 unsound), a stress sweep into the extremes. Harness
@@ -16,7 +16,7 @@ The honest boundary, stated plainly: **the frames never fire on pure random
 parity, no cardinality, no 2-SAT collapse — at *every* ratio, including the 4.26
 ridge. The middleware solves all of it, but via the certified Kissat fallback, at
 CDCL speed. This is the frames' scope drawn exactly: they are for *structured*
-instances; on the structureless omni-tail they add nothing but the certificate,
+instances; on the structureless tail they add nothing but the certificate,
 and they never lie (0 disagreements with Kissat across the whole sweep).
 
 ## 2. Symmetry tail (pigeonhole, up the isotropy tail)

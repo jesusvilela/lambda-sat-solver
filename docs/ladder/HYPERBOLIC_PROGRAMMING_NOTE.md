@@ -7,7 +7,7 @@ own object, honestly. This is a lens/substrate note, not a solver claim.*
 
 Earlier in this program "hyperbolic" was read as hyperbolic *geometry* (curvature,
 the Lorentz model) and honestly scoped out — Rung 1 showed geometric embeddings
-do not carry SAT hardness. But the operator meant something different and much
+do not carry SAT hardness. But the intended sense was something different and much
 more load-bearing: **hyperbolic PROGRAMMING** in the Gårding–Güler–Renegar–Brändén
 sense — convex optimization over the *hyperbolicity cone* of a hyperbolic
 polynomial, the largest structured generalization of conic optimization, with

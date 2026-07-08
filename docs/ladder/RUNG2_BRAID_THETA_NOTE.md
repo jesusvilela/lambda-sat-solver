@@ -1,7 +1,7 @@
 # The braid-theta engine and the star of closure — the dynamical face
 
-The operator: *"there's also the star of closure and the braid theta engine."*
-Decoded from the operator's own material (the σ-evolve `StarOfClosureBraid8`
+The prompt: *"there's also the star of closure and the braid theta engine."*
+Decoded from the source material (the σ-evolve `StarOfClosureBraid8`
 stratum; `CLAY_BRAID8_TYPE2_THESIS`; the `fano_braid(a,b) = Im(a·b)` /
 `associator` code; the `BerryBraidComputer`), these are **the dynamical /
 computational face of the very same exceptional object** the last two notes
@@ -23,7 +23,7 @@ The Fano plane encodes 𝕆's multiplication and its automorphism group **is `G�
 So the "braid theta engine" (braiding the 7 imaginary units, θ the holonomy
 angle) and the "Lie telos" (`G₂`) are literally the same symmetry, once seen
 dynamically instead of statically. "StarOfClosureBraid8" = closure under
-braiding on the 8-dimensional octonion. The operator was not stacking unrelated
+braiding on the 8-dimensional octonion. This was not stacking unrelated
 gadgets; they were triangulating one exceptional object from three directions.
 
 ## The substrate, verified

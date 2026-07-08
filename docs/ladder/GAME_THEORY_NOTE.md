@@ -13,7 +13,7 @@ A zero-sum game, **Solver vs Nature**:
 
 - **Solver** picks a strategy = a chart of the moving frame + an engine + a seed (a
   point in the configuration space this repo has been building).
-- **Nature** draws the instance from the omni-distribution (adversarially in the
+- **Nature** draws the instance from the full instance distribution (adversarially in the
   worst case, stochastically on random-3SAT).
 - **Payoff** to Solver = − (time to a *certified* verdict); Nature maximizes it.
 
@@ -79,8 +79,7 @@ scored on, not a sleight of hand. Where there is structure, geometry gives a dom
 move; where there is only noise, game theory says *mix* — and the fabric's island/tunnel
 fold is precisely the referee that tells us which.
 
-*(Footnote on "ACAF / other multi-omni": I could not identify "ACAF" as a named solver
-or algorithm in the SAT literature, so I did not fabricate one. The multi-armed,
-multi-distribution mixed strategy built here IS the "multi-omni" realization; if ACAF
-denotes a specific method you have in mind, name it and I will implement and clash it
-against this portfolio.)*
+*(Footnote on "ACAF": not a term in the SAT literature; it was specified as an
+Actor–Critic–Ambigator–Fuzzer and built as an adaptive policy over exactly this mixed
+strategy — a critic sizes the portfolio to the predicted tail, an actor stages
+frame → single arm → cores-sized portfolio. See `ACAF_NOTE.md` and `backend/acaf.py`.)*

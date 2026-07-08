@@ -1,6 +1,6 @@
 # Clashing SAT and Lambda — what survived, what fossilized
 
-The operator's Λᴿ ("lambda with remainder") vision — a hypercomplex, moving-frame
+The Λᴿ ("lambda with remainder") vision — a hypercomplex, moving-frame
 universal lambda language, and a Λᴿ-SAT that treats clauses as manifold patches
 and UNSAT as non-vanishing holonomy — is beautiful and large. The instruction was
 the Charter itself: *clash SAT and Lambda, see what survives and grows.* So the
@@ -80,7 +80,7 @@ fusion, the frame trilogy, and the Lean obligation meet on one object.
 
 ## The Y-combinator spine — ε > 0 made literal
 
-The operator's fuller vision was a *Y combinator* — the fixpoint, self-reference —
+The fuller vision was a *Y combinator* — the fixpoint, self-reference —
 "in a Calabi-Yau Möbius torus." The honest core of that: **full Y is undecidable**
 (a certificate cannot exist for the general fixpoint — the halting boundary), so
 "maybe that's too much" is *precisely* true. But its decidable spine is buildable,
@@ -99,7 +99,7 @@ rather than mere provenance. Verified (5 tests):
 - `λs. a ∨ s` → the boundary matters (two fixpoints) → **ε > 0**.
 - `λs. ¬s` — the **Möbius fixpoint**: traverse once, return flipped; its remainder
   is **eternally nonzero at every depth**. Self-negation is the term that never
-  orients, ε never reaching 0 — the operator's non-orientable torus, exact.
+  orients, ε never reaching 0 — the non-orientable torus, exact.
 
 So the vision's spine (Y, Möbius, the living remainder) is real and tested; the
 Calabi-Yau / 360-orthogonal / curvature envelope stays the lens — the *geometry of

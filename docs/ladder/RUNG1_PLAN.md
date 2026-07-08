@@ -1,6 +1,6 @@
 # Ladder to a hardness lower bound — Rung 1 plan
 
-The ladder (from the operator's own `COMPLEXITYINFERIORLIMIT` report,
+The ladder (from the source `COMPLEXITYINFERIORLIMIT` report,
 which correctly says ρ★>0 alone gives no lower bound and the carrier
 must be intrinsic, classical, verifiable):
 

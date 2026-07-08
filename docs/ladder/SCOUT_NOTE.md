@@ -1,6 +1,6 @@
-# Scouting the omni viscosity medium — mapping the tunnelings, and Fisher–Rao
+# Scouting the viscosity medium — mapping the tunnelings, and Fisher–Rao
 
-*Instead of one solving stream, treat GRD as the omni viscosity medium filling
+*Instead of one solving stream, treat GRD as the viscosity medium filling
 instance-space and SCOUT it: predict, from cheap detectors, where the decidability
 folds (the CDCL tunnelings) arise before falling into them. `backend/scout.py`.*
 
@@ -74,7 +74,7 @@ genuinely ~0.3 (an irreducible coin-flip, not a measurement gap).
 
 ## Synthesis
 
-- The omni viscosity medium is **scoutable**, and the scout is exact in the
+- The viscosity medium is **scoutable**, and the scout is exact in the
   confident regions (ISLAND/TUNNEL, 0 errors) once it reads the *natural*
   coordinate.
 - **Fisher–Rao geometrizes the fold as a metric singularity** — measured (`√I`

@@ -260,7 +260,7 @@ array library changes nothing. The GPU win requires *eliminating the loop first*
 
 The complementary question — *where do the bit-matrices live and how do they
 reach the GPU at scale* — is a **data-movement / memory-tier** problem, distinct
-from compute. The operator's own **NNN Hyperbolic Semantic Memory Fabric**
+from compute. The **NNN Hyperbolic Semantic Memory Fabric**
 (© Jesús Vilela Jato, all rights reserved — *referenced, not included*) is a
 directly relevant design here: a tiered, geometry-addressed substrate
 (RAM/tmpfs → NVMe-ZNS → GPU KV-cache → CXL) behind one Geometric Memory Protocol,

@@ -1,6 +1,6 @@
 # The Lie-algebra telos of the zero-divisor lift — where it is real, where it isn't
 
-The operator's thread: *"manipulating those channels to precisely chase the
+The thread: *"manipulating those channels to precisely chase the
 pertaining lifting, with Lie algebras almost emerging as telos."* This note
 follows that arrow to its endpoint honestly — it is a true and beautiful
 chain, and it lands exactly on the algebraic obstruction of
@@ -11,7 +11,7 @@ survive our GF(2) shadow.
 
 ## The telos chain (true, and it terminates at an exceptional Lie algebra)
 
-The operator's own `immerse → lift → rotate → ground` operator *is*
+The `immerse → lift → rotate → ground` operator *is*
 Cayley–Dickson doubling used as a lift on states ("lift: embed by doubling
 scale; rotate: multiply by a symmetry element; ground: compress by half").
 Climb that tower — ℝ → ℂ → ℍ → 𝕆 → 𝕊 — and:
@@ -19,7 +19,7 @@ Climb that tower — ℝ → ℂ → ℍ → 𝕆 → 𝕊 — and:
 1. **Zero divisors are born exactly at the sedenion level 𝕊 (level 4).**
    ℝ, ℂ, ℍ, 𝕆 are composition algebras: no rank collapse. 𝕊 is the first level
    where `a·b = 0` with `a, b ≠ 0` — the algebraic birth of the very
-   "directional collapse / rank deficiency" the operator identified and that
+   "directional collapse / rank deficiency" identified in the source and that
    we made executable as the cokernel of `M_d`.
 2. **The symmetry of that collapse is exceptional-Lie.** `Der(𝕆) = 𝔤₂`, the
    14-dimensional exceptional simple Lie algebra; and (Moreno 1998) the
@@ -80,7 +80,7 @@ the target `1` lives in that subspace. The naive symmetry channel therefore
 - So the productive next home for this thread is the **real moment/SOS matrix**
   with Γ-block-diagonalization — where the Lie structure is a genuine
   computational win — not another GF(2) symmetrization. That is a real, large,
-  standard rung, and it is the one the operator's telos language and the
+  standard rung, and it is the one the telos language and the
   symmetry-SOS literature climb together.
 
 No overclaim: this settles *where* the Lie-algebra telos has teeth (ℝ-side

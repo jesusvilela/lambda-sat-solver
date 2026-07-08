@@ -1,6 +1,6 @@
 # The fabric model — the family distributions, parametric and hyperbolic
 
-*The operator asked to "model the family distributions parametrically over the
+*The aim was to "model the family distributions parametrically over the
 fabric… statistically, in n-cosmo / n-manifold distributional ledgers" — and then:
 "remember hyperbolic computing, don't do boring euclidean 2d." So the model does not
 fit flat Gaussian clouds; it fits **wrapped-normal blobs on the Poincaré ball**, the
