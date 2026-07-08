@@ -10,8 +10,9 @@ and every rung says so.
 - **Two genuine hardness carriers, theorem-backed.** `min_refutation_width`
   (Ben-Sasson–Wigderson: width lower-bounds resolution size) and
   `nullstellensatz_degree` (Clegg–Edmonds–Impagliazzo: PC degree lower-bounds
-  PC size). They track but are *distinct*: NS ≥ width on every instance tested,
-  and PHP(3→2) separates them (NS 4 vs width 2). Both are exact and
+  PC size). They are related but **incomparable** — neither dominates: PHP(3→2)
+  has NS 4 > width 2, while Tseitin K4 has NS 3 < width 4 (measured, both
+  directions; test `test_ns_and_width_are_incomparable`). Both are exact and
   exponential — the right object is genuinely expensive.
 - **A clean, well-measured negative.** No cheap graph-structural scalar
   (`spectral_gap`, degree entropy, `signed_laplacian_frustration`) carries
@@ -32,8 +33,9 @@ and every rung says so.
 ## What's proven vs open
 
 - **Proven / measured:** the two size lower bounds (BSW, CEI) as theorems the
-  carriers compute against; the Rung-1 negative on our own instances; NS ≥ width
-  with PHP separation; the char-2 collapse of the naive symmetry channel.
+  carriers compute against; the Rung-1 negative on our own instances; NS and
+  width **incomparable** (PHP 4>2, Tseitin K4 3<4); the char-2 collapse of the
+  naive symmetry channel.
 - **Open / next:** the ℝ-side **G₂-block-diagonalized moment/SOS matrix** on the
   same rank-deficiency operator — the one place the exceptional symmetry is a
   genuine computational lever rather than a name.

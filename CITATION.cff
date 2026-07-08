@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use this software or its research notes, please cite it as below."
+title: "λSAT — certified λ-logic SAT middleware and a research harness for frame-structured SAT hardness"
+abstract: >-
+  A headless, certified Boolean-satisfiability middleware: it decides formulas via
+  three sound, engine-independent frames (implication/2-SAT, parity/GF(2),
+  counting/cardinality) and their coupling, falling back to a DRAT-certified CDCL
+  engine only when no frame applies. Every verdict is independently checked (SAT by
+  model replay, UNSAT by a sound frame refutation or a drat-trim proof). On top sits
+  a research program on the intrinsic geometry of SAT hardness — a hyperbolic
+  instance-manifold, a game-theoretic dispatcher, and an explicit proven/measured/
+  speculative claim ledger.
+type: software
+authors:
+  - family-names: "Vilela Franco"
+    given-names: "Jesús"
+repository-code: "https://github.com/jesusvilela/lambda-sat-solver"
+url: "https://github.com/jesusvilela/lambda-sat-solver"
+license: MIT
+version: "0.1.0"
+keywords:
+  - SAT
+  - satisfiability
+  - certified solving
+  - DRAT proof checking
+  - computational complexity
+  - resolution width
+  - Nullstellensatz degree
+  - lambda calculus
+references:
+  - type: article
+    authors:
+      - family-names: "Ben-Sasson"
+        given-names: "Eli"
+      - family-names: "Wigderson"
+        given-names: "Avi"
+    title: "Short proofs are narrow — resolution made simple"
+    year: 2001
+  - type: article
+    authors:
+      - family-names: "Clegg"
+        given-names: "Matthew"
+      - family-names: "Edmonds"
+        given-names: "Jeffery"
+      - family-names: "Impagliazzo"
+        given-names: "Russell"
+    title: "Using the Groebner basis algorithm to find proofs of unsatisfiability"
+    year: 1996
+  - type: article
+    authors:
+      - family-names: "Gomes"
+        given-names: "Carla P."
+      - family-names: "Selman"
+        given-names: "Bart"
+    title: "Heavy-tailed phenomena in satisfiability and constraint satisfaction problems"
+    year: 2000

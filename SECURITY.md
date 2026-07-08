@@ -1,31 +1,36 @@
-Thanks for helping make GitHub safe for everyone.
+# Security policy
 
-# Security
+This is a research library and CLI, not a network service. Its security surface is
+unusual and worth stating plainly: the project's core promise is **soundness** — that a
+verdict it certifies is correct. The most serious class of defect here is therefore not a
+memory-safety bug but a **soundness bug**: a formula reported `SAT`/`UNSAT` (with
+`certified = True`) whose verdict is wrong.
 
-GitHub takes the security of our software products and services seriously, including all of the open source code repositories managed through our GitHub organizations, such as [GitHub](https://github.com/GitHub).
+## Trusted computing base
 
-Even though [open source repositories are outside of the scope of our bug bounty program](https://bounty.github.com/index.html#scope) and therefore not eligible for bounty rewards, we will ensure that your finding gets passed along to the appropriate maintainers for remediation. 
+By design, the external SAT solver (Kissat) is **not trusted**. Every verdict is
+re-checked by a small, independent core:
 
-## Reporting Security Issues
+- SAT — the model is replayed against the original formula (`cnf_utils.verify_model`);
+- UNSAT via a frame — sound by construction (2-SAT SCC, GF(2) refutation, counting bound);
+- UNSAT via CDCL — the DRAT proof is replayed by `drat-trim` (LRAT optional).
 
-If you believe you have found a security vulnerability in any GitHub-owned repository, please report it to us through coordinated disclosure.
+A bug in Kissat, CaDiCaL, or CryptoMiniSat that produced a wrong answer would be **caught**
+by this core, not trusted. A soundness-relevant bug is therefore one in the trusted core
+itself (parser, Tseitin transform, model checker, the frame refutations, or the proof-checker
+invocation).
 
-**Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
+## Reporting a vulnerability
 
-Instead, please send an email to opensource-security[@]github.com.
+Please report privately rather than in a public issue:
 
-Please include as much of the information listed below as you can to help us better understand and resolve the issue:
+- Use **GitHub Security Advisories** ("Report a vulnerability") on this repository, or
+- email the maintainer via the address on the GitHub profile of the repository owner.
 
-  * The type of issue (e.g., buffer overflow, SQL injection, or cross-site scripting)
-  * Full paths of source file(s) related to the manifestation of the issue
-  * The location of the affected source code (tag/branch/commit or direct URL)
-  * Any special configuration required to reproduce the issue
-  * Step-by-step instructions to reproduce the issue
-  * Proof-of-concept or exploit code (if possible)
-  * Impact of the issue, including how an attacker might exploit the issue
+Please include a minimal reproducing formula and the observed vs expected verdict. A
+witnessed soundness violation (a certified-but-wrong verdict) will be treated as the
+highest priority.
 
-This information will help us triage your report more quickly.
+## Supported versions
 
-## Policy
-
-See [GitHub's Safe Harbor Policy](https://docs.github.com/en/site-policy/security-policies/github-bug-bounty-program-legal-safe-harbor#1-safe-harbor-terms)
+The project is pre-1.0; fixes land on the default branch. Pin a commit for reproducibility.

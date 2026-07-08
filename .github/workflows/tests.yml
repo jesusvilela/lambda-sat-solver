@@ -6,7 +6,10 @@ on:
   pull_request:
 
 jobs:
-  test:
+  # Lane 1 -- unit-fast: portable, may skip solver-dependent tests if the external
+  # binaries are unavailable (shutil.which -> None). Green does not by itself assert
+  # that external certification executed; that is lane 2's job.
+  unit-fast:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -27,9 +30,43 @@ jobs:
 
       # Best-effort: install the external solvers so the @requires_kissat
       # integration tests run too. If a package is unavailable the tests skip
-      # gracefully (shutil.which -> None), so CI stays green either way.
+      # gracefully (shutil.which -> None), so this lane stays green either way.
       - name: Install SAT solvers (best effort)
         run: sudo apt-get update && sudo apt-get install -y kissat drat-trim cadical || true
 
       - name: Run test suite
         run: python -m pytest backend/tests/ -q
+
+  # Lane 2 -- certification-hard: Kissat + drat-trim are MANDATORY. This lane fails
+  # red if the external certification path does not actually execute -- it is the
+  # lane that stands behind the repo's headline claim (verify, don't trust).
+  certification-hard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt
+
+      # Mandatory, NOT best-effort: no "|| true". If these are unavailable the lane
+      # must fail rather than silently skip the certification it is guarding.
+      - name: Install Kissat + drat-trim (mandatory)
+        run: sudo apt-get update && sudo apt-get install -y kissat drat-trim
+
+      - name: Assert the external tools are present
+        run: |
+          command -v kissat
+          command -v drat-trim
+
+      - name: Certification smoke (real DRAT UNSAT + model-replay SAT)
+        run: python .github/scripts/certification_smoke.py
+
+      - name: Certification-relevant tests must run (not skip)
+        run: python -m pytest backend/tests/test_integration.py backend/tests/test_kissat_wrapper.py -q
