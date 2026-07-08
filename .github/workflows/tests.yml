@@ -50,8 +50,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential git
           git clone --depth 1 https://github.com/arminbiere/kissat.git /tmp/kissat
-          make -C /tmp/kissat -j2
-          sudo cp /tmp/kissat/build/kissat /usr/local/bin/kissat
+          cd /tmp/kissat
+          ./configure
+          make -j2
+          sudo cp build/kissat /usr/local/bin/kissat
           git clone --depth 1 https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
           make -C /tmp/drat-trim -j2
           sudo cp /tmp/drat-trim/drat-trim /usr/local/bin/drat-trim
