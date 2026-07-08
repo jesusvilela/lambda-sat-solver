@@ -32,6 +32,7 @@ from .scout import scout, xor_rank_deficiency
 @dataclass
 class Fabric:
     parity_kind: str          # 'consistent'|'inconsistent'|'nostruct'
+    parity_signal: float      # XOR coverage: how much of the formula IS parity (0..1)
     rank_deficiency: float    # parity thread: 0 determined ... 1 free (fold ~0.05)
     orbit_coarseness: float   # orbit thread: 0 rigid ... 1 highly symmetric (fold ~0.9)
     gyration: float           # hyperbolic depth (distance to the boundary ∂∞)
@@ -42,8 +43,9 @@ class Fabric:
     predicted_frame: str
 
     def as_dict(self) -> Dict[str, float]:
-        return {"rank_def": self.rank_deficiency, "orbit": self.orbit_coarseness,
-                "gyration": self.gyration, "counting": self.counting_signal,
+        return {"parity": self.parity_signal, "rank_def": self.rank_deficiency,
+                "orbit": self.orbit_coarseness, "gyration": self.gyration,
+                "counting": self.counting_signal,
                 "implication": self.implication_signal, "ratio": self.ratio}
 
 
@@ -60,9 +62,10 @@ def fabric(formula: CNFFormula) -> Fabric:
     r = scout(formula)
     return Fabric(
         parity_kind=kind,
+        parity_signal=r.features.get("xor", 0.0),
         rank_deficiency=defic,
         orbit_coarseness=orbit,
-        gyration=hyperbolic_depth(formula),
+        gyration=hyperbolic_depth(formula, exact=False),
         counting_signal=amo,
         implication_signal=binf,
         ratio=m / n,

@@ -290,15 +290,23 @@ class SatSignature:
         return self.status
 
 
-def poincare_radius(formula: CNFFormula, node_budget: int = 80_000) -> float:
+def poincare_radius(formula: CNFFormula, node_budget: int = 80_000,
+                    exact: bool = True) -> float:
     """Non-Euclidean placement: the Poincare-disk radius of an instance. A
     STRUCTURE score = log2|Aut| (exact or bracketed) + a bonus if a frame decides
     it; radius = 1/(1+score) in (0,1]. Highly symmetric / frame-decidable
     instances sit near the center; RIGID, frame-void (CDCL) instances approach
     the boundary at infinity d_infinity -- the observer's asymptotic region, where
     no frame reaches. The tessellation is thus anisomorphic and hyperbolic: the
-    exponential family of hard instances has infinite room out at the boundary."""
-    sym = exact_symmetry_log2(formula, node_budget)
+    exponential family of hard instances has infinite room out at the boundary.
+
+    `exact=False` skips the Schreier-Sims exact |Aut| and uses the cheap 1-WL
+    upper bound directly -- the placement stays monotone (symmetric small radius,
+    rigid boundary) but costs milliseconds instead of seconds on highly symmetric
+    instances (exact |Aut| of PHP is a real automorphism-counting search). This is
+    the path the fabric descriptor uses, where the depth is a cheap coordinate, not
+    an exact invariant."""
+    sym = exact_symmetry_log2(formula, node_budget) if exact else None
     if sym is None:
         sym = symmetry_log2_upper(formula)
     decided = adjudicate(formula).status != "CDCL_NEEDED"
@@ -306,11 +314,15 @@ def poincare_radius(formula: CNFFormula, node_budget: int = 80_000) -> float:
     return 1.0 / (1.0 + score)
 
 
-def hyperbolic_depth(formula: CNFFormula, node_budget: int = 80_000) -> float:
+def hyperbolic_depth(formula: CNFFormula, node_budget: int = 80_000,
+                     exact: bool = True) -> float:
     """artanh(radius): hyperbolic distance from the center. Diverges as an
     instance approaches the rigid/frame-void boundary d_infinity -- so rigidity is
-    literally an infinite hyperbolic distance, not a bounded Euclidean one."""
-    r = min(poincare_radius(formula, node_budget), 1.0 - 1e-12)
+    literally an infinite hyperbolic distance, not a bounded Euclidean one.
+
+    `exact=False` forwards to the cheap-placement `poincare_radius` (1-WL upper
+    bound, no exact automorphism count) -- the fast coordinate for the fabric."""
+    r = min(poincare_radius(formula, node_budget, exact=exact), 1.0 - 1e-12)
     return math.atanh(r)
 
 

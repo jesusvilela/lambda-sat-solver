@@ -16,6 +16,7 @@ from backend.frame_solver import (
     frame_solve,
     frame_solve_coupled,
     frame_solve_guided,
+    frame_solve_scouted,
 )
 
 
@@ -285,6 +286,59 @@ class TestDecidabilityFold:
         assert hyperbolic_depth(noisy) > 5.0            # jumped toward the boundary
         ent, _ = coupled_entailments(noisy)
         assert len(ent) < n // 3                        # near-empty far side
+
+
+class TestScoutedGate:
+    """frame_solve_scouted must be a strict, sound optimization of the coupled
+    router: identical certified verdicts, never losing a frame decision, and
+    short-circuiting only genuine tunnel instances."""
+
+    def _corpus(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                              / "docs/ladder/scripts"))
+        from frame_benchmark import mixed, random_3sat, random_xorsat, tseitin
+        fams = []
+        for n in (60, 100, 150):
+            for s in range(4):
+                fams.append(random_3sat(n, round(4.26 * n), s))
+        for nv in (20, 40):
+            for s in range(3):
+                fams.append(tseitin(nv, s))
+        for n in (30, 40):
+            for s in range(3):
+                fams.append(random_xorsat(n, n, s))
+        for p in (5, 6, 7):
+            fams.append(pigeonhole(p)[0])
+        for s in range(4):
+            fams.append(mixed(30, 20, 20, s))
+        return fams
+
+    def test_no_verdict_regression_vs_coupled(self):
+        for f in self._corpus():
+            c = frame_solve_coupled(f)
+            sc = frame_solve_scouted(f)
+            # decided verdicts must agree exactly
+            if sc.status in ("SAT", "UNSAT"):
+                assert sc.status == c.status
+            # the gate must never drop a frame decision to CDCL
+            if c.status in ("SAT", "UNSAT"):
+                assert sc.status != "CDCL_NEEDED", f"lost a {c.status} frame win"
+
+    def test_gate_punts_random3_to_cdcl(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                              / "docs/ladder/scripts"))
+        from frame_benchmark import random_3sat
+        f = random_3sat(120, round(4.26 * 120), 0)
+        assert frame_solve_scouted(f).status == "CDCL_NEEDED"
+
+    def test_gate_keeps_structured_wins(self):
+        # tseitin (parity) and pigeonhole (counting) must still be decided
+        assert frame_solve_scouted(_tseitin_k4()).status == "UNSAT"
+        assert frame_solve_scouted(pigeonhole(6)[0]).status == "UNSAT"
 
 
 def _has_model(f: CNFFormula) -> bool:

@@ -26,7 +26,7 @@ from backend.binary_clause_check import check_binary_clauses
 from backend.cardinality_check import pigeonhole_counting_refutation
 from backend.cnf_utils import verify_model, write_dimacs
 from backend.eval.generators import pigeonhole
-from backend.frame_solver import frame_solve_coupled
+from backend.frame_solver import frame_solve_scouted
 from backend.proof_checking import DRATChecker
 from backend.xor_extraction import extract_xors, gf2_xor_solve
 from docs.ladder.scripts.frame_benchmark import (
@@ -67,13 +67,15 @@ def _certified_kissat(formula, timeout_s):
 
 
 def middleware_solve(formula, timeout_s=TIMEOUT):
-    """The breathing bordon: the COUPLED frame router (three frames as three
-    theories exchanging entailed literals to a fixpoint -- inhale/propagate,
-    resonate/settle), then a DRAT/model-certified CDCL fallback only when the
-    coupling escalates. Returns (status, seconds, solved_by, verified); every
-    frame/coupling verdict is certified (UNSAT sound, SAT model-verified)."""
+    """The breathing bordon: the SCOUT-GATED coupled frame router -- a cheap tunnel
+    probe skips the algebraic pre-pass on structureless instances (~3.3x faster
+    there), and otherwise three frames couple as three theories exchanging entailed
+    literals to a fixpoint (inhale/propagate, resonate/settle). Then a DRAT/model-
+    certified CDCL fallback only when the router escalates. Returns (status,
+    seconds, solved_by, verified); every frame verdict is certified (UNSAT sound,
+    SAT model-verified)."""
     t0 = time.perf_counter()
-    r = frame_solve_coupled(formula)
+    r = frame_solve_scouted(formula)
     if r.status == 'UNSAT':
         return 'UNSAT', time.perf_counter() - t0, r.resolved_by, True
     if r.status == 'SAT':

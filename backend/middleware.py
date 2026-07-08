@@ -33,7 +33,7 @@ from .kissat_wrapper import (
     SolverResult as KissatResult
 )
 from .proof_checking import DRATChecker, LRATChecker
-from .binary_clause_check import check_binary_clauses
+from .frame_solver import frame_solve_scouted
 from .cnf_profile import profile_cnf, CNFProfile
 from .policy import choose_heuristic, choose_budget
 
@@ -200,20 +200,42 @@ class SolverMiddleware:
         budget: Dict[str, Any]
     ) -> Dict[str, Any]:
         """Effect handler: Solve CNF formula"""
-        # Fast independent pre-check: a binary-clause (2-SAT) contradiction
-        # proves the whole formula UNSAT without invoking Kissat or waiting
-        # on DRAT verification - the SCC argument is self-verifying, and
-        # runs even if Kissat isn't installed. This only fires when such a
-        # contradiction exists in the 2-literal clauses; otherwise it's a
-        # no-op and Kissat runs as usual.
-        binary_check = check_binary_clauses(cnf)
-        if not binary_check.consistent:
+        # Sound algebraic pre-check: the scout-gated frame router decides any
+        # formula that lives in one of the three sound poly-time frames (2-SAT
+        # implication, GF(2) parity, ℤ counting) or their coupling, with a
+        # certificate and no search - so it needs neither Kissat nor DRAT. Every
+        # verdict here is sound by construction: UNSAT is a channel refutation, and
+        # SAT is only returned with a model we re-verify below (verify, don't
+        # trust). On a structureless instance the gate short-circuits to
+        # CDCL_NEEDED cheaply and Kissat runs exactly as before. This runs even if
+        # Kissat is not installed.
+        frame = frame_solve_scouted(cnf)
+        if frame.status == 'UNSAT':
             response = {
                 'status': 'UNSAT',
                 'verified': True,
                 'proof_message': (
-                    f'Proved UNSAT from binary clauses alone (2-SAT contradiction '
-                    f'on variable {binary_check.conflicting_variable}); Kissat not invoked.'
+                    f'Proved UNSAT by the {frame.resolved_by} frame (sound '
+                    f'algebraic refutation); Kissat not invoked.'
+                ),
+                'stats': None,
+            }
+            if self.mode == 'research':
+                response['raw_output'] = None
+                response['mode'] = 'research'
+            response['certificate'] = _certificate_status(
+                response['status'], response.get('verified')
+            )
+            return response
+        if frame.status == 'SAT' and frame.model is not None \
+                and verify_model(cnf, frame.model):
+            response = {
+                'status': 'SAT',
+                'model': frame.model,
+                'verified': True,
+                'proof_message': (
+                    f'Solved SAT by the {frame.resolved_by} frame '
+                    f'(model independently verified); Kissat not invoked.'
                 ),
                 'stats': None,
             }

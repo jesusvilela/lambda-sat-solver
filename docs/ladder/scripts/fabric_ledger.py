@@ -32,11 +32,12 @@ def main():
         ("random3", lambda: random_3sat(60, round(4.26 * 60), 1)),
     ]
     print("Distributional ledger -- families over the cosmo-manifold fabric:\n")
-    print(f"{'family':9}{'rank_def':>9}{'orbit':>7}{'gyration':>9}"
+    print(f"{'family':9}{'parity':>7}{'rank_def':>9}{'orbit':>7}{'gyration':>9}"
           f"{'count':>7}{'impl':>6}{'ratio':>7}  {'region':>7} {'frame':>9}")
     for name, gen in families:
         fb = fabric(gen())
-        print(f"{name:9}{fb.rank_deficiency:>9.2f}{fb.orbit_coarseness:>7.2f}"
+        print(f"{name:9}{fb.parity_signal:>7.2f}{fb.rank_deficiency:>9.2f}"
+              f"{fb.orbit_coarseness:>7.2f}"
               f"{fb.gyration:>9.2f}{fb.counting_signal:>7.2f}"
               f"{fb.implication_signal:>6.2f}{fb.ratio:>7.1f}"
               f"  {fb.region:>7} {fb.predicted_frame:>9}")
