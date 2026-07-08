@@ -53,8 +53,8 @@ Issues = "https://github.com/jesusvilela/lambda-sat-solver/issues"
 [project.scripts]
 lambda-sat = "backend.cli:main_cli"
 
-[tool.setuptools]
-packages = ["backend"]
+[tool.setuptools.packages.find]
+include = ["backend*"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
