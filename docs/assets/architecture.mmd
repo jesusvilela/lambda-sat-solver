@@ -1,0 +1,19 @@
+%% λSAT architecture — the certified frame-first router.
+%% Source of truth for the diagram; renders on github.com and via mermaid-cli.
+flowchart TD
+    F([formula]) --> R{router}
+    R -->|"binary clauses"| IMP["implication frame (2-SAT)<br/>SCC contradiction / assignment"]
+    R -->|"XOR structure"| PAR["parity frame (GF(2))<br/>Gaussian refutation / model"]
+    R -->|"pigeonhole shape"| CNT["counting frame (ℤ)<br/>k &gt; m magnitude contradiction"]
+    R -->|"none of the above"| CDCL["CDCL fallback (Kissat)"]
+
+    IMP --> OBS([observer — certify])
+    PAR --> OBS
+    CNT --> OBS
+    CDCL -->|"UNSAT: DRAT replay<br/>SAT: model replay"| OBS
+    OBS --> V([certified verdict])
+
+    classDef frame fill:#eef,stroke:#557;
+    classDef fallback fill:#fee,stroke:#755;
+    class IMP,PAR,CNT frame;
+    class CDCL fallback;

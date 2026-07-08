@@ -1,0 +1,13 @@
+# Minimal GitHub Pages config — austere by intent (plain Markdown, no theatre).
+# Serve from /docs on the default branch: Settings → Pages → Source: main /docs.
+title: λSAT
+description: >-
+  Certified frame-first SAT middleware — structured regions before CDCL,
+  certified verdicts after every path.
+theme: jekyll-theme-minimal
+show_downloads: false
+
+# Keep the research subtrees out of the built site index (still browsable on GitHub).
+exclude:
+  - vdis/
+  - __pycache__/
