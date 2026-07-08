@@ -68,14 +68,42 @@ def _report(name, bins):
     print(f"   peak Fisher sqrt(I) = {peak:.1f}")
 
 
+def _p_count_vs_orbit(trials=1500, seed=7):
+    """Orbit thread: P(counting refutes) vs symmetry coarseness, on pigeonhole
+    with progressively deleted at-most-one (hole-exclusion) cliques."""
+    from backend.cardinality_check import pigeonhole_counting_refutation
+    from backend.eval.generators import pigeonhole
+    from backend.orbifold import symmetry_partition
+    rng = random.Random(seed)
+    bins = defaultdict(lambda: [0, 0])
+    for _ in range(trials):
+        p = rng.randint(5, 8)
+        frac = 0.55 + 0.45 * rng.random()      # bias toward intact symmetry so the
+        #                                        transition bins (coarseness ~0.9) fill
+        cnf, _ = pigeonhole(p)
+        kept = [c for c in cnf.clauses
+                if not (len(c) == 2 and all(l < 0 for l in c)) or rng.random() < frac]
+        f = CNFFormula(cnf.num_vars, kept)
+        coarse = 1.0 - len(symmetry_partition(f)) / f.num_vars
+        dec = pigeonhole_counting_refutation(f).refuted
+        key = round(coarse * 10) / 10
+        bins[key][0] += dec
+        bins[key][1] += 1
+    return bins
+
+
 def main():
-    _report("Along COVERAGE (crude proxy -- fold smeared, Fisher flat)",
+    print("PARITY THREAD -- the fold coordinate is GF(2) rank-deficiency:")
+    _report("  along COVERAGE (crude proxy -- fold smeared, Fisher flat)",
             _p_decide("coverage"))
-    _report("Along XOR RANK-DEFICIENCY (natural coordinate -- fold sharp, Fisher SPIKES)",
+    _report("  along XOR RANK-DEFICIENCY (natural coordinate -- Fisher SPIKES)",
             _p_decide("deficiency"))
-    print("\nThe fold is a Fisher-Rao metric singularity -- but only in the natural")
-    print("algebraic coordinate. The metric is the right instrument; coverage is")
-    print("the wrong chart. (Sign-patterns, measured as GF(2) rank, ARE the chart.)")
+    print("\nORBIT THREAD -- the fold coordinate is symmetry coarseness:")
+    _report("  along ORBIT coarseness (counting refutes only near full symmetry)",
+            _p_count_vs_orbit())
+    print("\nBoth threads of the fabric fold as Fisher-Rao metric singularities, each")
+    print("in its OWN natural coordinate (rank for parity, orbits for counting).")
+    print("The metric is the right instrument; the wrong chart hides the fold.")
 
 
 if __name__ == "__main__":
