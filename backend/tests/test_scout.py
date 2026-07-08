@@ -13,7 +13,13 @@ from frame_benchmark import random_3sat, random_xorsat, tseitin  # noqa: E402
 
 from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.frame_solver import frame_solve_coupled  # noqa: E402
-from backend.scout import FOLD, ISLAND, TUNNEL, scout  # noqa: E402
+from backend.scout import (  # noqa: E402
+    FOLD,
+    ISLAND,
+    TUNNEL,
+    scout,
+    xor_rank_deficiency,
+)
 
 
 class TestScoutRegions:
@@ -29,15 +35,44 @@ class TestScoutRegions:
         r = scout(random_3sat(60, round(4.26 * 60), 1))
         assert r.region == TUNNEL
 
-    def test_partial_parity_is_fold_band(self):
-        # a clearly partial-coverage instance sits in the ambiguous boundary layer
+    def test_rank_coordinate_resolves_most_partial_parity(self):
+        # partial-coverage instances that the crude coverage feature left in the
+        # ambiguous FOLD band are now confidently resolved by the rank coordinate:
+        # inconsistent/determined -> ISLAND, free -> TUNNEL, only the thin
+        # deficiency~0.05 layer stays FOLD.
         import random
         from backend.cnf_utils import CNFFormula
         rng = random.Random(3)
-        base = random_xorsat(26, 26, 3).clauses
-        f = CNFFormula(26, base + [[rng.choice([-1, 1]) * rng.randint(1, 26)
-                                    for _ in range(3)] for _ in range(70)])
-        assert scout(f).region == FOLD
+        regions = set()
+        for noise in (20, 50, 90):
+            base = random_xorsat(26, 26, noise) .clauses
+            f = CNFFormula(26, base + [[rng.choice([-1, 1]) * rng.randint(1, 26)
+                                        for _ in range(3)] for _ in range(noise)])
+            regions.add(scout(f).region)
+        # at least one confident (non-FOLD) region appears -- the fold shrank
+        assert regions & {ISLAND, TUNNEL}
+
+
+class TestRankDeficiencyCoordinate:
+    def test_full_parity_is_determined(self):
+        # a fully-covered XOR system is consistent-or-inconsistent with 0 free
+        # variables (deficiency 0) -- the natural coordinate says 'island'.
+        kind, defic = xor_rank_deficiency(tseitin(20, 1))
+        assert kind in ("consistent", "inconsistent")
+        if kind == "consistent":
+            assert defic <= 0.02
+
+    def test_no_structure_has_no_coordinate(self):
+        kind, _ = xor_rank_deficiency(random_3sat(60, 250, 1))
+        assert kind == "nostruct"
+
+    def test_inconsistent_xor_is_island(self):
+        # x1^x2=0 AND x1^x2=1 -> inconsistent -> a certain UNSAT island
+        from backend.cnf_utils import CNFFormula
+        f = CNFFormula(2, [[1, -2], [-1, 2], [1, 2], [-1, -2]])
+        kind, _ = xor_rank_deficiency(f)
+        assert kind == "inconsistent"
+        assert scout(f).region == ISLAND
 
 
 class TestScoutSoundness:

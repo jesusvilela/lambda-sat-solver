@@ -29,7 +29,38 @@ from .binary_clause_check import check_binary_clauses
 from .cardinality_check import pigeonhole_counting_refutation
 from .cnf_utils import CNFFormula
 from .orbifold import symmetry_partition
-from .xor_extraction import extract_xors
+from .xor_extraction import _rref_gf2, extract_xors
+
+
+def xor_rank_deficiency(formula: CNFFormula):
+    """The NATURAL fold coordinate: the GF(2) rank-deficiency of the recovered
+    XOR system -- the actual algebraic content of the sign-patterns, not the crude
+    coverage fraction. Returns (kind, deficiency):
+      'nostruct'     -- no XOR groups
+      'inconsistent' -- the XOR system forces 0=1 (a certain UNSAT island)
+      'consistent'   -- deficiency in [0,1]: 0 = Gaussian fully DETERMINES the
+                        spanned variables (island); >0 leaves free variables so the
+                        parity does not pin the solution (tunnel).
+    The fold lives at deficiency ~ 0.05, where P(decide) drops 0.99 -> 0.12 and the
+    Fisher-Rao metric of the predictive field spikes (scripts/fisher_fold.py)."""
+    xr = extract_xors(formula)
+    n = formula.num_vars
+    spanned = set()
+    rows = []
+    for x in xr.xors:
+        row = 0
+        for v in x.variables:
+            row |= 1 << (v - 1)
+            spanned.add(v)
+        if x.rhs:
+            row |= 1 << n
+        rows.append(row)
+    if not spanned:
+        return "nostruct", 0.0
+    basis = _rref_gf2(rows, n)
+    if basis is None:
+        return "inconsistent", 0.0
+    return "consistent", (len(spanned) - len(basis)) / len(spanned)
 
 ISLAND = "island"       # a sound frame will decide it
 TUNNEL = "tunnel"       # no exploitable structure -> straight to CDCL
@@ -68,16 +99,20 @@ def scout(formula: CNFFormula) -> ScoutReport:
     # a 2-SAT contradiction is cheap to confirm and always on the island
     if not check_binary_clauses(formula).consistent:
         return ScoutReport(ISLAND, "2sat", 1.0, f)
-    # full parity coverage: the GF(2) decider almost always fires
-    if f["xor"] >= 0.999:
-        return ScoutReport(ISLAND, "parity", 1.0, f)
     # counting signature: symmetric + at-most-one heavy (PHP-like)
     if f["symmetry"] >= 0.6 and f["amo"] >= 0.2 or \
             pigeonhole_counting_refutation(formula).refuted:
         return ScoutReport(ISLAND, "counting", 0.9, f)
-    # partial parity: the fold boundary layer -- ambiguous, must run the coupling
-    if f["xor"] >= 0.25:
-        return ScoutReport(FOLD, "none", 1.0 - f["xor"], f)
-    # no exploitable structure: tunnel territory, straight to CDCL
-    conf = 1.0 - max(f["xor"], f["amo"], f["symmetry"] if f["symmetry"] > 0 else 0.0)
+    # parity: read the NATURAL coordinate (GF(2) rank-deficiency), not coverage.
+    kind, defic = xor_rank_deficiency(formula)
+    if kind == "inconsistent":
+        return ScoutReport(ISLAND, "parity", 1.0, f)      # forced UNSAT
+    if kind == "consistent":
+        if defic <= 0.02:                                 # Gaussian determines it
+            return ScoutReport(ISLAND, "parity", 0.98, f)
+        if defic <= 0.08:                                 # the thin fold layer
+            return ScoutReport(FOLD, "parity", 1.0 - defic / 0.08, f)
+        return ScoutReport(TUNNEL, "none", min(defic, 1.0), f)  # free -> tunnel
+    # no XOR structure at all: tunnel territory
+    conf = 1.0 - max(f["amo"], f["symmetry"] if f["symmetry"] > 0 else 0.0)
     return ScoutReport(TUNNEL, "none", conf, f)
