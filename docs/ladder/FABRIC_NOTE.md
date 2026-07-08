@@ -10,12 +10,21 @@ metric singularity in its own natural coordinate.*
 
 | thread | quality | natural fold coordinate |
 |---|---|---|
-| **parity** | GF(2) structure of the sign-patterns | XOR **rank-deficiency** (fold ~0.05) |
+| **parity (presence)** | *is* it a GF(2) system | XOR **coverage fraction** |
+| **parity (fold)** | GF(2) structure of the sign-patterns | XOR **rank-deficiency** (fold ~0.05) |
 | **orbit** | symmetry / isotropy | **symmetry coarseness** `1 − orbits/n` (fold ~0.9) |
 | **gyration** | position in the hyperbolic mesh | `hyperbolic_depth` (distance to `∂∞`) |
 | **counting** | cardinality structure | at-most-one fraction |
 | **implication** | 2-SAT structure | binary-clause fraction |
 | **shape** | size | clause/variable ratio |
+
+*(The parity **presence** thread — XOR coverage — was added so a fully-determined
+parity system, whose rank-deficiency ≈ 0 and is therefore indistinguishable from a
+structureless instance on the fold coordinate alone, still reads as parity. It is
+what lets the parametric model separate Tseitin/XORSAT from the tunnel; see
+`FABRIC_MODEL_NOTE.md`. The gyration thread now uses the cheap 1-WL placement
+(`hyperbolic_depth(exact=False)`) — exact |Aut| cost 11 s on PHP, see
+`PIPELINE_REVIEW_NOTE.md`.)*
 
 ## The distributional ledger (`scripts/fabric_ledger.py`)
 
@@ -65,3 +74,8 @@ symmetry almost perfectly intact).
   statistical ledger — the next step is to model the family distributions
   parametrically over it (a genuine n-manifold distributional model), not just
   tabulate their regions.
+
+**That next step has landed** (`FABRIC_MODEL_NOTE.md`): `backend/fabric_model.py`
+fits each family as a wrapped-normal blob on the **Poincaré ball** — hyperbolic, not
+flat — with held-out classification accuracy 1.00 and the decided/tunnel families
+separated by the fold to `∂∞` (geodesic ≈14.5) rather than a Euclidean gap.

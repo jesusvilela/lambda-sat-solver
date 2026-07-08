@@ -3,35 +3,39 @@
 **Question:** subjected to a SAT-competition-style mix, does the frame-aware
 middleware (sound algebraic frames → certified CDCL fallback) beat raw SOTA CDCL,
 and where does it *not*? Engines: **Kissat 4.0.4** and **CaDiCaL** (both raw),
-and the **middleware** = the **coupled ("breathing") frame router**
-(`frame_solve_coupled`): three sound poly-time frames — implication/2-SAT
+and the **middleware** = the **scout-gated coupled ("breathing") frame router**
+(`frame_solve_scouted`): three sound poly-time frames — implication/2-SAT
 (`check_binary_clauses`), parity/GF(2) (`gf2_xor_refutation`/`gf2_xor_solve`),
 counting/cardinality (`pigeonhole_counting_refutation`) — run as three theories
 that exchange entailed literals to a fixpoint (inhale/propagate → resonate/settle),
-then a **DRAT- and model-certified Kissat fallback** only when the coupling
-escalates. 40 instances, 5 families, 20 s timeout. Harness
-`docs/ladder/scripts/sota_benchmark.py`; raw rows `sota_benchmark_results.json`.
+fronted by a cheap tunnel gate that skips the algebraic pre-pass on structureless
+instances (~3.3× faster there, 0 verdict regressions — `PIPELINE_REVIEW_NOTE.md`),
+then a **DRAT- and model-certified Kissat fallback** only when the router escalates.
+This same router is now wired into the production `SolverMiddleware` itself, not just
+the benchmark (F1, `PIPELINE_REVIEW_NOTE.md`). 40 instances, 5 families, 20 s
+timeout. Harness `docs/ladder/scripts/sota_benchmark.py`; raw rows
+`sota_benchmark_results.json`.
 
 ## Results — solved-count / PAR-2 by family
 
 | family | n | Kissat | CaDiCaL | Middleware |
 |---|---|---|---|---|
-| random3 (α=4.26) | 9 | 9/9 · 0.11 s | 9/9 · 0.12 s | 9/9 · 0.25 s |
-| **tseitin** (parity) | 9 | 5/9 · 18.95 s | 5/9 · 18.77 s | **9/9 · 0.00 s** |
+| random3 (α=4.26) | 9 | 9/9 · 0.12 s | 9/9 · 0.13 s | 9/9 · 0.19 s |
+| **tseitin** (parity) | 9 | 5/9 · 18.97 s | 5/9 · 18.83 s | **9/9 · 0.00 s** |
 | xorsat | 12 | 12/12 · 0.00 s | 12/12 · 0.00 s | 12/12 · 0.00 s |
-| **php** (counting) | 4 | 3/4 · 10.71 s | 4/4 · 0.11 s | **4/4 · 0.00 s** |
+| **php** (counting) | 4 | 3/4 · 10.78 s | 4/4 · 0.12 s | **4/4 · 0.00 s** |
 | mixed | 6 | 6/6 · 0.00 s | 6/6 · 0.00 s | 6/6 · 0.00 s |
-| **TOTAL** | **40** | **35/40 · 5.36 s** | **36/40 · 4.26 s** | **40/40 · 0.06 s** |
+| **TOTAL** | **40** | **35/40 · 5.38 s** | **36/40 · 4.28 s** | **40/40 · 0.04 s** |
 
-The middleware solves **40/40 at PAR-2 0.06 s** — ~90× better PAR-2 than raw
-Kissat and ~70× than CaDiCaL — with **26/40 decided by a sound algebraic frame
+The middleware solves **40/40 at PAR-2 0.04 s** — ~134× better PAR-2 than raw
+Kissat and ~107× than CaDiCaL — with **26/40 decided by a sound algebraic frame
 with no solver at all** (22 parity, 4 counting), and **40/40 verdicts certified**
 (fast-path sound by construction, or Kissat-UNSAT verified by drat-trim, or
-Kissat-SAT verified by model replay). Re-run with the *coupled/breathing* router
-(`frame_solve_coupled`): the dynamical upgrade holds the result — it is a sound
-superset of the static fixed-order router, so it matches on these families and
-adds reach only on the parity+units *mixed-UNSAT* instances this suite does not
-include (see `frame_solve_coupled`, `--couple`).
+Kissat-SAT verified by model replay). **Honest scope of the scout gate**: it holds
+the totals identical to the coupled router (same verdicts) — its measured win is on
+the *pre-pass*, whereas random-3SAT's PAR-2 is bound by the DRAT **certification** of
+the UNSAT proof (the value-add), not the pre-pass. The scout gate removes wasted
+algebraic work; it does not remove certification.
 
 ## How the three frames divide the work
 
