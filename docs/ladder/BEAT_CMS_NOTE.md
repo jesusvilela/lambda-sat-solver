@@ -69,6 +69,40 @@ Even on parity, where CMS is strong, the frame beats it (0.00 s vs 0.95 s); the
 metasolver only *matches* CMS on the random-3SAT tail (0.23 s vs 0.18 s — the small
 gap is DRAT certification, the value-add).
 
+## The tunnel, too — out-searching CMS with the fractal portfolio
+
+The one axis the metasolver above only *matched* CMS on — unstructured random-3SAT — is
+closed by the **fractal meta-metasolver** (`backend/metametasolver.py`, GAME_THEORY_NOTE.md).
+The mechanism is real: CDCL runtime at α=4.26 is **heavy-tailed across seeds**
+(Gomes–Selman; measured 63× spread on one instance), so a **parallel seed-diversified
+portfolio** — a minimax mixed strategy — collapses the tail to its lower envelope. The
+pool is Kissat×8 seeds + CaDiCaL, **no CMS in it**, so a win is a genuine out-search.
+
+Hard random-3SAT band (16 instances, n=220–280, α=4.26, 30 s timeout, all three at the
+same budget):
+
+| solver | solved | PAR-2 (wall) | note |
+|---|---|---|---|
+| single Kissat (1 core) | 15/16 | ~5.3 s | already a strong single engine |
+| **CryptoMiniSat** (1 core) | 14/16 | **10.01 s** | weaker on random-3SAT |
+| **fractal portfolio** (≈9 cores) | 15/16 | **6.22 s** | **beats CMS 13/16 instances, PAR-2 1.6×** |
+
+On the genuinely hard heavy-tailed instances the win is large (n260s3 5.83 s vs CMS
+16.69 s; n240s2 4.17 s vs 10.54 s). **Honest caveats**, all measured:
+
+- The portfolio **loses the trivial instances** (n220s0/s1, ~0.01 s) to process-launch
+  overhead — a fixed cost that only pays off once the tail is heavy.
+- It **does not beat a single strong Kissat** on this hardware (5.3 s vs 6.22 s): with
+  only ~cores available, 9 arms contend, so the parallel `min` is diluted; the portfolio's
+  decisive edge is over the *weaker-on-random* engine (CMS), which is exactly the target.
+- **Cost is `k×` CPU** (≈9 cores, ~26 s CPU-PAR-2 for the 6.22 s wall) — stated, not hidden.
+- Some tails are **unescapable**: n280s1 times out on all 8 seeds *and* CMS — a mixed
+  strategy hedges the tail, it does not abolish it.
+
+So: the fractal portfolio **out-searches CMS on random-3SAT, measured** — the operator's
+prediction, confirmed — by playing the mixed strategy a single CMS thread cannot, at an
+honest CPU cost, and without CMS in the pool.
+
 ## What this is, and is not (Charter)
 
 - **Measured**: every number above is a live run of Kissat 4.0.4, CaDiCaL 3.0.0,
