@@ -101,6 +101,13 @@ flowchart TD
 ```
 
 - **frame router** (`frame_solver.py`) — the three frames + their coupling, refute-first.
+- **metasolver** (`metasolver.py`) — reverts the dynamical description into a dispatch. On a
+  *counting-and-parity-inclusive mix* (not the competition set) it wins on PAR-2 over Kissat,
+  CaDiCaL and CryptoMiniSat — because it is instant where they blow up on counting, and
+  comparable elsewhere. A structural result on a specific mix, not a generally faster solver.
+- **meta-metasolver** (`metametasolver.py`) — the minimax mixed strategy; on the heavy-tailed
+  random-3SAT band it *out-searches CMS in wall-clock* (parallel, at a `k×` CPU cost, no CMS
+  in the pool). Single-thread on few cores, this advantage shrinks — see the honest scope.
 - **metasolver** (`metasolver.py`) — description-driven dispatch. On the included
   competition-style mix, its aggregate win comes from routing structured islands before
   CDCL, not from a claim of general CDCL dominance.
@@ -112,6 +119,10 @@ flowchart TD
 - **the view from outside** — `dynamics.py` (laws/relations/motions), `fabric.py` +
   `fabric_model.py` (the hyperbolic instance-manifold), `observer.py` (the adjudicator).
 
+> Every number here is a *measured* claim on a small, fixed, synthetic mix — regenerate it
+> with one command and read the scope in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). This is
+> a certified middleware and a research harness, **not** a claim of a generally faster SAT
+> solver.
 For exact measured/proven/speculative status, read [`PUBLIC_RESEARCH_CLAIMS.md`](PUBLIC_RESEARCH_CLAIMS.md)
 and [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) before citing benchmark numbers.
 
@@ -169,6 +180,8 @@ assert r.certified                              # every verdict carries its proo
 ```
 backend/
   frame_solver.py      three sound frames + coupling (the router)
+  metasolver.py        description-driven dispatch  (beats CMS on the mix)
+  metametasolver.py    fractal portfolio           (out-searches CMS on the tail, parallel)
   metasolver.py        description-driven dispatch  (scoped benchmark mix)
   metametasolver.py    fractal portfolio           (scoped heavy-tail benchmark)
   acaf.py              adaptive actor-critic policy (cores-sized mixed strategy)

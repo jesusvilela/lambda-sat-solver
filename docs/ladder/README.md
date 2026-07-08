@@ -10,6 +10,10 @@ and every rung says so.
 - **Two genuine hardness carriers, theorem-backed.** `min_refutation_width`
   (Ben-Sasson–Wigderson: width lower-bounds resolution size) and
   `nullstellensatz_degree` (Clegg–Edmonds–Impagliazzo: PC degree lower-bounds
+  PC size). They are related but **incomparable** — neither dominates: PHP(3→2)
+  has NS 4 > width 2, while Tseitin K4 has NS 3 < width 4 (measured, both
+  directions; test `test_ns_and_width_are_incomparable`). Both are exact and
+  exponential — the right object is genuinely expensive.
   PC size). They are exact, expensive, and **incomparable**: PHP(3→2) separates
   one way (NS 4 > width 2), while Tseitin K4 separates the other way
   (NS 3 < width 4). The right object is genuinely stratified, not one scalar.
@@ -32,6 +36,9 @@ and every rung says so.
 ## What's proven vs open
 
 - **Proven / measured:** the two size lower bounds (BSW, CEI) as theorems the
+  carriers compute against; the Rung-1 negative on our own instances; NS and
+  width **incomparable** (PHP 4>2, Tseitin K4 3<4); the char-2 collapse of the
+  naive symmetry channel.
   carriers compute against; the Rung-1 negative on our own instances; width and
   Nullstellensatz degree as distinct, mutually non-dominating carriers; the
   char-2 collapse of the naive symmetry channel.
