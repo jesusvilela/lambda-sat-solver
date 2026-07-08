@@ -11,6 +11,7 @@ from itertools import combinations, product
 from backend.cnf_utils import CNFFormula, verify_model
 from backend.eval.generators import pigeonhole
 from backend.frame_solver import (
+    coupled_entailments,
     coupling_breath,
     frame_solve,
     frame_solve_coupled,
@@ -222,6 +223,28 @@ class TestBreathingBordon:
         assert b.rounds >= 1 and b.amplitude >= 1 and b.settled
         assert b.verdict == "UNSAT"
 
+    def test_entailed_literals_are_sound_warm_start(self):
+        # every literal the coupling entails must be IMPLIED: appending them as
+        # units preserves satisfiability (a sound warm-start for CDCL). Checked
+        # by brute force on small random instances.
+        import random
+        from itertools import product
+        rng = random.Random(5)
+        for _ in range(200):
+            nv = rng.randint(3, 6)
+            cl = [[rng.choice([-1, 1]) * v
+                   for v in rng.sample(range(1, nv + 1), rng.randint(1, 3))]
+                  for _ in range(rng.randint(2, 12))]
+            f = CNFFormula(num_vars=nv, clauses=cl)
+            ent, _ = coupled_entailments(f)
+
+            def sat(g):
+                return any(verify_model(g, {i + 1: b[i] for i in range(g.num_vars)})
+                           for b in product([False, True], repeat=g.num_vars))
+            warm = CNFFormula(num_vars=nv,
+                              clauses=cl + [[v if b else -v] for v, b in ent.items()])
+            assert sat(f) == sat(warm)            # entailed units preserve SAT/UNSAT
+
     def test_breath_is_monotone_and_bounded(self):
         # a finite CNF's coupling is monotone (fixed only grows) and always
         # settles -- resonance to rest; no eternal drone here (that is the
@@ -231,6 +254,37 @@ class TestBreathingBordon:
         b = coupling_breath(w)
         assert all(b.breath[i] <= b.breath[i + 1] for i in range(len(b.breath) - 1))
         assert b.settled
+
+
+class TestDecidabilityFold:
+    """The escape field is a catastrophe fold, not a smooth Eikonal field: a
+    small amount of noise snaps a decided instance across the decidability cliff
+    to CDCL_NEEDED (U: finite -> infinite), with a near-empty far side."""
+
+    def test_escape_field_snaps_at_the_fold(self):
+        import sys
+        from pathlib import Path
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2]
+                               / "docs/ladder/scripts"))
+        from frame_benchmark import random_xorsat
+        from backend.orbifold import hyperbolic_depth
+        n = 26
+        core = random_xorsat(n, n, 2).clauses
+        decided = CNFFormula(num_vars=n, clauses=list(core))
+        bt0 = coupling_breath(decided)
+        assert bt0.verdict in ("SAT", "UNSAT")          # on the island: decided
+        assert hyperbolic_depth(decided) < 1.0          # near the center
+
+        import random
+        rng = random.Random(1010)
+        noisy = CNFFormula(num_vars=n, clauses=list(core) +
+                           [[rng.choice([-1, 1]) * rng.randint(1, n)
+                             for _ in range(3)] for _ in range(20)])
+        bt1 = coupling_breath(noisy)
+        assert bt1.verdict == "CDCL_NEEDED"             # snapped across the fold
+        assert hyperbolic_depth(noisy) > 5.0            # jumped toward the boundary
+        ent, _ = coupled_entailments(noisy)
+        assert len(ent) < n // 3                        # near-empty far side
 
 
 def _has_model(f: CNFFormula) -> bool:

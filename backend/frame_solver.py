@@ -324,6 +324,7 @@ class BreathTrace:
     amplitude: int                    # deepest single-round intake
     settled: bool                     # reached a fixpoint/conflict (resonant rest)
     verdict: str                      # 'SAT' | 'UNSAT' | 'CDCL_NEEDED'
+    entailed: Dict[int, bool] = None  # the literals the coupling ENTAILED (sound)
 
 
 def coupling_breath(formula: CNFFormula, max_rounds: int = 64) -> BreathTrace:
@@ -334,7 +335,7 @@ def coupling_breath(formula: CNFFormula, max_rounds: int = 64) -> BreathTrace:
     of cross-frame exchange breathes visibly before settling."""
     base = frame_solve(formula)
     if base.status != 'CDCL_NEEDED':
-        return BreathTrace([], 0, 0, True, base.status)
+        return BreathTrace([], 0, 0, True, base.status, {})
 
     n = formula.num_vars
     le2 = [c for c in formula.clauses if len(c) <= 2]
@@ -386,4 +387,15 @@ def coupling_breath(formula: CNFFormula, max_rounds: int = 64) -> BreathTrace:
             verdict = 'SAT'
     amplitude = max((breath[i] - (breath[i - 1] if i else 0)
                      for i in range(len(breath))), default=0)
-    return BreathTrace(breath, rounds, amplitude, settled, verdict)
+    return BreathTrace(breath, rounds, amplitude, settled, verdict, dict(fixed))
+
+
+def coupled_entailments(formula: CNFFormula):
+    """The sound literals the coupling ENTAILS, even when it does not fully decide
+    -- GRD's escape field made concrete: carry the accumulated moving-frame
+    structure into the CDCL fallback instead of discarding it. Returns
+    (entailed: {var: bool}, verdict). Every entailed literal is implied by the
+    formula (2-SAT unit / weight-1 GF(2) row), so appending them as units is
+    satisfiability-preserving -- a sound warm-start."""
+    bt = coupling_breath(formula)
+    return (bt.entailed or {}), bt.verdict
