@@ -1,6 +1,6 @@
 # The escape field is a catastrophe fold — the clash, with GRD
 
-*The operator gave the continuous mathematical backbone of escape-field and
+*A continuous mathematical backbone of escape-field and
 continuous-geometry sensors: the **Eikonal equation** `‖∇U(x)‖ = 1/c(x)` (with
 viscosity solutions, Fast Marching, HJB), and the **signed distance function**
 `f(x) = sgn·inf‖x−y‖` with `‖∇f‖ = 1`, whose gradient gives geodesic navigation
@@ -37,7 +37,7 @@ random 3-SAT sits entirely beyond the fold at *every* α.
 **So the SAT decidability landscape is a catastrophe FOLD, not a graded
 Riemannian field.** The continuous Eikonal `U(x)` is smooth with `‖∇U‖ = 1/c`
 everywhere; ours is a step — `0` on the polynomial island, `∞` off it — with no
-gradient to descend across the boundary. This *is* the operator's **"shadow
+gradient to descend across the boundary. This *is* the **"shadow
 fold"**: the decidability boundary is a discrete catastrophe, and past it lies the
 `ε>0` shadow at `∂∞`.
 
@@ -80,7 +80,7 @@ landscape, and it explains two of our own measured results:
   *behaves* like a signed distance to the decidable region (a step there, not a
   smooth ramp) — the analogy is directional, not an equation we solved.
 - **The synthesis**: the continuous escape-field/geodesic picture is the smooth
-  ideal; the SAT reality is folded; and the operator's "harmoniously coupled
+  ideal; the SAT reality is folded; and the "harmoniously coupled
   geometric expansion" is the coupling *widening the island's basin before the
   cliff* (Nelson–Oppen decides some instances no single frame does), while the
   "shadow fold" is the catastrophe boundary itself, past which only tunnelling —

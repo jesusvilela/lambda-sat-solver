@@ -1,6 +1,6 @@
 # Beating every solver, including CryptoMiniSat — the description reverted into a dispatch
 
-*The operator's highest-altitude ask: float outside the model, collect the **laws,
+*The highest-altitude framing: float outside the model, collect the **laws,
 relations and motions** of the solve in lambda logic dynamically, then **revert**
 them into operation — using that descriptive power precisely **where frame and
 geometry do not suffice**, to beat every solver including CryptoMiniSat. This note is
@@ -99,7 +99,7 @@ On the genuinely hard heavy-tailed instances the win is large (n260s3 5.83 s vs 
 - Some tails are **unescapable**: n280s1 times out on all 8 seeds *and* CMS — a mixed
   strategy hedges the tail, it does not abolish it.
 
-So: the fractal portfolio **out-searches CMS on random-3SAT, measured** — the operator's
+So: the fractal portfolio **out-searches CMS on random-3SAT, measured** — the
 prediction, confirmed — by playing the mixed strategy a single CMS thread cannot, at an
 honest CPU cost, and without CMS in the pool.
 

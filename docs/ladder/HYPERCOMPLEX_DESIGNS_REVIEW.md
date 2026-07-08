@@ -1,6 +1,6 @@
 # Review — the hypercomplex computer designs & channels
 
-A pass over the operator's computer/architecture designs from the pasted
+A pass over the contributed computer/architecture designs from the source
 conversations (the Lean structures, the sedenion clock, the VDIS channels),
 in the same discipline as `CONTRACTS.md`: what each design *is*, what is real,
 what is a `sorry`/`abbrev` triviality, and its honest computational scope. Two
@@ -36,7 +36,7 @@ matrix** (still the standing "next build").
 `L63_HypercomplexTime` wants "zero-divisor cost is not polynomial" to be a
 hardness theorem. The rigorous, executable form of "zero-divisor cost" is the
 **Nullstellensatz degree = rank-deficiency of `M_d`** (`RUNG2_ALGEBRAIC_NOTE.md`)
-— the operator's own instinct, made computable. What today's double-check
+— the guiding instinct, made computable. What today's double-check
 establishes is precisely the honest boundary the two `sorry`s hide:
 
 - the zero-divisor/NS obstruction is **real and intrinsic**, but it is a carrier

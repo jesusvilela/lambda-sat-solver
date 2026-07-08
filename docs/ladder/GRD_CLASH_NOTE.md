@@ -1,7 +1,7 @@
 # Clashing the solver manifolds — what survives in holonomy
 
 *A theoretical guide (a lens, labelled as such), reading CDCL, CryptoMiniSat and
-the frame router as motion on different manifolds, through the operator's
+the frame router as motion on different manifolds, through the
 **Geodesic Resonance Descent** (GRD): "move on curves, listen to structure, do not
 collapse." GRD is a continuous optimizer and does not decide SAT; it is used here
 as the shared skeleton that our discrete decision system turns out to instantiate.*

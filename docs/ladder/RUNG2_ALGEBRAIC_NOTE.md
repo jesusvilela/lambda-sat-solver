@@ -1,6 +1,6 @@
 # Rung 2, algebraic face — the zero-divisor obstruction, made executable
 
-**This note lifts the operator's "zero divisor = rank deficiency =
+**This note lifts the "zero divisor = rank deficiency =
 directional collapse" insight into a computable intrinsic invariant and
 shows it is the algebraic sibling of the resolution refutation width from
 `RUNG2_REPORT.md`.** Where Rung 2 named the sheaf-obstruction as *bounded
@@ -12,7 +12,7 @@ stop being rank-deficient with respect to `1`. (It is the *static*
 Nullstellensatz measure, not Polynomial-Calculus degree — see the two
 corrections below; the distinction matters and an earlier draft blurred it.)
 
-## The reframe (the operator's, and it is exactly right)
+## The reframe (and it is exactly right)
 
 Encode each clause `C` by its **violation polynomial** over GF(2):
 
@@ -116,5 +116,5 @@ the *right* intrinsic object is genuinely hard to compute — which is again
 why no cheap scalar off the incidence graph (Rung 1) can stand in for it.
 The geometry (zero divisor → rank deficiency → cokernel of `M_d`) names the
 obstruction exactly; it does not cheapen it. That congruence — the
-operator's algebraic instinct landing precisely on the established
+the algebraic instinct landing precisely on the established
 degree/rank lower-bound machinery — is the result.

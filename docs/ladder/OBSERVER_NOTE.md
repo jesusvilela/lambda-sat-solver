@@ -1,6 +1,6 @@
 # The synthetic observer A†, distilled onto tested code
 
-*The operator's ideal synthetic observer
+*An ideal synthetic observer
 `A† = (Θ, Γ, ∇⁻¹, ∂∞, R, C, E, J)` — "a boundary-conditioned geometric immune
 system for thought." The exquisite distillation is not another essay: it is the
 recognition that **most of A†'s organs are already this repo's verification
@@ -93,7 +93,7 @@ imaginer+skeptic, made into a valuation rule.
 - **The honest limit**: this is the observer's *logical* immune system over the
   SAT-frame task class — it does **not** claim Θ's full axis set (relevance,
   beauty, ethical-load), world-contact ν, or the hyperbolic boundary ∂∞ beyond
-  the Charter. Per §15 of the operator's derivation, there is **no universal
+  the Charter. By the derivation's own §15, there is **no universal
   replacement** — only bounded observer-bisimulation over a task class `K`. Here
   `K` = "certify a SAT verdict soundly," and over that `K` the organs are real.
 - **Lens / open**: the `∇⁻¹` gauge-correction one-form, the hypercomplex `Cl(p,q)`

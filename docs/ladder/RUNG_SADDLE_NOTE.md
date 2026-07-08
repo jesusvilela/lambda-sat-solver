@@ -1,6 +1,6 @@
 # Saddle-point view — its real content and its honest boundary
 
-Prompted by the operator's "hardness as an n-dim saddle point" and their
+Prompted by the "hardness as an n-dim saddle point" framing and
 own `SaddleInterspace.lean`. Two findings, one refining the other.
 
 ## What the saddle view gets right (within a family)
@@ -14,7 +14,7 @@ This is the instance-level image of the free-energy saddle whose change
 of character is the SAT phase transition (Mézard–Parisi–Zecchina). It is
 genuinely a *local-search* hardness signal.
 
-## Where it honestly breaks (across problem types) — the operator's own insight, verified
+## Where it honestly breaks (across problem types) — the guiding insight, verified
 
 `SaddleInterspace.lean §4`: "XOR is MORE rugged than SAT yet is in P via
 its gate. Ruggedness does not imply hardness; the separator is gate
@@ -45,4 +45,4 @@ passes none).
   dichotomy, Bulatov–Zhuk), not geometric.
 
 The saddle intuition was not wrong; it was precisely scoped by the
-operator's own XOR counterexample. That scoping is the result.
+the XOR counterexample. That scoping is the result.
