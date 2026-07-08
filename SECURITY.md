@@ -1,31 +1,25 @@
-Thanks for helping make GitHub safe for everyone.
+# Security Policy
 
-# Security
+Please do **not** report security issues through public GitHub issues, discussions, or pull requests.
 
-GitHub takes the security of our software products and services seriously, including all of the open source code repositories managed through our GitHub organizations, such as [GitHub](https://github.com/GitHub).
+This repository is a research SAT middleware and benchmarking harness. It shells out to external solver/proof binaries such as Kissat, CaDiCaL, CryptoMiniSat, and `drat-trim`, and it reads attacker-controllable CNF/proof files when you choose to run those inputs.
 
-Even though [open source repositories are outside of the scope of our bug bounty program](https://bounty.github.com/index.html#scope) and therefore not eligible for bounty rewards, we will ensure that your finding gets passed along to the appropriate maintainers for remediation. 
+## Supported versions
 
-## Reporting Security Issues
+The supported branch is `main`.
 
-If you believe you have found a security vulnerability in any GitHub-owned repository, please report it to us through coordinated disclosure.
+## Reporting a vulnerability
 
-**Please do not report security vulnerabilities through public GitHub issues, discussions, or pull requests.**
+Report security concerns privately to the maintainer through the contact information listed on the GitHub profile, or through GitHub private vulnerability reporting if it is enabled for this repository.
 
-Instead, please send an email to opensource-security[@]github.com.
+Please include:
 
-Please include as much of the information listed below as you can to help us better understand and resolve the issue:
+- affected commit, branch, or release;
+- affected command or API entry point;
+- minimal reproduction input, if safe to share;
+- expected impact;
+- whether the issue requires untrusted CNF/proof input or a hostile local environment.
 
-  * The type of issue (e.g., buffer overflow, SQL injection, or cross-site scripting)
-  * Full paths of source file(s) related to the manifestation of the issue
-  * The location of the affected source code (tag/branch/commit or direct URL)
-  * Any special configuration required to reproduce the issue
-  * Step-by-step instructions to reproduce the issue
-  * Proof-of-concept or exploit code (if possible)
-  * Impact of the issue, including how an attacker might exploit the issue
+## Operational safety
 
-This information will help us triage your report more quickly.
-
-## Policy
-
-See [GitHub's Safe Harbor Policy](https://docs.github.com/en/site-policy/security-policies/github-bug-bounty-program-legal-safe-harbor#1-safe-harbor-terms)
+For untrusted inputs, prefer the Docker container or another sandbox. Do not run untrusted CNF/proof corpora with elevated privileges. External solver binaries are outside this project's trusted computing base; this project verifies SAT/UNSAT verdicts, but it does not make external solver processes memory-safe.
