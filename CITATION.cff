@@ -18,6 +18,20 @@ repository-code: "https://github.com/jesusvilela/lambda-sat-solver"
 url: "https://github.com/jesusvilela/lambda-sat-solver"
 license: MIT
 version: "0.1.0"
+message: "If you use this software, please cite it using the metadata from this file."
+title: "lambda-sat-solver: Certified SAT middleware and frame-structured hardness research harness"
+authors:
+  - family-names: "Vilela Jato"
+    given-names: "Jesus"
+repository-code: "https://github.com/jesusvilela/lambda-sat-solver"
+license: "MIT"
+type: software
+abstract: >-
+  A certified SAT middleware around external CDCL engines, with SAT verdicts checked by
+  model replay and UNSAT verdicts checked by sound frame refutation or independent DRAT
+  proof replay. The repository also contains a research harness for frame-structured SAT
+  hardness, including implication, parity, counting, coupled-frame routing, and scoped
+  benchmark reports.
 keywords:
   - SAT
   - satisfiability
@@ -54,3 +68,8 @@ references:
         given-names: "Bart"
     title: "Heavy-tailed phenomena in satisfiability and constraint satisfaction problems"
     year: 2000
+  - DRAT
+  - CDCL
+  - proof checking
+  - SAT hardness
+  - portfolio solving

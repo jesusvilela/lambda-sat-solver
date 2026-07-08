@@ -14,6 +14,9 @@ and every rung says so.
   has NS 4 > width 2, while Tseitin K4 has NS 3 < width 4 (measured, both
   directions; test `test_ns_and_width_are_incomparable`). Both are exact and
   exponential — the right object is genuinely expensive.
+  PC size). They are exact, expensive, and **incomparable**: PHP(3→2) separates
+  one way (NS 4 > width 2), while Tseitin K4 separates the other way
+  (NS 3 < width 4). The right object is genuinely stratified, not one scalar.
 - **A clean, well-measured negative.** No cheap graph-structural scalar
   (`spectral_gap`, degree entropy, `signed_laplacian_frustration`) carries
   random-3-SAT hardness — they are monotone in density, not peaked at the
@@ -36,6 +39,9 @@ and every rung says so.
   carriers compute against; the Rung-1 negative on our own instances; NS and
   width **incomparable** (PHP 4>2, Tseitin K4 3<4); the char-2 collapse of the
   naive symmetry channel.
+  carriers compute against; the Rung-1 negative on our own instances; width and
+  Nullstellensatz degree as distinct, mutually non-dominating carriers; the
+  char-2 collapse of the naive symmetry channel.
 - **Open / next:** the ℝ-side **G₂-block-diagonalized moment/SOS matrix** on the
   same rank-deficiency operator — the one place the exceptional symmetry is a
   genuine computational lever rather than a name.
@@ -92,16 +98,4 @@ invariants), `ns_degree_vs_width.py` (algebraic vs resolution obstruction),
 `symmetry_channel_ns.py` (the char-2 fork), `saddle_ruggedness_vs_gate.py`
 (ruggedness vs the algebraic separator), `fano_braid_associator.py` (the
 octonion substrate), `frame_router_scaling.py` (the crystallized
-`backend/frame_solver.py` scaled on Tseitin: near-linear refute-first UNSAT,
-superlinear full-solve — why the router refutes before it reconstructs),
-`hyperbolic_frames.py` (hyperbolic *programming* ↔ the frame ladder: det =
-matrix eigenvalues, `e_k` hyperbolic, the derivative-relaxation nesting the
-counting frame lives on, and the char-2 disanalogy for parity),
-`cosmo_map.py` (tessellate instance-space into clause-ideals, tile each by its
-obstruction signature, and draw the atlas — real-cone vs char-2 vs unstructured
-bands, the Tseitin↔PHP conjugate-dual edge; `--hunt` follows the *moving frame*
-and measures the optim the *rotor* `frame_solve_guided` finds, 1.5–1.75× on the
-unstructured/counting bands with identical verdicts; `--couple` measures the
-*coupled triple* `frame_solve_coupled` — three frames as three theories exchanging
-entailed literals over shared variables (Nelson–Oppen), deciding ~76–82% of the
-mixed instances no single frame decides, 0 unsound vs brute force).
+`backend/frame_solver.py` scaled on Tseitin: near-linear refute-first UNSAT).

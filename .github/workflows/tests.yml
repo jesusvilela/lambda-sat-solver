@@ -33,6 +33,7 @@ jobs:
       # gracefully (shutil.which -> None), so this lane stays green either way.
       - name: Install SAT solvers (best effort)
         run: sudo apt-get update && sudo apt-get install -y kissat drat-trim cadical || true
+          pip install -e .[dev]
 
       - name: Run test suite
         run: python -m pytest backend/tests/ -q
@@ -49,6 +50,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
       - name: Install Python dependencies
         run: |
@@ -70,3 +75,32 @@ jobs:
 
       - name: Certification-relevant tests must run (not skip)
         run: python -m pytest backend/tests/test_integration.py backend/tests/test_kissat_wrapper.py -q
+          pip install -e .[dev]
+
+      - name: Build SAT/proof tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential git
+          git clone --depth 1 https://github.com/arminbiere/kissat.git /tmp/kissat
+          cd /tmp/kissat
+          ./configure
+          make -j2
+          sudo cp build/kissat /usr/local/bin/kissat
+          git clone --depth 1 https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
+          make -C /tmp/drat-trim -j2
+          sudo cp /tmp/drat-trim/drat-trim /usr/local/bin/drat-trim
+          command -v kissat
+          command -v drat-trim
+
+      - name: Run strict certification smoke tests
+        run: |
+          set +e
+          python -m backend.cli examples/simple_sat.cnf --mode strict
+          sat_code=$?
+          python -m backend.cli examples/simple_unsat.cnf --mode strict
+          unsat_code=$?
+          test "$sat_code" -eq 10
+          test "$unsat_code" -eq 20
+
+      - name: Run full test suite with tools installed
+        run: python -m pytest backend/tests/ -q

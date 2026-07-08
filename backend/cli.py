@@ -183,7 +183,7 @@ async def main():
         if result['status'] == 'SAT':
             sys.exit(10)  # Standard SAT solver exit code
         elif result['status'] == 'UNSAT':
-            sys.exit(20)  # Standard UNSAT exit code
+            sys.exit(20)  # Standard UNSAT solver exit code
         else:
             sys.exit(1)
 
@@ -196,8 +196,11 @@ async def main():
 
 def cli_main():
     """Synchronous console-script entry point (see pyproject.toml)."""
+def main_cli():
+    """Synchronous console-script entry point for pyproject.toml."""
     asyncio.run(main())
 
 
 if __name__ == '__main__':
     cli_main()
+    main_cli()

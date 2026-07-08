@@ -7,10 +7,10 @@
 Headless. No web UI. No *trust-me*.
 
 A λ-logic middleware for Boolean satisfiability that **verifies every verdict it emits** —
-SAT by model replay, UNSAT by an independent DRAT proof. On top of the solver sits a
-research program on the *intrinsic shape of SAT hardness*: three sound algebraic frames, a
-hyperbolic map of instance-space, and a game-theoretic dispatcher that reads an instance
-before it searches.
+SAT by model replay, UNSAT by an independent DRAT proof or a sound algebraic frame. On top
+of the solver sits a research program on the *intrinsic shape of SAT hardness*: three sound
+algebraic frames, a hyperbolic map of instance-space, and a game-theoretic dispatcher that
+reads an instance before it searches.
 
 Kissat is a tool here, not an authority. A wrong answer is **caught**, not believed.
 
@@ -108,6 +108,12 @@ flowchart TD
 - **meta-metasolver** (`metametasolver.py`) — the minimax mixed strategy; on the heavy-tailed
   random-3SAT band it *out-searches CMS in wall-clock* (parallel, at a `k×` CPU cost, no CMS
   in the pool). Single-thread on few cores, this advantage shrinks — see the honest scope.
+- **metasolver** (`metasolver.py`) — description-driven dispatch. On the included
+  competition-style mix, its aggregate win comes from routing structured islands before
+  CDCL, not from a claim of general CDCL dominance.
+- **meta-metasolver** (`metametasolver.py`) — seed-diversified CDCL portfolio for the
+  heavy-tailed random-3SAT band; measured in the repo's scoped benchmark, with CPU cost
+  reported.
 - **ACAF** (`acaf.py`) — sizes the mixed strategy to the cores; wins the structured tier by
   a constructive certificate, the hard tier by an adaptive portfolio.
 - **the view from outside** — `dynamics.py` (laws/relations/motions), `fabric.py` +
@@ -117,6 +123,8 @@ flowchart TD
 > with one command and read the scope in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). This is
 > a certified middleware and a research harness, **not** a claim of a generally faster SAT
 > solver.
+For exact measured/proven/speculative status, read [`PUBLIC_RESEARCH_CLAIMS.md`](PUBLIC_RESEARCH_CLAIMS.md)
+and [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md) before citing benchmark numbers.
 
 ---
 
@@ -138,12 +146,25 @@ proven / measured / speculative ledger in
 ## 始 · quick start
 
 ```bash
-cd backend
-pip install -r requirements.txt          # Python 3.11+ · numpy · pycryptosat
-# install Kissat + drat-trim — see BACKEND_README.md
+python -m pip install --upgrade pip
+pip install -e .[dev]
+# install Kissat + drat-trim for strict external certification; see BACKEND_README.md
 
 python -m backend.cli examples/simple_sat.cnf --heuristic aggressive
-python -m pytest tests/                   # 650 tests
+python -m pytest backend/tests/ -q
+```
+
+Strict certification smoke tests:
+
+```bash
+python -m backend.cli examples/simple_sat.cnf --mode strict
+python -m backend.cli examples/simple_unsat.cnf --mode strict
+```
+
+CLI install path:
+
+```bash
+lambda-sat examples/simple_sat.cnf --mode strict
 ```
 
 ```python
@@ -161,6 +182,8 @@ backend/
   frame_solver.py      three sound frames + coupling (the router)
   metasolver.py        description-driven dispatch  (beats CMS on the mix)
   metametasolver.py    fractal portfolio           (out-searches CMS on the tail, parallel)
+  metasolver.py        description-driven dispatch  (scoped benchmark mix)
+  metametasolver.py    fractal portfolio           (scoped heavy-tail benchmark)
   acaf.py              adaptive actor-critic policy (cores-sized mixed strategy)
   dynamics.py          laws · relations · motions   (the view from outside)
   fabric.py            the instance as a woven tapestry
@@ -177,6 +200,7 @@ docs/
 
 Research index: [`docs/ladder/README.md`](docs/ladder/README.md).
 Per-invariant promises: [`docs/ladder/CONTRACTS.md`](docs/ladder/CONTRACTS.md).
+Reproduction guide: [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md).
 
 ---
 
