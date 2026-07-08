@@ -11,6 +11,7 @@ from itertools import combinations, product
 from backend.cnf_utils import CNFFormula, verify_model
 from backend.eval.generators import pigeonhole
 from backend.frame_solver import (
+    coupled_entailments,
     coupling_breath,
     frame_solve,
     frame_solve_coupled,
@@ -221,6 +222,28 @@ class TestBreathingBordon:
         b = coupling_breath(w)
         assert b.rounds >= 1 and b.amplitude >= 1 and b.settled
         assert b.verdict == "UNSAT"
+
+    def test_entailed_literals_are_sound_warm_start(self):
+        # every literal the coupling entails must be IMPLIED: appending them as
+        # units preserves satisfiability (a sound warm-start for CDCL). Checked
+        # by brute force on small random instances.
+        import random
+        from itertools import product
+        rng = random.Random(5)
+        for _ in range(200):
+            nv = rng.randint(3, 6)
+            cl = [[rng.choice([-1, 1]) * v
+                   for v in rng.sample(range(1, nv + 1), rng.randint(1, 3))]
+                  for _ in range(rng.randint(2, 12))]
+            f = CNFFormula(num_vars=nv, clauses=cl)
+            ent, _ = coupled_entailments(f)
+
+            def sat(g):
+                return any(verify_model(g, {i + 1: b[i] for i in range(g.num_vars)})
+                           for b in product([False, True], repeat=g.num_vars))
+            warm = CNFFormula(num_vars=nv,
+                              clauses=cl + [[v if b else -v] for v, b in ent.items()])
+            assert sat(f) == sat(warm)            # entailed units preserve SAT/UNSAT
 
     def test_breath_is_monotone_and_bounded(self):
         # a finite CNF's coupling is monotone (fixed only grows) and always
