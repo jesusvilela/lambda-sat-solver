@@ -158,10 +158,16 @@ def parse_dimacs(text: str, strict: bool = False) -> CNFFormula:
     )
 
 
+import lzma
+
 def parse_dimacs_file(path: Path, strict: bool = False) -> CNFFormula:
-    """Parse DIMACS CNF file"""
-    with open(path, 'r') as f:
-        return parse_dimacs(f.read(), strict=strict)
+    """Parse DIMACS CNF file (supports .cnf, .xz, .lzma)"""
+    if path.suffix in ['.xz', '.lzma']:
+        with lzma.open(path, 'rt') as f:
+            return parse_dimacs(f.read(), strict=strict)
+    else:
+        with open(path, 'r') as f:
+            return parse_dimacs(f.read(), strict=strict)
 
 
 def write_dimacs(formula: CNFFormula, path: Path):

@@ -20,6 +20,7 @@ from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.metametasolver import (  # noqa: E402
     default_arms, metametasolve,
 )
+from backend.tests.test_kissat_wrapper import requires_kissat  # noqa: E402
 
 
 def _tseitin_k4():
@@ -44,6 +45,7 @@ class TestFrameArm:
             assert r.winner == frame and r.arms == 1        # no portfolio needed
 
 
+@requires_kissat
 class TestTunnelPortfolio:
     def test_tunnel_decided_by_certified_cdcl_arm(self):
         f = random_3sat(120, round(4.26 * 120), 0)

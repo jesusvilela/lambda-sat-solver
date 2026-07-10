@@ -25,8 +25,9 @@ async def main():
 
     parser.add_argument(
         '--pattern',
-        default='*.cnf',
-        help='File pattern to match (default: *.cnf)'
+        nargs='+',
+        default=['*.cnf', '*.xz', '*.lzma'],
+        help='File patterns to match (default: *.cnf *.xz *.lzma)'
     )
 
     parser.add_argument(

@@ -43,3 +43,6 @@ docs/ladder/scripts/*_results.json
 build/
 dist/
 __pycache__/
+*.pyd
+*.obj
+build/

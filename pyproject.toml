@@ -1,6 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=68", "wheel", "Cython"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -38,67 +37,6 @@ bench = ["pycryptosat>=5.11.0"]
 
 [project.scripts]
 lambda-sat = "backend.cli:cli_main"
-description = "Certified SAT middleware and frame-structured SAT hardness research harness"
-readme = "README.md"
-requires-python = ">=3.11"
-license = { text = "MIT" }
-authors = [
-  { name = "Jesus Vilela Jato" }
-]
-keywords = [
-  "SAT",
-  "satisfiability",
-  "CDCL",
-  "DRAT",
-  "proof-checking",
-  "portfolio-solving",
-  "SAT-hardness"
-]
-classifiers = [
-  "Development Status :: 3 - Alpha",
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
-  "Topic :: Scientific/Engineering",
-  "Topic :: Software Development :: Libraries :: Python Modules"
-]
-dependencies = [
-  "pydantic>=2.0.0",
-  "numpy>=1.24.0",
-  "pycryptosat>=5.11.0"
-]
-
-[project.optional-dependencies]
-dev = [
-  "pytest>=7.4.0",
-  "pytest-asyncio>=0.21.0"
-]
-proof = []
-bench = []
-
-[project.urls]
-Homepage = "https://github.com/jesusvilela/lambda-sat-solver"
-Repository = "https://github.com/jesusvilela/lambda-sat-solver"
-Issues = "https://github.com/jesusvilela/lambda-sat-solver/issues"
-
-# External, non-pip tools are required for full certification (not installable via
-# pip): the Kissat SAT solver and the drat-trim DRAT checker (LRAT optional).
-# The three sound frames are self-certifying and need neither. See BACKEND_README.md.
-
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["backend*"]
-exclude = ["backend.tests*"]
-
-[tool.pytest.ini_options]
-testpaths = ["backend/tests"]
-[project.scripts]
-lambda-sat = "backend.cli:main_cli"
-
-[tool.setuptools.packages.find]
-include = ["backend*"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]

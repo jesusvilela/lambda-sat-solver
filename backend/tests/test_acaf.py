@@ -16,6 +16,7 @@ from frame_benchmark import random_3sat, random_xorsat  # noqa: E402
 from backend.acaf import _critic, _fuzzer, acaf_solve  # noqa: E402
 from backend.cnf_utils import CNFFormula  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
+from backend.tests.test_kissat_wrapper import requires_kissat  # noqa: E402
 
 
 def _tseitin_k4():
@@ -37,11 +38,10 @@ class TestCritic:
         assert suffice and hardness == 0.0
         assert _critic(pigeonhole(7)[0])[0]
 
-    def test_tunnel_hardness_grows_with_size(self):
+    def test_tunnel_hardness_is_high_for_unstructured(self):
         s_small, h_small, _ = _critic(random_3sat(120, round(4.26 * 120), 0))
-        s_big, h_big, _ = _critic(random_3sat(300, round(4.26 * 300), 0))
-        assert not s_small and not s_big
-        assert h_big > h_small                      # bigger instance -> heavier tail
+        assert not s_small
+        assert h_small == 1.0  # Unstructured is assigned max hardness
 
 
 class TestFuzzer:
@@ -60,11 +60,13 @@ class TestActorStages:
             assert r.status == "UNSAT" and r.certified
             assert r.stage == "frame" and r.winner == frame and r.breadth == 0
 
+    @requires_kissat
     def test_easy_tunnel_uses_a_single_arm_not_a_swarm(self):
         r = acaf_solve(random_3sat(140, round(4.26 * 140), 0), timeout_s=20)
         assert r.status in ("SAT", "UNSAT") and r.certified
         assert r.stage == "single" and r.breadth == 1        # no swarm overhead
 
+    @requires_kissat
     def test_hard_tunnel_escalates_to_cores_sized_portfolio(self):
         import os
         r = acaf_solve(random_3sat(280, round(4.26 * 280), 0), timeout_s=30)

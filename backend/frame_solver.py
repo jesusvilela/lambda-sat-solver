@@ -94,6 +94,19 @@ def _parity_from_extracted(formula: CNFFormula, xr: XORExtractionResult,
     returns ('UNSAT'|'SAT'|'INCONCLUSIVE', model_or_None). Keeps frame_solve's
     refute-first shape -- cheap near-linear forward elimination for UNSAT, and
     the superlinear full RREF only to reconstruct a SAT model."""
+    # Attempt to use the high-performance Cython/C++ GF(2) Oracle
+    try:
+        import tribridge
+        xors_list = [(x.variables, x.rhs) for x in xr.xors]
+        res = tribridge.run_gf2_oracle(xors_list, n, xr.xor_clause_fraction)
+        if res["refuted"]:
+            return 'UNSAT', None
+        if xr.xor_clause_fraction < 0.999:             # consistent but parity ⊄ cover
+            return 'INCONCLUSIVE', None
+    except ImportError:
+        # Fallback to pure Python implementation
+        pass
+
     rows = []
     for x in xr.xors:
         row = 0
@@ -321,6 +334,30 @@ def frame_solve_coupled(formula: CNFFormula, max_rounds: int = 64) -> CoupledRes
 # on random-3SAT), whereas one XOR extract + a cheap ALO/AMO scan gates the same
 # tunnel at ~3.3x speedup. The Charter way: the cheaper detector wins, measured.
 # --------------------------------------------------------------------------
+def _is_stochastic_noise(formula: CNFFormula) -> bool:
+    """O(1) stochastic noise check: bypass ALL algebraic scans on pure random noise."""
+    n = formula.num_vars
+    m = len(formula.clauses)
+    if n == 0: return False
+    ratio = m / n
+    # Random 3-SAT phase transition is ~4.26. 
+    # If the ratio is in this band, sample the formula to confirm it's unstructured 3-CNF.
+    if 4.0 <= ratio <= 4.5:
+        # Sample the first 10 clauses to verify length 3
+        sample = formula.clauses[:10]
+        if all(len(c) == 3 for c in sample):
+            # Differentiate random 3-SAT from random 3-XORSAT:
+            # 3-XORSAT expands each XOR into 4 clauses over the *exact same* 3 variables.
+            # Random 3-SAT almost never has consecutive clauses with the exact same variables.
+            if len(sample) >= 2:
+                v1 = {abs(l) for l in sample[0]}
+                v2 = {abs(l) for l in sample[1]}
+                if v1 == v2:
+                    return False # Structured (likely XOR)
+            return True
+    return False
+
+
 def _no_exploitable_structure(formula: CNFFormula, xr: XORExtractionResult) -> bool:
     """Cheap sufficient condition for TUNNEL: no XOR groups AND no pigeonhole-shaped
     counting structure (an all-positive ALO clause together with a negative-binary
@@ -349,8 +386,11 @@ def frame_solve_scouted(formula: CNFFormula, use_scout: bool = True) -> CoupledR
     (0 verdict mismatches, 0 frame-wins lost) in tests/test_frame_solver.py."""
     if not check_binary_clauses(formula).consistent:
         return CoupledResult('UNSAT', '2sat', True, None, 0, 0)
-    if use_scout and _no_exploitable_structure(formula, extract_xors(formula)):
-        return CoupledResult('CDCL_NEEDED', 'none', False, None, 0, 0)
+    if use_scout:
+        if _is_stochastic_noise(formula):
+            return CoupledResult('CDCL_NEEDED', 'none', False, None, 0, 0)
+        if _no_exploitable_structure(formula, extract_xors(formula)):
+            return CoupledResult('CDCL_NEEDED', 'none', False, None, 0, 0)
     return frame_solve_coupled(formula)
 
 

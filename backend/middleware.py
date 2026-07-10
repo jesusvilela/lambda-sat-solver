@@ -158,7 +158,7 @@ class SolverMiddleware:
         """Effect handler: extract structural features (backend.cnf_profile)"""
         return profile_cnf(cnf)
 
-    async def _handle_select_heuristic(self, profile: CNFProfile) -> Dict[str, Any]:
+    async def _handle_select_heuristic(self, formula: CNFFormula) -> Dict[str, Any]:
         """Effect handler: rule-based heuristic/budget selection (backend.policy)
 
         Returns a "Config" - {heuristic, budget} as the dataclass instances
@@ -167,8 +167,8 @@ class SolverMiddleware:
         to _handle_solve, which already accepts either dataclass or dict.
         """
         return {
-            'heuristic': choose_heuristic(profile),
-            'budget': choose_budget(profile),
+            'heuristic': choose_heuristic(formula),
+            'budget': choose_budget(formula),
         }
 
     async def _handle_solve_with_config(
@@ -500,21 +500,14 @@ class SolverMiddleware:
 
     def create_adaptive_pipeline(self) -> LambdaExpr:
         """
-        Create the profile -> select -> solve -> certify pipeline:
+        Create the select -> solve -> certify pipeline:
 
-            lambda cnf. certify(solveWithConfig(cnf, selectHeuristic(profileCNF(cnf))))
+            lambda cnf. certify(solveWithConfig(cnf, selectHeuristic(cnf)))
 
         Unlike create_solve_pipeline() (which takes heuristic/budget as
         caller-supplied literals), this pipeline derives them from the CNF
-        itself via backend.cnf_profile / backend.policy, and each stage is
-        a real composed effect application rather than a single hardcoded
-        solve() call - the four stages are individually visible to the type
-        checker (Profile -> Config -> Result -> Certificate) rather than
-        being one opaque effect.
-
-        `cnf` is referenced twice in the body (once for profiling, once for
-        solving) - ordinary lambda calculus allows reusing a bound variable;
-        there is no linearity restriction here.
+        itself via backend.policy, and each stage is a real composed effect
+        application rather than a single hardcoded solve() call.
         """
         return abs_(
             'cnf',
@@ -523,7 +516,7 @@ class SolverMiddleware:
                 effect(
                     'solveWithConfig',
                     var('cnf'),
-                    effect('selectHeuristic', effect('profileCNF', var('cnf')))
+                    effect('selectHeuristic', var('cnf'))
                 )
             )
         )

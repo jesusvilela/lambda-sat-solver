@@ -59,86 +59,7 @@ def _clause_is_horn(clause) -> bool:
     return sum(1 for lit in clause if lit > 0) <= 1
 
 
-def _shannon_entropy_ratio(weights) -> Optional[float]:
-    """Normalized Shannon entropy of a nonnegative weight vector.
 
-    Returns H(p) / log(n) in [0, 1], where p is the weight vector
-    normalized to sum to 1. Returns None if there are fewer than 2
-    nonzero weights (entropy is degenerate/undefined as a ratio).
-    """
-    total = sum(weights)
-    if total <= 0:
-        return None
-    nonzero = [w for w in weights if w > 0]
-    if len(nonzero) < 2:
-        return None
-    probs = [w / total for w in nonzero]
-    h = -sum(p * math.log(p) for p in probs)
-    return h / math.log(len(nonzero))
-
-
-def _hyperbolic_delta_entropy_ratio(
-    formula: CNFFormula,
-) -> Optional[float]:
-    """Experimental spectral feature: see `CNFProfile.hyp_delta_entropy_ratio`.
-
-    Builds the signed clause-variable incidence matrix M (clauses x vars,
-    M[c, v] = +1 / -1 / 0 for the polarity of variable v in clause c),
-    computes the normalized entropy of its singular-value distribution,
-    then repeats after mapping each row through the Poincare-ball
-    exponential map at the origin (a standard hyperbolic embedding:
-    exp_0(x) = tanh(||x||) * x / ||x||, applied after scaling rows to
-    unit max-norm so the map is well-defined). Returns hyp - euclidean.
-    """
-    try:
-        import numpy as np
-    except ImportError:
-        return None
-
-    n_vars = formula.num_vars
-    n_clauses = formula.num_clauses
-    if n_vars == 0 or n_clauses == 0:
-        return None
-    if n_vars * n_clauses > _SVD_MAX_CELLS:
-        return None
-
-    matrix = np.zeros((n_clauses, n_vars), dtype=np.float64)
-    for i, clause in enumerate(formula.clauses):
-        for lit in clause:
-            v = abs(lit) - 1
-            if 0 <= v < n_vars:
-                matrix[i, v] = 1.0 if lit > 0 else -1.0
-
-    def entropy_ratio_of(m: "np.ndarray") -> Optional[float]:
-        try:
-            singular_values = np.linalg.svd(m, compute_uv=False)
-        except np.linalg.LinAlgError:
-            return None
-        return _shannon_entropy_ratio(singular_values.tolist())
-
-    euclidean_ratio = entropy_ratio_of(matrix)
-    if euclidean_ratio is None:
-        return None
-
-    row_norms = np.linalg.norm(matrix, axis=1, keepdims=True)
-    max_norm = row_norms.max()
-    if max_norm <= 0:
-        return None
-    normalized = matrix / max_norm
-    row_norms_normalized = np.linalg.norm(normalized, axis=1, keepdims=True)
-    with np.errstate(invalid='ignore', divide='ignore'):
-        scale = np.where(
-            row_norms_normalized > 0,
-            np.tanh(row_norms_normalized) / row_norms_normalized,
-            0.0,
-        )
-    hyperbolic = normalized * scale
-
-    hyperbolic_ratio = entropy_ratio_of(hyperbolic)
-    if hyperbolic_ratio is None:
-        return None
-
-    return hyperbolic_ratio - euclidean_ratio
 
 
 def profile_cnf(formula: CNFFormula, compute_spectral: bool = True) -> CNFProfile:
@@ -189,12 +110,8 @@ def profile_cnf(formula: CNFFormula, compute_spectral: bool = True) -> CNFProfil
     pos_neg_balance = num_positive_lits / total_lits if total_lits else 0.5
     avg_var_degree = total_lits / num_vars if num_vars else 0.0
 
-    degree_entropy_ratio = _shannon_entropy_ratio(var_degree[1:])
-    var_degree_entropy = degree_entropy_ratio if degree_entropy_ratio is not None else 0.0
-
-    hyp_delta = None
-    if compute_spectral:
-        hyp_delta = _hyperbolic_delta_entropy_ratio(formula)
+    # SVD entropy ratio previously removed
+    var_degree_entropy = 0.0
 
     return CNFProfile(
         num_vars=num_vars,
@@ -206,5 +123,5 @@ def profile_cnf(formula: CNFFormula, compute_spectral: bool = True) -> CNFProfil
         pos_neg_balance=pos_neg_balance,
         avg_var_degree=avg_var_degree,
         var_degree_entropy=var_degree_entropy,
-        hyp_delta_entropy_ratio=hyp_delta,
+        hyp_delta_entropy_ratio=None,
     )
