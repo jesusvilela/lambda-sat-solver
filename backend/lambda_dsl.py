@@ -125,7 +125,7 @@ class TypeChecker:
         'checkDRAT': (['CNF', 'Any'], 'Bool'),
         'checkLRAT': (['CNF', 'Any'], 'Bool'),
         'profileCNF': (['CNF'], 'Profile'),
-        'selectHeuristic': (['CNF'], 'Config'),
+        'selectHeuristic': (['Profile'], 'Config'),
         'solveWithConfig': (['CNF', 'Config'], 'Result'),
         'certify': (['Result'], 'Certificate'),
     }

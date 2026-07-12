@@ -61,22 +61,11 @@ def _critic(formula: CNFFormula) -> Tuple[bool, float, int]:
     dyn = describe(formula)
     if dyn.certified:
         return True, 0.0, len(dyn.conserved)
-        
-    hardness = 1.0  # default to heavy tail
-    ambiguity = 0
-    try:
-        from .cython import tribridge
-        res = tribridge.route_instance_topology(formula.clauses, formula.num_vars)
-        struct_class = res["class"]
-        
-        # PURE_GF2 and PARTIAL_XOR_SADDLE have bounded tails, they don't need swarm
-        if struct_class in ("PURE_GF2", "PARTIAL_XOR_SADDLE"):
-            hardness = 0.0
-            ambiguity = 1
-    except ImportError:
-        pass
-        
-    return False, hardness, ambiguity
+    n = max(formula.num_vars, 1)
+    # random-3SAT gets into the heavy-tailed seconds regime past ~220 vars (measured);
+    # a smooth proxy, saturating, cheap -- no solve required.
+    hardness = min(1.0, n / 260.0)
+    return False, hardness, 0
 
 
 # ---- FUZZER: generate decorrelated engine+seed configs ----
@@ -113,7 +102,7 @@ def acaf_solve(formula: CNFFormula, timeout_s: float = 30.0,
             return ACAFResult("SAT", time.perf_counter() - t0, "frame",
                               r.resolved_by, True, model=r.model, hardness=0.0)
         # frame check said suffice but punted (rare) -> fall through to tunnel policy
-        _, hardness, _ = _critic(formula)
+        hardness = min(1.0, max(formula.num_vars, 1) / 260.0)
 
     cores = _cores()
     # AMBIGATOR: size the diversification to the predicted tail weight, capped at cores.

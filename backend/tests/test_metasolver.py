@@ -22,18 +22,6 @@ from backend.cnf_utils import CNFFormula, verify_model  # noqa: E402
 from backend.dynamics import describe  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.metasolver import metasolve  # noqa: E402
-from backend.tests.test_kissat_wrapper import requires_kissat  # noqa: E402
-
-try:
-    import pycryptosat
-    cms_available = True
-except ImportError:
-    cms_available = False
-
-requires_cms = pytest.mark.skipif(
-    not cms_available,
-    reason="pycryptosat module not installed"
-)
 
 
 def _tseitin_k4():
@@ -49,7 +37,6 @@ def _tseitin_k4():
     return CNFFormula(num_vars=len(edges), clauses=clauses)
 
 
-@requires_cms
 class TestCMSBaseline:
     def test_trivial_sat_and_unsat(self):
         sat = cms_solve(CNFFormula(2, [[1, 2], [-1]]))
@@ -104,14 +91,12 @@ class TestMetasolver:
         assert r.status == "UNSAT" and r.strategy == "counting" and r.certified
         assert r.seconds < 1.0
 
-    @requires_kissat
     def test_tunnel_falls_to_certified_cdcl(self):
         r = metasolve(random_3sat(120, round(4.26 * 120), 0))
         assert r.status in ("SAT", "UNSAT")
         assert r.strategy in ("kissat", "cadical")
         assert r.certified                  # DRAT (UNSAT) or model replay (SAT)
 
-    @requires_kissat
     def test_sat_verdicts_carry_verified_models(self):
         r = metasolve(random_3sat(40, 120, 3))
         if r.status == "SAT" and r.model is not None:

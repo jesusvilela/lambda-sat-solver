@@ -1,9 +1,5 @@
 # λSAT · the moving frame
 
-![Canary Springtime Path](docs/assets/canary_path.png)
-> *The path has chosen you, now you honour the springtime in the pathwalk.*
-> **CANARY REPOSITORY:** This is the experimental, formalized structure of the solver.
-
 > *A solver that carries its own proof, and knows which shape of hardness it's looking at.*
 
 [![tests](https://github.com/jesusvilela/lambda-sat-solver/actions/workflows/tests.yml/badge.svg)](https://github.com/jesusvilela/lambda-sat-solver/actions/workflows/tests.yml)
@@ -85,30 +81,43 @@ where game theory flips: on the island a *pure* strategy dominates; on the tunne
 
 ---
 
-## 構造 · the Canary stack (Adiabatic Geodesic Flow)
+## 構造 · the stack
 
-The Canary architecture wholly abandons heuristic python string-matching and scalar Euclidean approximations (like simplistic `m/n` clause-ratio checks). Instead, it physicalizes the solver as a Hamiltonian system operating under hyper-dimensional Riemannian logic. Every layer is mapped directly to a structural C++ topology extractor, bridging discrete logic into a continuous Riemannian manifold.
-
-> **Read the full philosophical and mathematical integration:** [The Ultimate Synthesis](ultimate_synthesis.md)
+Every layer is the same operator seen at a different scale. Fractal, self-similar, and
+each verdict certified all the way down.
 
 ```mermaid
-graph TD
-    A[CNF Hyper-Manifold] --> B(C++ Tensor-Native Flavor Analyzer)
-    B -- O(L) Dense SIMD Vectorization --> C{Cython Topological Bridge}
-    C -- Z2 x Z2 Parity Matrix --> D[Bridge Annealer: Parity Oracle]
-    C -- A4 High-Density Topology --> E[Bridge Annealer: CMS Gauss-Jordan]
-    C -- Trivial/Unstructured Geometry --> F[CDCL Fallback / Bare Kissat]
-    D --> G(Diamond Holonomy Verification in Lean 4)
-    E --> G
-    F --> G
+flowchart TD
+    ACAF["<b>ACAF</b> · adaptive actor-critic-ambigator-fuzzer"] --> META["<b>metasolver</b> · description-driven dispatch"]
+    ACAF --> MM["<b>meta-metasolver</b> · fractal seed-portfolio"]
+    META --> FR["<b>frame router</b> · 3 sound frames + Nelson-Oppen coupling"]
+    MM --> FR
+    META --> K["certified CDCL · Kissat / CaDiCaL"]
+    MM --> K
+    FR --> OBS(["<b>observer</b> — certify every verdict"])
+    K --> OBS
+
+    DESC["<b>the view from outside</b><br/>dynamics · fabric · hyperbolic model"] -.reads.-> ACAF
 ```
 
-- **Flavor Analyzer** (`backend/cpp/flavor_analyzer.hpp`) — C++ structural extractor. Reads the exact hyper-dimensional geometry of the CNF to map dispersion groups ($Z_2 \times Z_2$, $A_4$, Trivial).
-- **Cython Bridge** (`backend/cython/tribridge.pyx`) — Lifts the C++ `vector[vector[int]]` geometry into the Python space seamlessly.
-- **BBD Router** (`backend/cpp/router.hpp`) — Breathing Bridge Descent. Selects the geodesic path instantly based on the Flavor group, acting as a Hamiltonian state transition rather than a heuristic choice. It rejects Euclidean scalars in favor of topological shape-matching (e.g., verifying exact variable overlap for XOR expansion).
-- **Parity Oracle** — Handles highly structured cryptographic chains with zero search.
-- **CDCL Fallback** (`Kissat/CaDiCaL`) — The unstructured heavy-tail engine.
-- **Diamond Holonomy Benchmarking** — Evaluates paths using rigorous TFLOPS-bounded physics instead of scalar time.
+- **frame router** (`frame_solver.py`) — the three frames + their coupling, refute-first.
+- **metasolver** (`metasolver.py`) — reverts the dynamical description into a dispatch. On a
+  *counting-and-parity-inclusive mix* (not the competition set) it wins on PAR-2 over Kissat,
+  CaDiCaL and CryptoMiniSat — because it is instant where they blow up on counting, and
+  comparable elsewhere. A structural result on a specific mix, not a generally faster solver.
+- **meta-metasolver** (`metametasolver.py`) — the minimax mixed strategy; on the heavy-tailed
+  random-3SAT band it *out-searches CMS in wall-clock* (parallel, at a `k×` CPU cost, no CMS
+  in the pool). Single-thread on few cores, this advantage shrinks — see the honest scope.
+- **metasolver** (`metasolver.py`) — description-driven dispatch. On the included
+  competition-style mix, its aggregate win comes from routing structured islands before
+  CDCL, not from a claim of general CDCL dominance.
+- **meta-metasolver** (`metametasolver.py`) — seed-diversified CDCL portfolio for the
+  heavy-tailed random-3SAT band; measured in the repo's scoped benchmark, with CPU cost
+  reported.
+- **ACAF** (`acaf.py`) — sizes the mixed strategy to the cores; wins the structured tier by
+  a constructive certificate, the hard tier by an adaptive portfolio.
+- **the view from outside** — `dynamics.py` (laws/relations/motions), `fabric.py` +
+  `fabric_model.py` (the hyperbolic instance-manifold), `observer.py` (the adjudicator).
 
 > Every number here is a *measured* claim on a small, fixed, synthetic mix — regenerate it
 > with one command and read the scope in [`REPRODUCIBILITY.md`](REPRODUCIBILITY.md). This is
@@ -143,13 +152,6 @@ pip install -e .[dev]
 
 python -m backend.cli examples/simple_sat.cnf --heuristic aggressive
 python -m pytest backend/tests/ -q
-```
-
-### Benchmarking against SAT Competition
-To operationalize the solver and squeeze performance on standard competition instances (`.cnf`, `.xz`, `.lzma`):
-
-```bash
-python -m backend.benchmark_cli ./cache/zenodo_full/ --pattern "*.xz" --timeout 5000 --parallel
 ```
 
 Strict certification smoke tests:

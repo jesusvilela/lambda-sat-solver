@@ -401,7 +401,7 @@ class TestEffectArgumentTypeChecking:
             effect(
                 'solveWithConfig',
                 literal({'clauses': []}),
-                effect('selectHeuristic', literal({'clauses': []}))
+                effect('selectHeuristic', effect('profileCNF', literal({'clauses': []})))
             )
         )
         assert self.tc.check(expr) == 'Certificate'

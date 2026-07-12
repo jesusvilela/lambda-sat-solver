@@ -53,11 +53,9 @@ class CageResult:
 # --- leaf CDCL arms, each a diversified pure strategy (engine + seed) ---
 def _arm_cmd(engine: str, seed: int, cnf: Path, proof: Path) -> List[str]:
     if engine == "kissat":
-        kissat_bin = os.environ.get("KISSAT_BIN", "kissat")
-        return [kissat_bin, "--relaxed", f"--seed={seed}", str(cnf), str(proof)]
+        return ["kissat", "--relaxed", f"--seed={seed}", str(cnf), str(proof)]
     if engine == "cadical":
-        cadical_bin = os.environ.get("CADICAL_BIN", "cadical")
-        return [cadical_bin, f"--seed={seed}", str(cnf), str(proof)]
+        return ["cadical", f"--seed={seed}", str(cnf), str(proof)]
     raise ValueError(engine)
 
 

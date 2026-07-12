@@ -438,26 +438,20 @@ class BenchmarkHarness:
         }
 
 
-def discover_benchmarks(directory: Path, pattern: str | List[str] = "*.cnf") -> List[BenchmarkInstance]:
+def discover_benchmarks(directory: Path, pattern: str = "*.cnf") -> List[BenchmarkInstance]:
     """
     Discover benchmark instances in a directory
 
     Args:
         directory: Directory to search
-        pattern: File pattern to match or list of patterns (default: *.cnf)
+        pattern: File pattern to match (default: *.cnf)
 
     Returns:
         List of benchmark instances
     """
     instances = []
-    
-    if isinstance(pattern, str):
-        patterns = [pattern]
-    else:
-        patterns = pattern
 
-    for p in patterns:
-        for path in directory.rglob(p):
+    for path in directory.rglob(pattern):
         # Try to infer category from directory structure
         category = path.parent.name if path.parent != directory else "unknown"
 
