@@ -27,7 +27,6 @@ competitor in the benchmark.
 
 from __future__ import annotations
 
-import os
 import subprocess
 import tempfile
 import time
@@ -52,8 +51,8 @@ class MetaResult:
 
 
 _ENGINE_CMD = {
-    "kissat": lambda c, p: [os.environ.get("KISSAT_BIN", "kissat"), "--relaxed", str(c), str(p)],
-    "cadical": lambda c, p: [os.environ.get("CADICAL_BIN", "cadical"), str(c), str(p)],
+    "kissat": lambda cnf, proof: ["kissat", "--relaxed", str(cnf), str(proof)],
+    "cadical": lambda cnf, proof: ["cadical", str(cnf), str(proof)],
 }
 
 
