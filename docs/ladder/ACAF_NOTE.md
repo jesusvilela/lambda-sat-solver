@@ -37,10 +37,58 @@ Four organs, each grounded in existing machinery:
 
 | organ | role | realized as |
 |---|---|---|
-| **Critic** | value estimate: does frame+geometry suffice; how heavy the tail | `dynamics.describe` + a cheap hardness proxy (`n`, `m/n`, gyration) |
+| **Critic** | value estimate: does frame+geometry suffice; how heavy the tail | `dynamics.describe` + a geometric hardness read off the holographic screen ∂∞ (`_cosmological_hardness`) |
 | **Actor** | staged policy: frame → single arm → cores-sized portfolio | `frame_solve_scouted` → `_certified_cdcl` → `_parallel_cdcl_portfolio` |
 | **Ambigator** | polysemy/region sets how much to diversify | `dynamics` conserved-count / hardness → breadth |
 | **Fuzzer** | emit decorrelated engine+seed configs (collapse the tail) | `_fuzzer(breadth)` |
+
+## The critic's hardness — a position on the holographic screen, not a Euclidean ramp
+
+The critic's value estimate was a flat scalar, `min(1, n/260)` — hardness as a straight
+Euclidean ramp in the variable count. That threw the geometry away. The fabric already
+places every instance on the **Poincaré ball**: a frame-decided instance sits near the
+centre, a frame-void (CDCL) instance falls to the **boundary at infinity ∂∞**, an
+*infinite* hyperbolic distance out (`orbifold.hyperbolic_depth`, FABRIC_MODEL_NOTE). By
+the time the critic is asked for a tunnel hardness the instance has **already fallen to
+∂∞** — and there the radial coordinate *degenerates*: measured, `gyration` pins at ~14.16
+for **every** tunnel instance, all `n`, all `α`. Rigidity is exhausted; every tunnel
+instance is equally structureless.
+
+So hardness cannot live on the radial axis. Holographically it lives on the screen's own
+intrinsic coordinates (`backend/acaf._cosmological_hardness`):
+
+- **horizon (scale)** — the assignment cosmos holds `2^n` points; in a curvature −1 space
+  volume grows as `e^d`, so `2^n` subtends a comoving horizon `d ~ n ln2`. Mapped back
+  *through* the boundary as `tanh(n/N*)`, so the saturation toward 1 is the **geometry's
+  own** — there is no artificial `min()` clamp any more.
+- **criticality (caustic)** — solutions grow scarce on the phase-transition ridge
+  `α_c = 4.26`; a `sech(κ·(α−α_c))` caustic is 1 on the ridge and decays for over- and
+  under-constrained cosmoses, which are easy at any scale.
+- **screen gate** — `tanh(gyration)` confirms the instance is truly at ∂∞ (frame-void)
+  before charging full hardness, honestly discounting any residual near-fold structure.
+
+`hardness = screen · horizon · (½ + ½·caustic)`, in the open interval (0, 1).
+
+The improvement is behavioural, not only aesthetic. `n/260` is **blind to α**: at `n=240`
+it hands the same 4-arm swarm to a critical instance and to a trivially over- or
+under-constrained one. The screen reads criticality — measured, at `n=240`, α=4.26 gets
+the full 4 arms while α=2.5 and α=7.0 (easy tails) step down to 3, returning a core the
+old ramp wasted. The measured onset is preserved: `N* = 175` puts the ~220-var heavy-tail
+knee at `tanh(220/175) ≈ 0.85`, so the actor's single-vs-portfolio staging is unchanged
+where it was already calibrated.
+
+- **Measured**: the gyration pinning at ∂∞ (all n, all α); the (0,1) bounds with no clamp;
+  monotonicity in scale on the ridge; the caustic peak on α_c and monotone decay off it;
+  the α-blindness of the old ramp vs the α-sensitivity of the screen (arm-count differential).
+- **A proxy, never a proof (Charter)**: this is the critic's *expected*-tail-weight
+  estimate that sizes the mixed strategy — it is a heuristic value function, not a theorem
+  about any single instance's runtime. Soundness is untouched: every verdict stays
+  certified regardless of how many arms the screen provisioned.
+- **Lens, not proven**: that `n ln2` is the *right* comoving law or `sech` the *true*
+  caustic profile (both are fitted, elegant readings of the manifold the fabric measures),
+  and that `α_c = 4.26` transfers verbatim off random-3SAT (it is the 3SAT ridge; other
+  families have their own, so the caustic is a random-SAT-calibrated prior, not a universal
+  constant).
 
 ## Winning the trivial tier — the answer is the *certificate*, not the search
 

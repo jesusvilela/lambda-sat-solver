@@ -1,50 +1,15 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "lambda-sat-solver"
 version = "0.1.0"
-description = "Certified λ-logic SAT middleware and a research harness for frame-structured SAT hardness"
-readme = "README.md"
-requires-python = ">=3.11"
-license = { file = "LICENSE" }
-authors = [{ name = "Jesús Vilela Franco" }]
-keywords = [
-    "SAT", "satisfiability", "solver", "certified", "DRAT", "proof-checking",
-    "Kissat", "CryptoMiniSat", "computational-complexity", "lambda-calculus",
-]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Mathematics",
-]
-dependencies = [
-    "numpy>=1.24.0",
-    "pydantic>=2.0.0",
-    # CryptoMiniSat baseline used by backend/cms_wrapper.py and the benchmarks.
-    # It is a *competitor* the metasolver is measured against, not part of the
-    # certified solve path; kept as a core dep so the test suite runs as shipped.
-    "pycryptosat>=5.11.0",
-]
-
-[project.optional-dependencies]
-dev = ["pytest>=7.4.0", "pytest-asyncio>=0.21.0"]
-bench = ["pycryptosat>=5.11.0"]
-
-[project.scripts]
-lambda-sat = "backend.cli:cli_main"
 description = "Certified SAT middleware and frame-structured SAT hardness research harness"
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
-authors = [
-  { name = "Jesus Vilela Jato" }
-]
+authors = [{ name = "Jesus Vilela Jato" }]
 keywords = [
   "SAT",
   "satisfiability",
@@ -52,7 +17,7 @@ keywords = [
   "DRAT",
   "proof-checking",
   "portfolio-solving",
-  "SAT-hardness"
+  "SAT-hardness",
 ]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -62,21 +27,24 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Topic :: Scientific/Engineering",
-  "Topic :: Software Development :: Libraries :: Python Modules"
+  "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-  "pydantic>=2.0.0",
   "numpy>=1.24.0",
-  "pycryptosat>=5.11.0"
+  "pydantic>=2.0.0",
+  # CryptoMiniSat baseline used by backend/cms_wrapper.py and the benchmarks.
+  # It is a *competitor* the metasolver is measured against, not part of the
+  # certified solve path; kept as a core dep so the test suite runs as shipped.
+  "pycryptosat>=5.11.0",
 ]
 
 [project.optional-dependencies]
-dev = [
-  "pytest>=7.4.0",
-  "pytest-asyncio>=0.21.0"
-]
+dev = ["pytest>=7.4.0", "pytest-asyncio>=0.21.0"]
+bench = ["pycryptosat>=5.11.0"]
 proof = []
-bench = []
+
+[project.scripts]
+lambda-sat = "backend.cli:main_cli"
 
 [project.urls]
 Homepage = "https://github.com/jesusvilela/lambda-sat-solver"
@@ -91,14 +59,6 @@ Issues = "https://github.com/jesusvilela/lambda-sat-solver/issues"
 where = ["."]
 include = ["backend*"]
 exclude = ["backend.tests*"]
-
-[tool.pytest.ini_options]
-testpaths = ["backend/tests"]
-[project.scripts]
-lambda-sat = "backend.cli:main_cli"
-
-[tool.setuptools.packages.find]
-include = ["backend*"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]

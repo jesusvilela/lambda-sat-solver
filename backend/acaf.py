@@ -7,9 +7,11 @@ trivial instances to launch overhead, and only tying the strongest single engine
 
 The four organs, each grounded in machinery this repo already has:
 
-  CRITIC     the value estimate -- backend/dynamics.describe + a cheap hardness proxy
-             (n, m/n, gyration): does frame+geometry suffice, and if not, how heavy is
-             the expected tail? (the Bellman value the actor acts on)
+  CRITIC     the value estimate -- backend/dynamics.describe + a geometric hardness proxy
+             read off the holographic screen of hardness (∂∞): does frame+geometry suffice,
+             and if not, where on the screen does it sit -- its comoving scale (2^n horizon)
+             and criticality (distance from the phase-transition ridge)? Not a Euclidean
+             var-count ramp. (the Bellman value the actor acts on)
   ACTOR      the staged policy -- (0) the owning frame if sufficient (in-process,
              instant, certified); (1) a single fast certified engine for easy tunnel
              (ONE process, not a swarm -- no launch overhead on trivial instances);
@@ -30,6 +32,7 @@ certified (frame-sound | DRAT | model).
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
@@ -39,6 +42,7 @@ from .dynamics import describe
 from .frame_solver import frame_solve_scouted
 from .metametasolver import CageResult, _parallel_cdcl_portfolio
 from .metasolver import _certified_cdcl
+from .orbifold import hyperbolic_depth
 
 
 @dataclass
@@ -54,17 +58,55 @@ class ACAFResult:
     hardness: float = 0.0             # the critic's value estimate
 
 
+# ---- the holographic screen of hardness: constants of the search cosmos ----
+_ALPHA_C = 4.26    # random-3SAT satisfiability phase-transition ridge (Mitchell-Selman-
+                   #   Levesque; Kirkpatrick-Selman) -- the caustic where solutions grow scarce
+_N_STAR = 175.0    # comoving scale of the assignment cosmos: tanh(220/175) ~ 0.85 places the
+                   #   measured heavy-tail onset (~220 vars) at the horizon knee
+_KAPPA = 0.55      # angular width of the critical caustic in the alpha (= m/n) coordinate
+
+
+def _cosmological_hardness(n: int, m: int, gyration: float) -> float:
+    """Hardness as a POSITION ON THE HOLOGRAPHIC SCREEN OF HARDNESS (∂∞) -- not a Euclidean
+    variable-count ramp (the retired `min(1, n/260)` scalar).
+
+    Geometry (FABRIC_MODEL_NOTE, orbifold.hyperbolic_depth): a frame-void instance has
+    already fallen to the boundary at infinity -- its Poincare radius r = tanh(gyration) -> 1,
+    an INFINITE hyperbolic distance from the decided centre. At that boundary the radial
+    coordinate degenerates: every tunnel instance is equally rigid (measured -- gyration pins
+    at ~14.16 for all n and all alpha). So hardness cannot live on the exhausted radial axis;
+    holographically it lives on the screen's own intrinsic coordinates:
+
+      * horizon (scale)   -- the assignment cosmos holds 2^n points; in a curvature -1 space
+                             volume grows as e^d, so 2^n subtends a comoving horizon d ~ n ln2.
+                             Mapped back THROUGH the boundary as tanh(n/N*), so the saturation
+                             is the geometry's own -- no artificial min() clamp.
+      * criticality (caustic) -- solutions grow scarce on the phase-transition ridge
+                             alpha_c = 4.26; a sech caustic sech(kappa*(alpha - alpha_c)) is 1
+                             on the ridge and decays for over/under-constrained cosmoses,
+                             which are easy at any scale.
+
+    hardness = screen * horizon * (floor + rise*caustic): the screen gate tanh(gyration)
+    confirms we are truly at ∂∞ (frame-void), discounting any residual near-fold structure;
+    scale sets the floor; the critical caustic lifts it toward the full horizon. Result in
+    (0, 1) -- a proxy for the expected heavy-tail weight, never a proof of it (Charter)."""
+    screen = math.tanh(gyration)                            # r -> 1 at ∂∞ (frame-void)
+    horizon = math.tanh(n / _N_STAR)                        # comoving reach of the 2^n cosmos
+    caustic = 1.0 / math.cosh(_KAPPA * (m / n - _ALPHA_C))  # sech: peaked on the ridge
+    return screen * horizon * (0.5 + 0.5 * caustic)
+
+
 # ---- CRITIC: the value estimate (does it suffice; how heavy is the tail) ----
 def _critic(formula: CNFFormula) -> Tuple[bool, float, int]:
-    """Return (frames_suffice, hardness, ambiguity). Hardness is a cheap proxy for the
-    expected tail weight (0 easy .. 1 heavy); ambiguity is the polysemy degree."""
+    """Return (frames_suffice, hardness, ambiguity). Hardness is a geometric proxy for the
+    expected tail weight (0 easy .. 1 heavy) read off the holographic screen (∂∞); ambiguity
+    is the polysemy degree."""
     dyn = describe(formula)
     if dyn.certified:
         return True, 0.0, len(dyn.conserved)
     n = max(formula.num_vars, 1)
-    # random-3SAT gets into the heavy-tailed seconds regime past ~220 vars (measured);
-    # a smooth proxy, saturating, cheap -- no solve required.
-    hardness = min(1.0, n / 260.0)
+    # the instance has fallen to the boundary -- read its hardness off the screen, no solve.
+    hardness = _cosmological_hardness(n, len(formula.clauses), dyn.gyration)
     return False, hardness, 0
 
 
@@ -101,8 +143,11 @@ def acaf_solve(formula: CNFFormula, timeout_s: float = 30.0,
         if r.status == "SAT" and r.model is not None and verify_model(formula, r.model):
             return ACAFResult("SAT", time.perf_counter() - t0, "frame",
                               r.resolved_by, True, model=r.model, hardness=0.0)
-        # frame check said suffice but punted (rare) -> fall through to tunnel policy
-        hardness = min(1.0, max(formula.num_vars, 1) / 260.0)
+        # frame check said suffice but punted (rare) -> read hardness off the screen too,
+        # recovering the fabric's gyration via the cheap 1-WL Poincare placement.
+        hardness = _cosmological_hardness(
+            max(formula.num_vars, 1), len(formula.clauses),
+            hyperbolic_depth(formula, exact=False))
 
     cores = _cores()
     # AMBIGATOR: size the diversification to the predicted tail weight, capped at cores.
