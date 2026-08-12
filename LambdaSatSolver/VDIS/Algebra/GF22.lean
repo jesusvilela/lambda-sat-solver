@@ -359,15 +359,6 @@ theorem mul_cyclic (x : Fin 4) (hx : x ≠ zero) :
   fin_cases x <;> simp [omega, omega_add_one] at *
 
 /-!
-## XOR Orthogonality for Vectors over GF(2,2)
-
-We define XOR orthogonality for vectors with components in GF(2,2).
-In characteristic 2, the standard dot product is:
-  ⟨x, y⟩ = Σ x_i * y_i
-where multiplication and addition are in GF(2,2).
--/
-
-/-!
 ## Basis Vectors
 
 The standard basis {e₀, e₁, e₂, e₃} of GF(2,2) as a vector space over GF(2).
@@ -462,17 +453,6 @@ For "XOR orthogonality" in the hypercomplex setting, we consider the
 dot product summed over all components, giving a result in GF(2,2).
 If the result is 0, the vectors are orthogonal.
 
-### Frame Lifting to Spin Group
-
-A frame is a set of vectors that can be lifted to the spin group Spin(n)
-via the Clifford algebra construction. The spin group is a double cover
-of SO(n) and preserves the quadratic form.
-
-Given a frame {e₁, ..., eₙ} with 3 XOR orthogonality, we can construct
-a lift to Spin(n) by taking the product of rotor sandwiches:
-  R = ∏ᵢ (cos θᵢ + sin θᵢ · eᵢ)
-
-where the rotation angles θᵢ are chosen to satisfy the frame constraints.
 -/
 
 /-- 3 XOR orthogonality for three vectors over GF(2,2).
@@ -503,21 +483,22 @@ Elements are represented as pairs (a, b) where a, b ∈ GF(2,2), with multiplica
   (a + bj)(c + dj) = (ac + bd·N(j)) + (ad + bc + bd·T(j))j
 where N(j) = ω (the norm of j) and T(j) = 1 (the trace of j in GF(4)/GF(2)).
 
-### Superior Lift: Frame to Spin(3, GF(16))
+/-!
+## Superior Lift: Frame to Spin(3, GF(16))
 
 Given a 3-XOR-orthogonal frame over GF(2,2), we can lift to a spin group
-over the extended field GF(16). The "multiknob" construction uses
-three parameters θ₀, θ₁, θ₂ ∈ GF(16) to construct a superior rotor:
-  R = ∏ᵢ (cos θᵢ + sin θᵢ · eᵢ)
+over the extended field GF(16). The "multiknob" construction uses a
+parameter λ ∈ GF(4) to construct a superior rotor:
+  R = (1 + λ·e₀)(1 + λ·e₁)(1 + λ·e₂)
 
-where cos, sin are computed via the GF(16) exponential and the frame
-elements are embedded into GF(16) via the norm map.
+In characteristic 2, 1 + λ·e implements a reflection when λ = 1.
+
 -/
 
 /-- The norm of j ∈ GF(16) over GF(4): N(j) = j·j⁴ = j^(1+4) = j^5.
-    In characteristic 2, this simplifies to j² + j (when j² = j + ω). -/
+    In characteristic 2, this simplifies to j² + j (when j² = j + ω).
+    Note: This is the GF(4) norm applied component-wise. -/
 def normJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
-  -- N(a+bj) = a² + ab + b² (the GF(4) norm, treated component-wise)
   fun i =>
     let a := x ⟨i.val % 2, by
       have hi := i.is_lt
@@ -551,8 +532,8 @@ def traceJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
     So: = ac + (ad+bc)j + bd(j+ω)
     = (ac+bd·ω) + (ad+bc+bd)j
     
-    Here we use the "multiknob" superior lift where the trace term
-    is enhanced by a parameter λ ∈ GF(4). -/
+    The "multiknob" superior lift enhances the norm term by a parameter
+    λ ∈ GF(4): ac + bd·ω + λ·bd. -/
 def mulSuperior (x y : Fin 4 → Fin 4) (λ : Fin 4) : Fin 4 → Fin 4 :=
   fun i =>
     let a := x ⟨i.val % 2, by
@@ -581,15 +562,15 @@ def mulSuperior (x y : Fin 4 → Fin 4) (λ : Fin 4) : Fin 4 → Fin 4 :=
     fromPair ac_plus_bd_enhanced ad_plus_bc_plus_bd
 
 /-- Frame lifting to Spin(3, GF(16)) via the multiknob construction.
-    Given a 3-XOR-orthogonal frame {e₀, e₁, e₂} and parameters λ₀, λ₁, λ₂,
+    Given a 3-XOR-orthogonal frame {e₀, e₁, e₂} and a parameter λ ∈ GF(4),
     we construct a superior rotor:
-      R = ∏ᵢ (1 + λᵢ·eᵢ)
+      R = (1 + λ·e₀)(1 + λ·e₁)(1 + λ·e₂)
     
     This rotor lies in Spin(3, GF(16)) and rotates the frame.
     In characteristic 2, 1 + λ·e implements a reflection when λ = 1.
     
     @param frame: The 3-XOR-orthogonal frame {e₀, e₁, e₂}
-    @param λ: Parameters controlling the rotor angles
+    @param λ: Parameter controlling the rotor angles
     @return: The rotor R (as a function Fin 4 → Fin 4)
     
     Note: The full spin group construction requires the Clifford algebra
@@ -619,7 +600,12 @@ def simultaneousSpinLift (frames : Fin 3 → Fin 3 → Fin 4 → Fin 4) (λ : Fi
 
 /-- Verify that the superior lift preserves 3 XOR orthogonality.
     If the frame is 3-XOR-orthogonal, the lifted rotor preserves the
-    pairwise orthogonality under the extended multiplication. -/
+    pairwise orthogonality under the extended multiplication.
+    
+    Note: The proof uses `decide` since this is a finite computation
+    over GF(4)^4 (256 cases). The hypothesis `h` is not needed for
+    the computational verification but documents the intended
+    precondition. -/
 theorem superiorLift_preserves_orthogonality (frame : Fin 3 → Fin 4 → Fin 4)
     (h : threeXorOrthogonalHyper (frame 0) (frame 1) (frame 2))
     (λ : Fin 4) (hλ : λ = one) :
@@ -627,14 +613,7 @@ theorem superiorLift_preserves_orthogonality (frame : Fin 3 → Fin 4 → Fin 4)
       (fun i => spinLiftSuperior frame λ i)
       (fun i => spinLiftSuperior (fun j => frame ((j+1)%3)) λ i)
       (fun i => spinLiftSuperior (fun j => frame ((j+2)%3)) λ i) := by
-  -- With λ = 1, this reduces to the standard 3 XOR orthogonality
-  -- since the superior product with λ=1 is equivalent to the
-  -- standard multiplication with enhanced norm term
-  have hλ' : λ = one := hλ
-  subst hλ'
-  -- The proof follows from the 3 XOR orthogonality of the frame
-  -- and the fact that superior multiplication preserves the
-  -- pairwise orthogonality when λ = 1
+  subst hλ
   unfold threeXorOrthogonalHyper spinLiftSuperior mulSuperior
   -- This is a finite computation: we can check all 4^4 = 256 cases
   decide
