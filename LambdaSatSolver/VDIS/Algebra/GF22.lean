@@ -476,14 +476,6 @@ theorem standardFrame_not_threeXorOrthogonal :
   decide
 
 /-!
-## GF(GF(2,2),GF(2,2)) — The Field with 16 Elements (GF(16))
-
-GF(GF(2,2),GF(2,2)) = GF(4²) = GF(16) is the field with 16 elements.
-Elements are represented as pairs (a, b) where a, b ∈ GF(2,2), with multiplication:
-  (a + bj)(c + dj) = (ac + bd·N(j)) + (ad + bc + bd·T(j))j
-where N(j) = ω (the norm of j) and T(j) = 1 (the trace of j in GF(4)/GF(2)).
-
-/-!
 ## Superior Lift: Frame to Spin(3, GF(16))
 
 Given a 3-XOR-orthogonal frame over GF(2,2), we can lift to a spin group
@@ -492,6 +484,9 @@ parameter λ ∈ GF(4) to construct a superior rotor:
   R = (1 + λ·e₀)(1 + λ·e₁)(1 + λ·e₂)
 
 In characteristic 2, 1 + λ·e implements a reflection when λ = 1.
+
+We first define the extension field operations and then the superior
+multiplication that incorporates the multiknob parameter.
 
 -/
 
