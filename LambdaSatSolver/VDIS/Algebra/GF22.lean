@@ -408,36 +408,12 @@ This follows from j² = j + ω.
 
 Component-wise addition in GF(2,2): (a + bj) + (c + dj) = (a+c) + (b+d)j.
 
+Note: `mulExt` was removed as it was unused. The superior multiplication
+`mulSuperior` supersedes it.
+
 -/
 
-/-- Multiplication in GF(GF(2,2),GF(2,2)): (a+bj)(c+dj) = (ac+bd·ω) + (ad+bc+bd)j. -/
-def mulExt (x y : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
-  fun i =>
-    let a := x ⟨i.val % 2, by
-      have hi := i.is_lt
-      omega⟩
-    let b := x ⟨i.val / 2, by
-      have hi := i.is_lt
-      have : 2 ≤ 4 := by norm_num
-      omega⟩
-    let c := y ⟨i.val % 2, by
-      have hi := i.is_lt
-      omega⟩
-    let d := y ⟨i.val / 2, by
-      have hi := i.is_lt
-      have : 2 ≤ 4 := by norm_num
-      omega⟩
-    -- (ac + bd·ω) + (ad + bc + bd)j
-    -- Pack into Fin 4: (ac + bd·ω) is the "real" part, (ad + bc + bd) is the "j" part
-    let ac := mul a c
-    let bd := mul b d
-    let bd_omega := mul bd omega
-    let ac_plus_bd_omega := add ac bd_omega
-    let ad := mul a d
-    let bc := mul b c
-    let ad_plus_bc_plus_bd := add (add ad bc) bd
-    -- Pack: first component = ac + bd·ω, second component = ad + bc + bd
-    fromPair ac_plus_bd_omega ad_plus_bc_plus_bd
+
 
 /-!
 ## 3 XOR Orthogonality for Hypercomplex Vectors
