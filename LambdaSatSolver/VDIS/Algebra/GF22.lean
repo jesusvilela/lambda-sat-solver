@@ -485,14 +485,15 @@ parameter λ ∈ GF(4) to construct a superior rotor:
 
 In characteristic 2, 1 + λ·e implements a reflection when λ = 1.
 
-We first define the extension field operations and then the superior
-multiplication that incorporates the multiknob parameter.
+The extension field GF(16) = GF(GF(2,2),GF(2,2)) was defined above.
+Here we define the norm, trace, and superior multiplication for the
+multiknob construction.
 
 -/
 
-/-- The norm of j ∈ GF(16) over GF(4): N(j) = j·j⁴ = j^(1+4) = j^5.
-    In characteristic 2, this simplifies to j² + j (when j² = j + ω).
-    Note: This is the GF(4) norm applied component-wise. -/
+/-- The GF(4) norm applied component-wise to GF(16) elements.
+    For an element x = (a, b) representing a + bj, N(x) = (a² + ab + b², 0).
+    In GF(2), a² = a, b² = b, so this simplifies to (a + ab + b, 0). -/
 def normJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
   fun i =>
     let a := x ⟨i.val % 2, by
@@ -503,10 +504,11 @@ def normJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
       have : 2 ≤ 4 := by norm_num
       omega⟩
     -- Norm formula: a² + ab + b² (in GF(2), a² = a, b² = b)
-    fromPair a (add (mul a b) b)
+    fromPair (a + a * b + b) 0
 
-/-- The trace of j ∈ GF(16) over GF(4): T(j) = j + j⁴.
-    In characteristic 2, j⁴ = j² (Frobenius), so T(j) = j² + j. -/
+/-- The GF(4) trace applied component-wise to GF(16) elements.
+    For an element x = (a, b) representing a + bj, T(x) = (a + b, b).
+    This is the trace from GF(4) to GF(2) applied to each component. -/
 def traceJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
   fun i =>
     let a := x ⟨i.val % 2, by
@@ -516,7 +518,7 @@ def traceJ (x : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
       have hi := i.is_lt
       have : 2 ≤ 4 := by norm_num
       omega⟩
-    fromPair (add a b) b
+    fromPair (a + b) b
 
 /-- Multiplication in GF(16) = GF(GF(2,2),GF(2,2)):
     (a + bj)(c + dj) = (ac + bd·N(j)) + (ad + bc + bd·T(j))j
