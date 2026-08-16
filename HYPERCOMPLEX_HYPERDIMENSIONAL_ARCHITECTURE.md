@@ -185,15 +185,17 @@ Type 4: GF343 × GF343 → GF343 × GF343 - GF(343²) vector
 
 ### 6.2 Operations Map
 
-| Operation | GF22 | GF22Large |
-|---|---|---|
-| Addition | add | add343, add117649 |
-| Multiplication | mul | mul343, mul117649 |
-| Inverse | inv | inv343, inv117649 |
-| Negation | neg | neg343 |
-| Subtraction | sub | sub343, sub117649 |
-| Spin lift | spinLift | spinLift (adapted) |
-| Orthogonality | threeXorOrthogonalHyper | threeXorOrthogonalHyper (adapted) |
+| Operation | GF22 | GF22Large | GF22Unified |
+|---|---|---|---|
+| Addition | add | add343, add117649 | add, add343, add117649 |
+| Multiplication | mul | mul343, mul117649 | mul, mul343, mul117649 |
+| Inverse | inv | inv343, inv117649 | inv, inv343, inv117649 |
+| Negation | neg | neg343 | neg, neg343 |
+| Subtraction | sub | sub343, sub117649 | sub, sub343, sub117649 |
+| Carrier embed | - | - | embedCarrierGF22, embedCarrierGF117649 |
+| Spin lift | spinLift | spinLift (adapted) | fullSpinLiftGF22, fullSpinLiftGF117649 |
+| Simultaneous lift | simultaneousSpinLift | simultaneousSpinLift | fullSpinLiftGF22 (with carriers) |
+| Orthogonality | threeXorOrthogonalHyper | threeXorOrthogonalHyper (adapted) | simultaneousThreeXorOrthogonal |
 
 ### 6.3 Spin Group Operations
 
@@ -210,6 +212,35 @@ R = (1 + e₀)(1 + e₁)(1 + e₂)
 R⁻¹ = (a, -b) / norm (quadratic extension inverse)
 Rotation: R · v · R⁻¹
 ```
+
+### 6.4 Unified Spin Group Lifting
+
+The unified framework (GF22Unified.lean) provides:
+
+```
+fullSpinLiftGF22(frame, carriers):
+  1. Embed carriers via norm: cᵢ ↦ N(cᵢ) = cᵢ²
+  2. Compute rotor: Rᵢ = (1 + eᵢ₀)(1 + eᵢ₁)(1 + eᵢ₂)
+  3. Apply carrier: Rᵢ' = Rᵢ · N(cᵢ)
+  4. Combine: R = R₀' · R₁' · R₂'
+
+fullSpinLiftGF117649(frame, carriers):
+  1. Embed carriers via norm: N(a + bj) = a² - b²ω
+  2. Compute rotor: Rᵢ = (1 + eᵢ₀)(1 + eᵢ₁)(1 + eᵢ₂)
+  3. Apply carrier: Rᵢ' = Rᵢ · N(cᵢ)
+  4. Combine: R = R₀' · R₁' · R₂'
+```
+
+### 6.5 Simultaneous 3 XOR Orthogonality
+
+```
+simultaneousThreeXorOrthogonal(u, v, w, c₀, c₁, c₂):
+  threeXorOrthogonalHyper(u, v, w) ∧
+  ⟨u, N(c₀)⟩ = 0 ∧ ⟨v, N(c₁)⟩ = 0 ∧ ⟨w, N(c₂)⟩ = 0
+```
+
+This ensures the lifted frame preserves orthogonality with respect to
+both the original frame vectors AND the carrier-embedded vectors.
 
 ## 7. Implementation Status
 
