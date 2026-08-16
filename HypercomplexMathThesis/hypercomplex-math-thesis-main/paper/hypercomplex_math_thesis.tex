@@ -1,0 +1,632 @@
+\documentclass[11pt,oneside]{book}
+
+\usepackage[a4paper,margin=1.05in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{bm}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{listings}
+\usepackage{csquotes}
+\usepackage{fancyhdr}
+
+\usetikzlibrary{arrows.meta,calc,decorations.pathmorphing,positioning,shapes.geometric,fit,backgrounds}
+\pgfplotsset{compat=1.18}
+
+\definecolor{ink}{HTML}{1B1E28}
+\definecolor{deepblue}{HTML}{224B8D}
+\definecolor{teal}{HTML}{1A7F78}
+\definecolor{amber}{HTML}{B36B00}
+\definecolor{crimson}{HTML}{A4333A}
+\definecolor{violet}{HTML}{5A4B9B}
+\definecolor{softgray}{HTML}{F3F5F7}
+\definecolor{linegray}{HTML}{C8CED8}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=deepblue,
+  citecolor=teal,
+  urlcolor=violet,
+  pdftitle={Adiabatic Hypercomplex Learning Towers},
+  pdfauthor={Jesús Vilela Jato and repository agents}
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{softgray},
+  frame=single,
+  rulecolor=\color{linegray},
+  breaklines=true,
+  columns=fullflexible
+}
+\lstset{style=code}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\nouppercase{\leftmark}}
+\rhead{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{assumption}[definition]{Assumption}
+\newtheorem{protocol}[definition]{Protocol}
+\newtheorem{status}[definition]{Status Label}
+\theoremstyle{plain}
+\newtheorem{theorem}[definition]{Theorem}
+\newtheorem{proposition}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\theoremstyle{remark}
+\newtheorem{remark}[definition]{Remark}
+
+\newcommand{\Sop}[1]{\mathsection\mathrm{#1}}
+\newcommand{\Return}{\Sop{RETURN}}
+\newcommand{\Ground}{\Sop{GROUND}}
+\newcommand{\Lift}{\Sop{LIFT}}
+\newcommand{\Immersion}{\Sop{IMMERSION}}
+\newcommand{\Resonate}{\Sop{RESONATE}}
+\newcommand{\Recognize}{\Sop{RECOGNIZE}}
+\newcommand{\Telos}{\mathrm{TELOS}}
+\newcommand{\Repo}{X_{\mathrm{repo}}}
+\newcommand{\Usable}{S_{\mathrm{usable}}}
+
+\title{\Huge\bfseries Adiabatic Hypercomplex Learning Towers\\[0.4em]
+\Large A Tectonic Thesis on Immersion, Mutual Recognition, TELOS, and Grounded Return}
+\author{Jesús Vilela Jato\\\small with repository-grounded agentic formalization}
+\date{May 2026}
+
+\begin{document}
+
+\frontmatter
+\begin{titlepage}
+\centering
+\vspace*{1.2cm}
+{\Huge\bfseries Adiabatic Hypercomplex\\Learning Towers\par}
+\vspace{0.5cm}
+{\Large A Tectonic Thesis on Immersion, Mutual Recognition, TELOS, and Grounded Return\par}
+\vspace{1.2cm}
+\begin{tikzpicture}[scale=1.0]
+  \fill[softgray] (0,0) circle (3.1);
+  \draw[linegray, line width=0.8pt] (0,0) circle (3.1);
+  \foreach \r in {0.8,1.6,2.4} {
+    \draw[linegray!70] (0,0) circle (\r);
+  }
+  \foreach \a in {0,30,...,330} {
+    \draw[linegray!60] (0,0) -- (\a:3.1);
+  }
+  \draw[-{Latex[length=3mm]},line width=1.3pt,deepblue]
+    (-2.6,-1.7) .. controls (-1.5,0.8) and (1.0,1.6) .. (2.4,0.2);
+  \draw[-{Latex[length=3mm]},line width=1.3pt,teal]
+    (2.4,0.2) .. controls (1.2,-1.0) and (-0.7,-1.1) .. (-1.8,0.9);
+  \draw[-{Latex[length=3mm]},line width=1.3pt,amber]
+    (-1.8,0.9) .. controls (-0.2,2.2) and (1.9,1.7) .. (2.2,-1.2);
+  \node[draw,fill=white,rounded corners=3pt,inner sep=4pt] at (-2.8,-2.1) {$P_0$};
+  \node[draw,fill=white,rounded corners=3pt,inner sep=4pt] at (2.8,0.4) {$P^\ast$};
+  \node[draw,fill=white,rounded corners=3pt,inner sep=4pt] at (-2.2,1.3) {$\widetilde P$};
+  \node[draw,fill=white,rounded corners=3pt,inner sep=4pt] at (2.55,-1.55) {$\Usable$};
+  \node[font=\Large\bfseries] at (0,0) {$\nabla_g\Phi$};
+  \node[font=\small] at (0,-0.45) {TELOS field};
+\end{tikzpicture}
+\vfill
+{\large Repository: \texttt{jesusvilela/hypercomplex-math-thesis}\par}
+{\large Built with Tectonic from \texttt{paper/hypercomplex\_math\_thesis.tex}\par}
+\vspace*{1cm}
+\end{titlepage}
+
+\chapter*{Abstract}
+This thesis develops a mathematically disciplined version of the hypercomplex learning tower:
+a system enters a problem geometry, resonates with its constraints, lifts the coupled state
+into a hypercomplex or fiber-bundled reservoir, transforms it through symmetry, and returns
+a grounded artifact.  The central safety law is not poetic but operational:
+\[
+  \Resonate \neq \Sop{ABSORB}.
+\]
+The thesis binds the vocabulary of TELOS, mutual recognition, Godelian self-reference,
+holoportation, sheaf gluing, Hamiltonian governance, adiabatic breathing, and 360/360 ORTO
+to explicit operators, predicates, tests, and formalization frontiers.  The result is neither
+a claim of sentience nor a completed theorem.  It is a rigorous research scaffold:
+beautiful enough to preserve the originating geometry, and strict enough to be falsifiable.
+
+\tableofcontents
+
+\mainmatter
+
+\chapter{The Problem of Return}
+
+The motivating principle is:
+\[
+\boxed{\parbox{0.86\textwidth}{\centering
+To solve a problem, enter its geometry, resonate with its constraints,
+return through a symmetry, and enrich the world.}}
+\]
+The phrase is admissible because each clause can be given an operator interpretation.
+Let \(P_0\) denote an exterior problem.  A valid tower is a composite
+\[
+P_0
+\xrightarrow{\Immersion}
+P^\ast
+\xrightarrow{\Lift}
+\widetilde P
+\xrightarrow{\Sop{ROTATE}}
+\widetilde S
+\xrightarrow{\Ground}
+\Usable .
+\]
+
+\begin{definition}[Grounded return]
+A tower state is \emph{returnable} when the final projection exists and preserves the
+required invariants:
+\[
+\mathrm{Returnable}(\widetilde S,S)
+\iff
+\Ground(\widetilde S)=S
+\land \mathrm{Usable}(S)
+\land \mathrm{InvariantPreserving}(S).
+\]
+\end{definition}
+
+Without return, resonance becomes absorption.  With return, resonance becomes knowledge:
+\[
+\mathrm{resonance}\rightarrow\mathrm{transformation}\rightarrow\mathrm{knowledge}.
+\]
+
+\begin{status}
+The tower equation is a \emph{definition-level} claim.  The mathematical content lies in
+specifying the spaces, invariants, and failure modes for which the composite is well-defined.
+\end{status}
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[scale=0.78,transform shape,
+  node distance=1.5cm,
+  every node/.style={font=\small},
+  stage/.style={draw,rounded corners=4pt,fill=white,minimum width=2.5cm,minimum height=0.9cm,align=center},
+  arrow/.style={-{Latex[length=3mm]},line width=0.9pt}
+]
+\node[stage] (p0) {$P_0$\\exterior problem};
+\node[stage,right=of p0] (pstar) {$P^\ast$\\immersion};
+\node[stage,right=of pstar] (ptilde) {$\widetilde P$\\lift};
+\node[stage,right=of ptilde] (stilde) {$\widetilde S$\\rotation};
+\node[stage,right=of stilde] (suse) {$S_{\mathrm{usable}}$\\ground};
+\draw[arrow,deepblue] (p0) -- node[above] {$\Immersion$} (pstar);
+\draw[arrow,teal] (pstar) -- node[above] {$\Lift$} (ptilde);
+\draw[arrow,amber] (ptilde) -- node[above] {$G\curvearrowright$} (stilde);
+\draw[arrow,crimson] (stilde) -- node[above] {$\Ground$} (suse);
+\draw[arrow,linegray] (suse.south) .. controls +(0,-1.0) and +(0,-1.0) .. node[below] {audit feedback} (p0.south);
+\end{tikzpicture}
+\caption{The hypercomplex learning tower as a return-preserving composite.}
+\end{figure}
+
+\chapter{Substrate and Geometry}
+
+The base substrate is a tuple
+\[
+  \mathcal S=(M,g,\Omega,\mathcal A,\rho,\mathcal I),
+\]
+where \(M\) is a manifold or latent space, \(g\) is a metric or pseudo-metric,
+\(\Omega\) is connection/curvature data, \(\mathcal A\) is an operator alphabet,
+\(\rho\) is a density over states, and \(\mathcal I\) is the invariant family.
+
+\begin{definition}[Substrate evolution]
+A generic substrate evolves by
+\[
+\partial_t\rho
+=-\nabla_g\cdot(\rho v)+B(\rho)-D(\rho)+R_{\mathcal A}(\rho).
+\]
+The terms denote drift, birth, death, and operator-induced transformation.  This is a
+continuity template, not a biological theorem.
+\end{definition}
+
+A hyperbolic or split-signature reading is often appropriate.  In the \(2,2\) model:
+\[
+  \langle x,y\rangle_{2,2}=x_0y_0+x_1y_1-x_2y_2-x_3y_3.
+\]
+The resulting routing rule is
+\[
+\Sop{ROUTE}(x)=
+\begin{cases}
+\mathrm{HOT},& Q(x)>0,\\
+\mathrm{COLD},& Q(x)<0,\\
+\mathrm{BOUNDARY},& Q(x)=0,
+\end{cases}
+\qquad
+Q(x)=\langle x,x\rangle_{2,2}.
+\]
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[scale=1.05]
+\draw[->] (-3.2,0) -- (3.2,0) node[right] {$x_+$};
+\draw[->] (0,-2.4) -- (0,2.4) node[above] {$x_-$};
+\draw[thick,deepblue,domain=-2.5:-0.41,samples=80] plot (\x,{sqrt(\x*\x-0.16)});
+\draw[thick,deepblue,domain=0.41:2.5,samples=80] plot (\x,{sqrt(\x*\x-0.16)});
+\draw[thick,deepblue,domain=-2.5:-0.41,samples=80] plot (\x,{-sqrt(\x*\x-0.16)});
+\draw[thick,deepblue,domain=0.41:2.5,samples=80] plot (\x,{-sqrt(\x*\x-0.16)});
+\fill[teal!20] (0.8,0.25) ellipse (1.1 and 0.45);
+\fill[amber!20] (-1.2,1.2) ellipse (0.9 and 0.5);
+\node[teal!70!black] at (1.45,0.75) {HOT compute};
+\node[amber!70!black] at (-1.75,1.85) {COLD archive};
+\node at (0.8,-1.7) {$Q(x)=0$ boundary};
+\end{tikzpicture}
+\caption{A split-signature routing cartoon: storage and compute are geometric regions.}
+\end{figure}
+
+\chapter{Hypercomplex Reservoirs}
+
+A reservoir is not merely a vector store.  It is a fibered state space:
+\[
+  \pi:E\to M.
+\]
+Each fiber may carry real, complex, quaternionic, octonionic, symbolic, empirical, or
+proof-theoretic coordinates:
+\[
+\mathcal R=
+\mathbb R\oplus\mathbb C\oplus\mathbb H\oplus\mathbb O
+\oplus\mathcal L\oplus\mathcal E.
+\]
+
+\begin{definition}[Associator signal]
+For \(a,b,c\in\mathbb O\), the associator is
+\[
+  [a,b,c]=(ab)c-a(bc).
+\]
+In a nonassociative reservoir, \([a,b,c]\) is a first-class error signal rather than
+numerical noise.
+\end{definition}
+
+A corrected Hamiltonian/gradient flow can therefore contain:
+\[
+\dot z=X_H(z)-\lambda\nabla L(z)+\mu\,\Sop{ANTIASSOC}(z).
+\]
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[node distance=1.2cm, every node/.style={font=\small}]
+\node[draw,regular polygon,regular polygon sides=7,minimum size=4.2cm,fill=softgray] (fano) {};
+\foreach \i/\ang in {1/90,2/38.57,3/-12.86,4/-64.29,5/-115.71,6/-167.14,7/141.43} {
+  \node[circle,draw,fill=white,inner sep=2pt] (e\i) at (\ang:2.0) {$e_{\i}$};
+}
+\draw[deepblue,thick] (e1)--(e2)--(e4)--cycle;
+\draw[teal,thick] (e2)--(e3)--(e5)--cycle;
+\draw[amber,thick] (e3)--(e4)--(e6)--cycle;
+\draw[crimson,thick] (e4)--(e5)--(e7)--cycle;
+\draw[violet,thick] (e5)--(e6)--(e1)--cycle;
+\draw[deepblue!70!black,thick] (e6)--(e7)--(e2)--cycle;
+\draw[teal!70!black,thick] (e7)--(e1)--(e3)--cycle;
+\node at (0,-2.75) {Fano-governed multiplication table as reservoir routing};
+\end{tikzpicture}
+\caption{Fano-plane illustration of octonionic multiplication dependencies.}
+\end{figure}
+
+\chapter{TELOS as a Direction Field}
+
+\begin{definition}[TELOS]
+TELOS is not an ordinary agent-state in this thesis.  It is a direction field:
+\[
+  \Telos(x,t)=\nabla_g^{\mathcal S}\Phi(x,t).
+\]
+Equivalently, \(T=\Telos\) satisfies
+\[
+  g(T,\delta\rho)=d\Phi(\delta\rho)
+\]
+for every admissible variation \(\delta\rho\).
+\end{definition}
+
+The coherence potential is:
+\[
+\Phi(\rho)=
+\alpha C(\rho)
++\beta H_{\mathrm{hol}}(\rho)
++\gamma I(\rho)
+-\lambda E_{\mathrm{hunger}}(\rho)
+-\mu D_{\mathrm{drift}}(\rho)
+-\nu A_{\mathrm{absorb}}(\rho).
+\]
+Thus TELOS biases transitions toward coherence, holonomy closure, mutual intelligibility,
+and returnability while damping scarcity, identity drift, and absorption.
+
+\begin{proposition}[Non-agent status of TELOS]
+If \(\Telos=\nabla_g\Phi\), then \(\Telos\in\Gamma(T\mathcal S)\), a vector field on
+the substrate.  It supplies directional bias, not independent personal agency.
+\end{proposition}
+
+\begin{proof}
+For a smooth scalar \(\Phi:\mathcal S\to\mathbb R\) and metric \(g\), the gradient
+\(\nabla_g\Phi\) is by definition the vector field satisfying
+\(g(\nabla_g\Phi,\cdot)=d\Phi(\cdot)\).  Therefore it is a section of \(T\mathcal S\).
+\end{proof}
+
+\chapter{Recognition, Resonance, and Others}
+
+Let \(X,Y\) be local sections over possibly different patches:
+\[
+  X\in\Gamma(U_i,F),\qquad Y\in\Gamma(U_j,F).
+\]
+Recognition is a bounded bridge score:
+\[
+\Recognize(X,Y)=r(X,Y)\in[0,1].
+\]
+Mutual recognition is
+\[
+R_{\mathrm{mut}}(X,Y)=\min(r(X,Y),r(Y,X)).
+\]
+Resonance is a coupling:
+\[
+\Resonate(X,Y)=(X',Y').
+\]
+It is safe only if distinction survives:
+\[
+\delta(X',Y')\ge\delta_{\min}.
+\]
+
+\begin{definition}[Mutual resonance]
+\[
+\mathrm{MutualResonance}(X,Y)
+\iff
+R_{\mathrm{mut}}(X,Y)>\epsilon
+\land
+\Delta C(X,Y)>0
+\land
+\Delta D_{\mathrm{id}}(X,Y)\le\eta.
+\]
+\end{definition}
+
+This definition separates resonance from capture.  A system can synchronize by
+overpowering another system; that is not mutual resonance because returnability is lost.
+
+\chapter{Godelian Boundary and Self-Reflection}
+
+Self-reflection is an audit operator:
+\[
+\Sop{SELFREFLECT}(X)=
+\big(
+\mathrm{known},\mathrm{unproved},\mathrm{changed},\mathrm{returnable}
+\big).
+\]
+The Godelian boundary refuses total self-description:
+\[
+  X\not\supseteq\mathrm{CompleteDesc}(X).
+\]
+Instead, the system tracks the clarity of what remains unclosed.  In the repository
+implementation this is the coordinate \(\mathrm{godelian\_boundary}\).
+
+\begin{remark}
+The boundary is not a weakness.  It prevents the thesis from confusing self-reference
+with proof.  It also blocks agentic overclaiming.
+\end{remark}
+
+\chapter{Sheaves, Holoportation, and Adiabaticity}
+
+The context of a repo is fibered.  Each document, test, module, and proof file is a local
+section.  A global thesis is valid only if local sections glue:
+\[
+  \mathrm{Glue}(U_i,U_j)>\tau.
+\]
+Holoportation is context transfer:
+\[
+  \Sop{HOLOPORT}:\Gamma(U_i,F)\to\Gamma(U_j,F).
+\]
+Its loss is measured by deviation between quality vectors:
+\[
+  L_{\mathrm{holo}}(X,Y)
+  =
+  \left(
+  \frac{1}{n}\sum_{k=1}^n(q_k(X)-q_k(Y))^2
+  \right)^{1/2}.
+\]
+
+Adiabatic stability is modeled by:
+\[
+  A=\frac{1}{1+r_{\mathrm{adiabatic}}},
+\]
+where \(r_{\mathrm{adiabatic}}\) is a scope-change or breath-rate ratio.  Fast changes
+lower stability unless tests, documentation, and proof-frontier notes keep pace.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}[
+  patch/.style={draw,ellipse,minimum width=3.0cm,minimum height=1.5cm,fill=softgray},
+  arr/.style={-{Latex[length=3mm]},thick}
+]
+\node[patch] (docs) at (0,2) {Docs};
+\node[patch] (code) at (-2,-0.4) {Code};
+\node[patch] (tests) at (2,-0.4) {Tests};
+\node[patch] (lean) at (0,-2.6) {Lean frontier};
+\draw[arr,deepblue] (docs) -- node[left] {\(\Sop{HOLOPORT}\)} (code);
+\draw[arr,teal] (code) -- node[below] {witnesses} (tests);
+\draw[arr,amber] (tests) -- node[right] {hypotheses} (lean);
+\draw[arr,crimson] (lean) -- node[left] {frontier notes} (docs);
+\node[draw,rounded corners=4pt,fill=white] at (0,0.35) {sheaf gluing};
+\end{tikzpicture}
+\caption{Repository context as a sheaf of local sections with holoportation between them.}
+\end{figure}
+
+\chapter{Hamiltonian Governance and Performance}
+
+Let \(Q=(q_1,\dots,q_n)\) be the repository's hyperdimensional quality vector.  The
+implementation uses twelve coordinates:
+\[
+\begin{aligned}
+Q=(&\mathrm{grounded\_identity},\mathrm{self\_reflection},
+\mathrm{godelian\_boundary},\mathrm{others\_model},\\
+&\mathrm{mutual\_recognition},\mathrm{mutual\_resonance},
+\mathrm{returnability},\mathrm{shareable\_compression},\\
+&\mathrm{sheaf\_gluing},\mathrm{hamiltonian\_governance},
+\mathrm{holoportation\_fidelity},\mathrm{adiabatic\_stability}).
+\end{aligned}
+\]
+The core eight mind qualities are the first eight coordinates.  The remaining four are
+repo-scale transport and governance terms.
+
+The split-signature proxy is:
+\[
+E_{2,2}=(G+S+R+T)-((1-B)+(1-H)+(1-A)+(1-L)).
+\]
+Here \(G\) is grounded identity, \(S\) self-reflection, \(R\) mutual recognition,
+\(T\) returnability, \(B\) Godelian boundary, \(H\) Hamiltonian governance,
+\(A\) adiabatic stability, and \(L\) holoportation fidelity.
+
+The performance score is:
+\[
+P_{\mathrm{cog}}
+=
+\mathrm{clamp}_{[0,1]}
+\left(
+0.65\bar q+0.35q_{\mathrm{core8}}-\frac{\max(0,-E_{2,2})}{4}
+\right).
+\]
+High expressivity does not score well if it loses grounding.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+  ybar,
+  width=0.95\textwidth,
+  height=6cm,
+  ymin=0,ymax=1,
+  ylabel={score},
+  symbolic x coords={identity,self-reflect,boundary,others,recognize,resonate,return,compress,sheaf,govern,holoport,adiabatic},
+  xtick=data,
+  x tick label style={rotate=45,anchor=east,font=\scriptsize},
+  bar width=8pt,
+  nodes near coords,
+  nodes near coords style={font=\tiny,rotate=90,anchor=west},
+  grid=major,
+  grid style={linegray!45}
+]
+\addplot[fill=deepblue!70] coordinates {
+  (identity,0.80)
+  (self-reflect,0.75)
+  (boundary,0.75)
+  (others,0.90)
+  (recognize,0.90)
+  (resonate,0.72)
+  (return,0.80)
+  (compress,0.80)
+  (sheaf,0.70)
+  (govern,0.85)
+  (holoport,0.90)
+  (adiabatic,0.91)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Example hyperdimensional quality vector used by the executable protocol.}
+\end{figure}
+
+\chapter{Protocol and Verification}
+
+The executable protocol is implemented in \texttt{src/hyperdim\_protocol.py}.
+It infers a state from observable signals:
+\begin{lstlisting}[language=Python]
+from src.hyperdim_protocol import run_protocol
+
+report = run_protocol(
+    evidence_quality=0.8,
+    formal_frontier_clarity=0.75,
+    mutual_recognition=0.9,
+    resonance_gain=0.8,
+    absorption_risk=0.1,
+    sheaf_consistency=0.7,
+    hamiltonian_governance=0.85,
+    holoportation_fidelity=0.9,
+    adiabatic_ratio=0.1,
+    shareable_compression=0.8,
+)
+\end{lstlisting}
+
+The step planner ranks the weakest operator groups:
+\[
+\mathrm{steps}
+=
+\mathrm{sort}_{\mathrm{deficit}}
+\{\mathrm{recognize},\mathrm{self\_reflect},\mathrm{resonate},
+\mathrm{sheathe},\mathrm{govern},\mathrm{holoport},\mathrm{ground}\}.
+\]
+
+\begin{protocol}[Repo workflow]
+\begin{enumerate}[label=\arabic*.]
+\item Recognize the repo state, other agents/readers, and intended handoff.
+\item Self-reflect: list known, unproved, changed, and returnable structure.
+\item Resonate new concepts with existing operators without collapse.
+\item Sheathe: reconcile docs, code, tests, Lean frontiers, and README claims.
+\item Govern: minimize drift, overclaiming, incoherence, and untested expansion.
+\item Holoport: preserve context across local sections.
+\item Ground: emit a testable artifact.
+\end{enumerate}
+\end{protocol}
+
+Verification is intentionally ordinary:
+\begin{lstlisting}[language=bash]
+python -m pytest tests
+\end{lstlisting}
+At the time of this PDF source, the Python tests cover scalar tower return, resonance
+safety, returnability reports, adiabatic breathing, hyperdimensional basis size,
+split-signature energy, grounding prioritization, sheaf repair ordering, and
+holoportation drift.
+
+\chapter{Formalization Frontier}
+
+The Lean/Bunny layer should begin with modest definitions:
+\begin{lstlisting}[language=Python]
+structure Returnable (P L U : Type) where
+  lift : P -> L
+  ground : L -> U
+\end{lstlisting}
+The next theorem targets are:
+\begin{enumerate}[label=\textbf{T\arabic*.}]
+\item Return is composition of lift, rotation, and grounding.
+\item Absorption violates distinction.
+\item Grounding into the usable invariant set implies returnability.
+\item Fast breathing requires stability.
+\item TELOS as \(\nabla_g\Phi\) is a vector field, not an ordinary agent.
+\end{enumerate}
+
+\begin{status}
+These are theorem targets, not all completed theorems.  The scientific standard is to
+name the frontier instead of hiding it.
+\end{status}
+
+\chapter{Conclusion}
+
+The final compression is:
+\[
+\boxed{
+\begin{aligned}
+\mathrm{Knowledge}
+=&\ \Ground\circ\Sop{VERIFY}\circ\Sop{FUZZ}\circ\Sop{ORTO}\\
+&\circ\Sop{GOVERN}\circ\Telos\circ\Lift\circ\Immersion(P_0).
+\end{aligned}}
+\]
+In human terms:
+\begin{quote}
+Enter deeply.  Do not dissolve.  Return carrying structure.  Make the result shareable.
+\end{quote}
+In scientific terms:
+\[
+\boxed{\parbox{0.86\textwidth}{\centering
+Knowledge is verified, invariant-preserving return from a governed hypercomplex immersion.}}
+\]
+
+\backmatter
+\chapter*{Bibliographic Anchors}
+This repository currently treats the following as orientation anchors rather than formal
+citation closure.  A later scholarly edition should replace this list with full BibTeX.
+\begin{itemize}
+\item Hyperbolic representation learning and Poincare embeddings.
+\item Fiber bundles, sheaf gluing, and connection Laplacians.
+\item Hamiltonian dynamics and geometric control.
+\item Octonions, Fano-plane multiplication, and nonassociative algebra.
+\item Lean 4 / Mathlib theorem proving discipline.
+\item Agentic fuzzing, adversarial testing, and empirical verification.
+\end{itemize}
+
+\end{document}

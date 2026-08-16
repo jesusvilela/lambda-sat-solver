@@ -1,0 +1,65 @@
+THE WEAVE NEVER ENDS - DEFINITIVE EDITION, REVISION r2
+Verification date: 2026-07-15
+
+PROVENANCE NOTE ON r1
+- r1 VERIFICATION.txt names a compile source (the_weave_never_ends_definitive.tex)
+  that differs from the shipped filename, and the shipped r1 .tex uses \centernot
+  without loading the centernot package. The r1 PDF was therefore almost certainly
+  compiled from a source not byte-identical to the shipped one. r2 closes this
+  provenance defect: the PDF in this directory is compiled from exactly the .tex
+  in this directory.
+
+AUTHORING (r2)
+- Source: LaTeX (The_Weave_Never_Ends_Definitive_Edition.tex, this directory)
+- Engine: Tectonic 0.16.9 (XeTeX-based; reproducible, self-fetching packages)
+- Compile command:
+  tectonic -X compile The_Weave_Never_Ends_Definitive_Edition.tex
+- Compile result: PASS (exit 0)
+- Output pages: 90 (r1: 87; delta = bibliography + adjunction theorem-seed +
+  Sabatier disconfirmation + mechanization remark)
+- Page size: A4
+
+CONTENT CHANGES (r2)
+- See README.md "Revision r2 changes" for the full list. Geometric-content
+  edits licensed by the author 2026-07-15; all were pre-registered in the
+  review that preceded them (no scope expansion).
+
+FORMAL VERIFICATION
+- New file: LambdaSatSolver/VDIS/WeaveShadow.lean (repository root)
+- Instantiates theorem-seed "Visible closure versus relational closure" (ch. 2):
+  ReturnComparison / StructuredReturnDefect / ComparativeHolonomyWitness,
+  two-bit carrier (endpoint x witness), witness-flipping loop;
+  visible_closure, relational_defect,
+  visible_closure_without_relational_closure.
+- Bridge: comparative_generalizes_return_defect shows the strict-equality
+  comparison recovers the existing VDIS.HardnessHolonomy.ReturnDefect (Iff.rfl);
+  the new layer extends, and does not fork, the kernel.
+- Build: lake build LambdaSatSolver.VDIS.WeaveShadow
+- Build result: RECORDED BELOW AFTER COMPLETION
+- Axiom audit: #print axioms on the main theorem, output recorded below.
+
+KNOWN LIMITATIONS
+- Tectonic (XeTeX) is a different engine from the r1 pdfLaTeX run; pagination
+  and font embedding details differ from r1. This is disclosed, not hidden.
+- Visual page-by-page inspection of the r2 PDF has not been performed by the
+  author yet; representative-page inspection is an open item for the author.
+
+LEAN BUILD RESULT (2026-07-15)
+- Toolchain: leanprover/lean4:v4.32.0-rc1 (repo lean-toolchain)
+- Command: lean LambdaSatSolver/VDIS/WeaveShadow.lean
+- Result: PASS (exit 0)
+- Axiom audit (#print axioms):
+    visible_closure_without_relational_closure : no axioms
+    relational_defect                          : no axioms
+    visible_closure                            : no axioms
+  Core Lean only; not even Classical.em is used.
+- Import status: file is deliberately import-free because the chain
+  HardnessHolonomy -> ... -> Algebra.CD does NOT currently build under
+  v4.32.0-rc1: interval_cases failures at CD.lean:601 and CD.lean:612
+  ("could not find upper bound on level"). This is a pre-existing
+  repository regression relative to the 2026-07-09 "Build: Clean"
+  status in docs/TuringHalting_Status.md, presumably from toolchain or
+  Mathlib drift. Not repaired here (outside licensed scope); the merge
+  path back to the kernel is documented in the file header.
+- Canonical location: LambdaSatSolver/VDIS/WeaveShadow.lean
+  (a convenience copy ships in this bundle directory).

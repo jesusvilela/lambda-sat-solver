@@ -1,0 +1,31 @@
+THE WEAVE NEVER ENDS - DEFINITIVE EDITION
+Verification date: 2026-07-14
+
+AUTHORING
+- Source: LaTeX
+- Engine: pdfLaTeX through latexmk helper
+- Compile command:
+  python /home/oai/skills/pdfs/scripts/latex_to_pdf.py the_weave_never_ends_definitive.tex -o The_Weave_Never_Ends_Definitive_Edition.pdf
+- Compile result: PASS
+- Output pages: 87
+- Page size: A4, 595 x 842 pt
+- Embedded fonts: PASS
+- PDF encryption: none
+
+VISUAL VERIFICATION
+- Render command:
+  python /home/oai/skills/pdfs/scripts/render_pdf.py The_Weave_Never_Ends_Definitive_Edition.pdf --out_dir build/rendered_final --dpi 120
+- Render result: PASS, 87 pages
+- Representative pages inspected: cover, abstract, contents, notation, body chapters, both full-page schematics, theorem/claim boxes, appendices, closing ledger.
+- No clipped text, overlapping objects, broken glyphs, or black squares observed.
+
+PREFLIGHT
+- PyMuPDF openability: PASS
+- Likely scanned: false
+- XFA: false
+- Outline items: 157
+- Form fields: 0
+
+KNOWN NON-FAILURE WARNINGS
+- A small number of underfull vertical boxes are normal page-balancing artifacts in chapter and appendix endings.
+- No overfull boxes remain in the final compile log.

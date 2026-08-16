@@ -1,0 +1,785 @@
+{
+ "config": {
+  "instances": 24,
+  "steps": 4,
+  "flip_prob": 0.15,
+  "timeout": 3.0
+ },
+ "results": [
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "SAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0716,
+    0.0428,
+    0.0445,
+    0.0393
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s0",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "UNSAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.0761,
+    0.0694,
+    0.0745,
+    0.072
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s1",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.1148,
+    0.105,
+    0.1162,
+    0.0971
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s2",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.2085,
+    0.145,
+    0.3787,
+    0.4666
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s3",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "UNSAT",
+    "SAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0401,
+    0.0434,
+    0.0437,
+    0.038
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s4",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.0711,
+    0.0667,
+    0.0685,
+    0.0709
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s5",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "SAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.1032,
+    0.1094,
+    0.099,
+    0.1261
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s6",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "UNSAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.2446,
+    0.533,
+    0.1476,
+    0.1458
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s7",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "SAT",
+    "SAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.0372,
+    0.0367,
+    0.0422,
+    0.0382
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s8",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.0731,
+    0.0716,
+    0.0757,
+    0.0677
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s9",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.1546,
+    0.1262,
+    0.1014,
+    0.1087
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s10",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "SAT",
+    "SAT"
+   ],
+   "seconds": [
+    0.6533,
+    0.4163,
+    0.2709,
+    0.151
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "r3sat_s11",
+   "family": "random-3sat"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0062,
+    0.016,
+    0.0072,
+    0.0068
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s0",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0084,
+    0.011,
+    0.0118,
+    0.011
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s1",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0115,
+    0.0155,
+    0.0155,
+    0.0153
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "php_s2",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0154,
+    0.0224,
+    0.0233,
+    0.0229
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "php_s3",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0202,
+    0.0382,
+    0.0379,
+    0.0312
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "php_s4",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0057,
+    0.0172,
+    0.0072,
+    0.0069
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s5",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0081,
+    0.0233,
+    0.0109,
+    0.011
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s6",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0107,
+    0.0258,
+    0.0166,
+    0.0155
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s7",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0151,
+    0.0224,
+    0.0224,
+    0.0227
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "php_s8",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0203,
+    0.0309,
+    0.0341,
+    0.0313
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0794,
+    0.0891,
+    0.0994
+   ],
+   "cumulative_holonomy": 0.2678,
+   "net_holonomy": 0.2665,
+   "geometric_phase": 0.0013,
+   "adiabatic": true,
+   "instance_id": "php_s9",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "SAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0056,
+    0.0195,
+    0.0079,
+    0.0072
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s10",
+   "family": "pigeonhole"
+  },
+  {
+   "n_steps": 4,
+   "verdicts": [
+    "UNSAT",
+    "UNSAT",
+    "UNSAT",
+    "UNSAT"
+   ],
+   "seconds": [
+    0.0088,
+    0.0104,
+    0.0108,
+    0.0107
+   ],
+   "mantle_flags": [
+    false,
+    false,
+    false,
+    false
+   ],
+   "step_holonomies": [
+    0.0823,
+    0.0915,
+    0.1015
+   ],
+   "cumulative_holonomy": 0.2753,
+   "net_holonomy": 0.2739,
+   "geometric_phase": 0.0014,
+   "adiabatic": true,
+   "instance_id": "php_s11",
+   "family": "pigeonhole"
+  }
+ ],
+ "summary": {
+  "single_cycle_mean": 0.08024583333333334,
+  "cumulative_mean": 0.2699875,
+  "geometric_phase_mean": 0.0013291666666666666,
+  "ratio": 3.3645049067968222,
+  "adiabatic_fraction": 1.0
+ }
+}

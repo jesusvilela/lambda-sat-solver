@@ -1,0 +1,14 @@
+name = "lambda-sat-solver"
+version = "0.1.0"
+defaultTargets = ["lambda-sat-solver"]
+
+[[lean_lib]]
+name = "LambdaSatSolver"
+
+[[lean_exe]]
+name = "lambda-sat-solver"
+root = "Main"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"

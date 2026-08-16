@@ -34,3 +34,4 @@ pids
 .spark-workbench-id
 *.pyc
 __pycache__/
+/.lake
