@@ -144,8 +144,6 @@ theorem secondHalf_embedSecond {n : ℕ} (hn : 0 < n) (x : Fin (2 ^ (n - 1)) →
       Nat.add_lt_add_right hi _
     exact lt_of_lt_of_eq h_lt_sum h_pow_add
   simp [h_lt]
-  apply Fin.ext
-  omega
 
 /-- The first half of a sum is the sum of the first halves. -/
 theorem firstHalf_add {n : ℕ} (x y : Fin (2 ^ n) → ℝ) :
@@ -180,30 +178,25 @@ theorem embedFirst_secondHalf_add {n : ℕ} (hn : 0 < n) (x : Fin (2 ^ n) → �
   · have h_not_ge : ¬ (2 ^ (n - 1) ≤ i.val) := by omega
     have h_lt : i.val + 2 ^ (n - 1) < 2 ^ n := by
       have hi := i.is_lt
+      have hn1 : 1 ≤ n := Nat.one_le_of_lt hn
       have h_pow_add : 2 ^ (n - 1) + 2 ^ (n - 1) = 2 ^ n := by
-        by_cases hn : n = 0
-        · subst hn; simp
-        · have hn1 : 1 ≤ n := Nat.one_le_of_lt (Nat.pos_of_ne_zero hn)
-          calc
-            2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
-            _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
+        calc
+          2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
+          _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
       have h_lt_sum : i.val + 2 ^ (n - 1) < 2 ^ (n - 1) + 2 ^ (n - 1) :=
         Nat.add_lt_add_right h _
       exact lt_of_lt_of_eq h_lt_sum h_pow_add
-    simp [h, h_not_ge, h_lt]
+    simp [h, h_not_ge, h_lt]; norm_num
   · have h_ge : 2 ^ (n - 1) ≤ i.val := by omega
     have h_not_lt : ¬ (i.val + 2 ^ (n - 1) < 2 ^ n) := by
-      by_cases hn : n = 0
-      · subst hn; simp at h_ge
-        have hi := i.is_lt; omega
-      · have hn1 : 1 ≤ n := Nat.one_le_of_lt (Nat.pos_of_ne_zero hn)
-        have hi := i.is_lt
-        have h_pow_add : 2 ^ (n - 1) + 2 ^ (n - 1) = 2 ^ n := by
-          calc
-            2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
-            _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
-        omega
-    simp [h, h_ge, h_not_lt]
+      have hi := i.is_lt
+      have hn1 : 1 ≤ n := Nat.one_le_of_lt hn
+      have h_pow_add : 2 ^ (n - 1) + 2 ^ (n - 1) = 2 ^ n := by
+        calc
+          2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
+          _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
+      omega
+    simp [h, h_ge, h_not_lt]; norm_num
 
 /-!
 ## Conjugation
@@ -498,17 +491,28 @@ theorem CayleyDicksonRecurrenceLow (level : ℕ) (hpos : 0 < level) (hlevel : le
       mulByLevel (level - 1) y₀ x₁) := by
   interval_cases level
   · -- level = 1: ℂ
-    ext i; fin_cases i <;>
-      dsimp [mulByLevel, mulComplex, embedFirst, embedSecond, firstHalf, secondHalf, conjByLevel] <;>
-      simp <;> ring
+    have h : mulComplex (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
+      embedFirst (x₀ * y₀ - y₁ * x₁) + embedSecond (x₀ * y₁ + y₀ * x₁) := by
+      ext i; fin_cases i <;>
+        simp [mulComplex, embedFirst, embedSecond] <;>
+        ring
+    simpa [mulByLevel, conjByLevel] using h
   · -- level = 2: ℍ
-    ext i; fin_cases i <;>
-      dsimp [mulByLevel, mulQuat, embedFirst, embedSecond, firstHalf, secondHalf, conjByLevel] <;>
-      simp <;> ring
+    have h : mulQuat (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
+      embedFirst (mulQuat x₀ y₀ - mulQuat (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
+      embedSecond (mulQuat (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulQuat y₀ x₁) := by
+      ext i; fin_cases i <;>
+        simp [mulQuat, embedFirst, embedSecond] <;>
+        ring
+    simpa [mulByLevel, conjByLevel] using h
   · -- level = 3: 𝕆
-    ext i; fin_cases i <;>
-      dsimp [mulByLevel, mulOct, embedFirst, embedSecond, firstHalf, secondHalf, conjByLevel] <;>
-      simp <;> ring
+    have h : mulOct (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
+      embedFirst (mulOct x₀ y₀ - mulOct (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
+      embedSecond (mulOct (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulOct y₀ x₁) := by
+      ext i; fin_cases i <;>
+        simp [mulOct, embedFirst, embedSecond] <;>
+        ring
+    simpa [mulByLevel, conjByLevel] using h
 
 /-- Extracting the first half of an embedded second half gives zero. -/
 theorem firstHalf_embedSecond {n : ℕ} (x : Fin (2 ^ (n - 1)) → ℝ) :
@@ -517,27 +521,25 @@ theorem firstHalf_embedSecond {n : ℕ} (x : Fin (2 ^ (n - 1)) → ℝ) :
   unfold firstHalf embedSecond
   have hi := i.is_lt
   have h_not_ge : ¬ (2 ^ (n - 1) ≤ i.val) := by omega
-  simp [h_not_ge]
+  simp [h_not_ge]; norm_num
 
 /-- Extracting the second half of an embedded first half gives zero. -/
-theorem secondHalf_embedFirst {n : ℕ} (x : Fin (2 ^ (n - 1)) → ℝ) :
+theorem secondHalf_embedFirst {n : ℕ} (hn : 0 < n) (x : Fin (2 ^ (n - 1)) → ℝ) :
     secondHalf (embedFirst x) = 0 := by
   ext i
   unfold secondHalf embedFirst
   have hi := i.is_lt
   have h_lt : i.val + 2 ^ (n - 1) < 2 ^ n := by
-    by_cases hn : n = 0
-    · subst hn; simp at hi
-    · have hn1 : 1 ≤ n := Nat.one_le_of_lt (Nat.pos_of_ne_zero hn)
-      have h_pow_add : 2 ^ (n - 1) + 2 ^ (n - 1) = 2 ^ n := by
-        calc
-          2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
-          _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
-      have h_lt_sum : i.val + 2 ^ (n - 1) < 2 ^ (n - 1) + 2 ^ (n - 1) :=
-        Nat.add_lt_add_right hi _
-      exact lt_of_lt_of_eq h_lt_sum h_pow_add
+    have hn1 : 1 ≤ n := Nat.one_le_of_lt hn
+    have h_pow_add : 2 ^ (n - 1) + 2 ^ (n - 1) = 2 ^ n := by
+      calc
+        2 ^ (n - 1) + 2 ^ (n - 1) = 2 * 2 ^ (n - 1) := by ring
+        _ = 2 ^ n := by rw [mul_comm, ← pow_succ, Nat.sub_add_cancel hn1]
+    have h_lt_sum : i.val + 2 ^ (n - 1) < 2 ^ (n - 1) + 2 ^ (n - 1) :=
+      Nat.add_lt_add_right hi _
+    exact lt_of_lt_of_eq h_lt_sum h_pow_add
   have h_not_lt_inner : ¬ (i.val + 2 ^ (n - 1) < 2 ^ (n - 1)) := by omega
-  simp [hi, h_lt, h_not_lt_inner]
+  simp [hi, h_lt, h_not_lt_inner]; norm_num
 
 /-- The general Cayley–Dickson recurrence for `level ≥ 4`: proved by
 definitional reduction to the half-extraction lemmas.
@@ -562,24 +564,63 @@ theorem CayleyDicksonRecurrenceGeneral (level : ℕ) (hlevel : 4 ≤ level)
       mulByLevel (level - 1) (conjByLevel (level - 1) y₁) x₁) +
     embedSecond (mulByLevel (level - 1) (conjByLevel (level - 1) x₀) y₁ +
       mulByLevel (level - 1) y₀ x₁) := by
-  -- Write level = l + 4 for some l
   rcases Nat.exists_eq_add_of_le hlevel with ⟨l, hl⟩
+  rw [add_comm 4 l] at hl
   subst hl
   -- Now level = l + 4, level - 1 = l + 3
+  have hpos : 0 < l + 4 := by omega
+  have hpos' : 0 < l + 3 := by omega
+  have hx0 : firstHalf (embedFirst x₀ + embedSecond x₁) = x₀ := by
+    rw [firstHalf_add, firstHalf_embedFirst, firstHalf_embedSecond, add_zero]
+  have hx1 : secondHalf (embedFirst x₀ + embedSecond x₁) = x₁ := by
+    calc
+      secondHalf (embedFirst x₀ + embedSecond x₁)
+          = secondHalf (embedFirst x₀) + secondHalf (embedSecond x₁) := by
+            rw [secondHalf_add hpos (embedFirst x₀) (embedSecond x₁)]
+      _ = 0 + x₁ := by rw [secondHalf_embedFirst hpos x₀, secondHalf_embedSecond hpos x₁]
+      _ = x₁ := by simpa using (zero_add x₁)
+  have hy0 : firstHalf (embedFirst y₀ + embedSecond y₁) = y₀ := by
+    rw [firstHalf_add, firstHalf_embedFirst, firstHalf_embedSecond, add_zero]
+  have hy1 : secondHalf (embedFirst y₀ + embedSecond y₁) = y₁ := by
+    calc
+      secondHalf (embedFirst y₀ + embedSecond y₁)
+          = secondHalf (embedFirst y₀) + secondHalf (embedSecond y₁) := by
+            rw [secondHalf_add hpos (embedFirst y₀) (embedSecond y₁)]
+      _ = 0 + y₁ := by rw [secondHalf_embedFirst hpos y₀, secondHalf_embedSecond hpos y₁]
+      _ = y₁ := by simpa using (zero_add y₁)
   cases l with
   | zero =>
-      simp [mulByLevel, firstHalf_add, secondHalf_add,
-        firstHalf_embedFirst, secondHalf_embedSecond,
-        firstHalf_embedSecond, secondHalf_embedFirst]
-      simp [add_zero, zero_add]
-  | succ l =>
-      have h_eq : (Nat.succ l : ℕ) + 4 = l + 5 := by omega
-      rw [h_eq]
-      simp [mulByLevel, firstHalf_add, secondHalf_add,
-        firstHalf_embedFirst, secondHalf_embedSecond,
-        firstHalf_embedSecond, secondHalf_embedFirst]
-      simp [add_zero, zero_add]
-  rfl
+      -- level = 4: both sides reduce to mulSedenion
+      have hpos4 : 0 < 4 := by omega
+      have hx0' : firstHalf (embedFirst x₀ + embedSecond x₁) = x₀ := by
+        calc
+          firstHalf (embedFirst x₀ + embedSecond x₁)
+              = firstHalf (embedFirst x₀) + firstHalf (embedSecond x₁) := firstHalf_add _ _
+          _ = x₀ + 0 := by rw [firstHalf_embedFirst, firstHalf_embedSecond]
+          _ = x₀ := by simp
+      have hx1' : secondHalf (embedFirst x₀ + embedSecond x₁) = x₁ := by
+        rw [secondHalf_add hpos4, secondHalf_embedFirst hpos4 x₀,
+          secondHalf_embedSecond hpos4 x₁]
+        simp
+      have hy0' : firstHalf (embedFirst y₀ + embedSecond y₁) = y₀ := by
+        calc
+          firstHalf (embedFirst y₀ + embedSecond y₁)
+              = firstHalf (embedFirst y₀) + firstHalf (embedSecond y₁) := firstHalf_add _ _
+          _ = y₀ + 0 := by rw [firstHalf_embedFirst, firstHalf_embedSecond]
+          _ = y₀ := by simp
+      have hy1' : secondHalf (embedFirst y₀ + embedSecond y₁) = y₁ := by
+        rw [secondHalf_add hpos4, secondHalf_embedFirst hpos4 y₀,
+          secondHalf_embedSecond hpos4 y₁]
+        simp
+      have hzero : mulSedenion (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
+        embedFirst (mulOct x₀ y₀ - mulOct (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
+        embedSecond (mulOct (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulOct y₀ x₁) := by
+        ext i; fin_cases i <;>
+          simp [mulSedenion, embedFirst, embedSecond] <;>
+          ring
+      simpa [mulByLevel, conjByLevel] using hzero
+  | succ m =>
+      simp
 
 /-!
 ## Key Algebraic Properties
@@ -672,8 +713,8 @@ theorem mul_alternative_octonions (a b : Fin 8 → ℝ) :
     mulByLevel 3 (mulByLevel 3 a a) b = mulByLevel 3 a (mulByLevel 3 a b) := by
   ext i
   fin_cases i <;>
-    unfold mulByLevel mulOct mulQuat <;>
-    dsimp <;>
+    delta mulByLevel mulOct mulQuat <;>
+    simp <;>
     ring
 
 /-!
@@ -708,6 +749,7 @@ theorem norm_mul_quat (a b : Fin 4 → ℝ) : normByLevel 2 (mulByLevel 2 a b) =
   congr 1
   ring
 
+set_option maxHeartbeats 0 in
 /-- Norm multiplicativity at the octonion level (Degen eight-square
 identity, proved).
 
@@ -732,14 +774,28 @@ theorem norm_mul_octonions (a b : Fin 8 → ℝ) :
   have h_nonneg_ab : 0 ≤ normByLevel 3 (mulByLevel 3 a b) := by
     unfold normByLevel; exact Real.sqrt_nonneg _
   have h_sq_eq : (normByLevel 3 (mulByLevel 3 a b)) ^ 2 = (normByLevel 3 a * normByLevel 3 b) ^ 2 := by
-    unfold normByLevel
-    simp [Finset.sum_range_succ]
-    have h : (∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i) =
+    simp only [normByLevel, mulByLevel]
+    have hsum : (∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i) =
       (∑ i : Fin 8, a i * a i) * (∑ i : Fin 8, b i * b i) := by
       unfold mulOct mulQuat
-      simp [Finset.sum_range_succ]
+      simp only [Fin.sum_univ_eight]
       ring
-    simpa [Finset.sum_range_succ] using h
+    have h_nonneg_sum : 0 ≤ ∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i :=
+      Finset.sum_nonneg fun i _ => by nlinarith [sq_nonneg ((mulOct a b) i)]
+    have h_nonneg_sum_a : 0 ≤ ∑ i : Fin 8, a i * a i :=
+      Finset.sum_nonneg fun i _ => by nlinarith [sq_nonneg (a i)]
+    have h_nonneg_sum_b : 0 ≤ ∑ i : Fin 8, b i * b i :=
+      Finset.sum_nonneg fun i _ => by nlinarith [sq_nonneg (b i)]
+    have hcalc : (Real.sqrt (∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i)) ^ 2 =
+      (Real.sqrt (∑ i : Fin 8, a i * a i) * Real.sqrt (∑ i : Fin 8, b i * b i)) ^ 2 := by
+      calc
+        (Real.sqrt (∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i)) ^ 2
+            = (∑ i : Fin 8, (mulOct a b) i * (mulOct a b) i) := Real.sq_sqrt h_nonneg_sum
+        _ = (∑ i : Fin 8, a i * a i) * (∑ i : Fin 8, b i * b i) := hsum
+        _ = (Real.sqrt (∑ i : Fin 8, a i * a i)) ^ 2 * (Real.sqrt (∑ i : Fin 8, b i * b i)) ^ 2 := by
+          rw [Real.sq_sqrt h_nonneg_sum_a, Real.sq_sqrt h_nonneg_sum_b]
+        _ = (Real.sqrt (∑ i : Fin 8, a i * a i) * Real.sqrt (∑ i : Fin 8, b i * b i)) ^ 2 := by ring
+    simpa [normByLevel, mulByLevel, Fin.sum_univ_eight, sq] using hcalc
   have h_nonneg_prod : 0 ≤ normByLevel 3 a * normByLevel 3 b :=
     mul_nonneg h_nonneg_a h_nonneg_b
   nlinarith

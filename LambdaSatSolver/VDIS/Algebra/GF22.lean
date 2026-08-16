@@ -391,31 +391,211 @@ def fromZMod2x2 (p : ZMod 2 × ZMod 2) : Fin 4 := fromPair p.1 p.2
 /-!
 ## GF(GF(2,2),GF(2,2)) — The Field with 16 Elements
 
-GF(GF(2,2),GF(2,2)) = GF(4) extended by GF(4) as a vector space over GF(4).
-This is GF(4²) = GF(16), the field with 16 elements.
+GF(GF(2,2),GF(2,2)) = GF(4²) = GF(16), the field with 16 elements.
 
 ### Representation
 
-Elements are `Fin 4 → GF(2,2)` representing a + b·j where a,b ∈ GF(2,2) and j² = j + ω.
+Elements are pairs (a, b) where a, b ∈ GF(2,2), representing a + b·j
+with j² = j + ω (and ω² = ω + 1 in GF(2,2)).
 
 ### Multiplication
 
   (a + bj)(c + dj) = (ac + bd·ω) + (ad + bc + bd)j
 
-This follows from j² = j + ω.
+Derivation: (a + bj)(c + dj) = ac + adj + bcj + bdj²
+           = ac + (ad+bc)j + bd(j+ω)
+           = (ac + bd·ω) + (ad + bc + bd)j
 
 ### Addition
 
-Component-wise addition in GF(2,2): (a + bj) + (c + dj) = (a+c) + (b+d)j.
-
-Note: `mulExt` was removed as it was unused. The superior multiplication
-`mulSuperior` supersedes it.
-
+Component-wise: (a + bj) + (c + dj) = (a+c) + (b+d)j.
 -/
 
+/-- GF(16) represented as pairs (a, b) with a, b ∈ GF(2,2). -/
+def GF16 := Fin 4 × Fin 4
 
+namespace GF16
+
+/-- The element ω ∈ GF(2,2) used in the extension: ω² = ω + 1. -/
+def omega : Fin 4 := VDIS.Algebra.GF22.omega
+
+/-- Addition in GF(16): component-wise XOR. -/
+def add (x y : GF16) : GF16 := (GF22.add x.1 y.1, GF22.add x.2 y.2)
+
+/-- Negation in GF(16): identity in characteristic 2. -/
+def neg (x : GF16) : GF16 := x
+
+/-- Subtraction in GF(16): same as addition in characteristic 2. -/
+def sub (x y : GF16) : GF16 := add x y
+
+/-- Multiplication in GF(16):
+    (a + bj)(c + dj) = (ac + bd·ω) + (ad + bc + bd)j
+    where j² = j + ω. -/
+def mul (x y : GF16) : GF16 :=
+  let a := x.1; let b := x.2
+  let c := y.1; let d := y.2
+  (GF22.add (GF22.mul a c) (GF22.mul (GF22.mul b d) omega),
+   GF22.add (GF22.add (GF22.mul a d) (GF22.mul b c)) (GF22.mul b d))
+
+/-- Additive identity: (0, 0). -/
+def zero : GF16 := (GF22.zero, GF22.zero)
+
+/-- Multiplicative identity: (1, 0). -/
+def one : GF16 := (GF22.one, GF22.zero)
+
+/-- Additive group structure on GF(16). -/
+instance : AddCommGroup GF16 where
+  add := add
+  add_assoc := by
+    intro x y z
+    ext <;> dsimp [add] <;> apply add_assoc
+  zero := zero
+  zero_add := by
+    intro x
+    ext <;> dsimp [add, zero] <;> apply zero_add
+  add_zero := by
+    intro x
+    ext <;> dsimp [add, zero] <;> apply add_zero
+  nsmul := nsmulRec
+  nsmul_zero := by intro x; rfl
+  nsmul_succ := by
+    intro n x
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      simp [add_comm, add_assoc, ih]
+  add_comm := by
+    intro x y
+    ext <;> dsimp [add] <;> apply add_comm
+  sub_eq_add_neg := by
+    intro x y
+    ext <;> dsimp [sub, neg, add] <;> apply sub_eq_add_neg
+  zsmul := zsmulRec
+  zsmul_zero' := by intro x; rfl
+  zsmul_succ' := by
+    intro n x
+    induction n with
+    | zero => rfl
+    | succ n ih =>
+      simp [add_comm, add_assoc, ih]
+  zsmul_neg' := by
+    intro n x
+    simp [sub_eq_add_neg, add_comm, add_assoc]
+
+/-- GF(16) is a commutative ring with the custom multiplication. -/
+instance : CommRing GF16 where
+  __ := (inferInstance : AddCommGroup GF16)
+  mul := mul
+  one := one
+  zero := zero
+  mul_assoc := by
+    decide
+  one_mul := by
+    intro x
+    ext <;> dsimp [mul, one] <;> simp
+  mul_one := by
+    intro x
+    ext <;> dsimp [mul, one] <;> simp
+  mul_comm := by
+    decide
+  left_distrib := by
+    decide
+  right_distrib := by
+    decide
+  mul_zero := by
+    intro x
+    ext <;> dsimp [mul, zero] <;> simp
+  zero_mul := by
+    intro x
+    ext <;> dsimp [mul, zero] <;> simp
+  natCast := fun n => nsmulRec n 1
+  natCast_zero := rfl
+  natCast_succ := by
+    intro n
+    simp [nsmul_add, add_comm, add_assoc]
+
+/-- Multiplicative inverse in GF(16).
+    For (a,b) ≠ (0,0): (a,b)⁻¹ = ((a+b)/N, b/N)
+    where N = a² + ab + b²·ω is the norm.
+    
+    Derivation: In the quadratic extension F[α]/F with α² = α + ω,
+    the conjugate is α' = 1 + α, and:
+    N(a+bα) = (a+bα)(a+bα') = a² + ab + b²ω
+    (a+bα)⁻¹ = (a+bα')/N = ((a+b) + bα)/N
+    So (a,b)⁻¹ = ((a+b)/N, b/N) where division by N means
+    multiplying each component by N⁻¹ ∈ GF(2,2). -/
+def inv (x : GF16) : GF16 :=
+  let a := x.1; let b := x.2
+  let N := GF22.add (GF22.add (GF22.mul a a) (GF22.mul a b)) (GF22.mul (GF22.mul b b) omega)
+  if h : x = zero then
+    zero
+  else
+    (GF22.mul (inv N) (GF22.add a b),
+     GF22.mul (inv N) b)
+
+/-- GF(16) is a field. -/
+instance : Field GF16 where
+  __ := (inferInstance : CommRing GF16)
+  inv := inv
+  mul_inv_cancel := by
+    decide
+  inv_zero := by
+    dsimp [inv]
+    simp [zero]
+
+end GF16
 
 /-!
+## 3 XOR Orthogonality for GF(16)-Valued Vectors
+
+We generalize 3 XOR orthogonality to vectors over GF(16).
+-/
+
+/-- 3 XOR orthogonality for three vectors over GF(16).
+    u, v, w are pairwise orthogonal under the GF(16)-valued dot product. -/
+def threeXorOrthogonalGF16 (u v w : Fin 4 → GF16) : Prop :=
+  (∑ i : Fin 4, GF16.mul (u i) (v i)) = GF16.zero ∧
+  (∑ i : Fin 4, GF16.mul (u i) (w i)) = GF16.zero ∧
+  (∑ i : Fin 4, GF16.mul (v i) (w i)) = GF16.zero
+
+/-!
+## Spin Group Lifting for GF(16)
+
+We generalize the spin lift to GF(16). The rotor construction uses
+the first 3 basis vectors of GF(16) as a 4-dimensional vector space over GF(2).
+-/
+
+/-- Frame lifting to Spin(3, GF(16)) via the Clifford algebra construction.
+    Given a 3-XOR-orthogonal frame {e₀, e₁, e₂} over GF(16),
+    we construct a rotor R = (1 + e₀)(1 + e₁)(1 + e₂).
+    In characteristic 2, R⁻¹ = R. -/
+def spinLiftGF16 (frame : Fin 3 → Fin 4 → GF16) : Fin 4 → GF16 :=
+  fun i =>
+    let r0 := GF16.add GF16.one (frame 0 i)
+    let r1 := GF16.add GF16.one (frame 1 i)
+    let r2 := GF16.add GF16.one (frame 2 i)
+    GF16.mul (GF16.mul r0 r1) r2
+
+/-- The spin lift preserves 3 XOR orthogonality over GF(16). -/
+theorem spinLiftGF16_preserves_orthogonality (frame : Fin 3 → Fin 4 → GF16)
+    (h : threeXorOrthogonalGF16 (frame 0) (frame 1) (frame 2)) :
+    threeXorOrthogonalGF16
+      (fun i => spinLiftGF16 frame i)
+      (fun i => spinLiftGF16 (fun j => frame ((j+1)%3)) i)
+      (fun i => spinLiftGF16 (fun j => frame ((j+2)%3)) i) := by
+  unfold threeXorOrthogonalGF16 spinLiftGF16
+  decide
+
+/-- Generalized spin lift preserves 3 XOR orthogonality over GF(16). -/
+theorem spinLiftGF16_preserves_orthogonality_general (u v w : Fin 4 → GF16)
+    (h : threeXorOrthogonalGF16 u v w) :
+    threeXorOrthogonalGF16 (spinLiftGF16 (fun i => match i with | 0 => u | 1 => v | 2 => w))
+      (spinLiftGF16 (fun i => match i with | 0 => v | 1 => w | 2 => u))
+      (spinLiftGF16 (fun i => match i with | 0 => w | 1 => u | 2 => v)) := by
+  unfold threeXorOrthogonalGF16 spinLiftGF16
+  decide
+
+end VDIS.Algebra.GF22/-!
 ## 3 XOR Orthogonality for Hypercomplex Vectors
 
 We define 3 XOR orthogonality as a predicate on three vectors in GF(2,2)^n.
@@ -479,15 +659,7 @@ Given three 3-XOR-orthogonal frames with carriers c₀, c₁, c₂,
 we construct a simultaneous spin lift that acts on all three frames.
 -/
 
-/-- The Clifford algebra product of two vectors.
-    In characteristic 2, e_i * e_j + e_j * e_i = 0 for orthogonal vectors. -/
-def cliffordProduct (u v : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
-  fun i => add (mul (u i) (v i)) (mul (v i) (u i))
 
-/-- The rotor sandwich: R · v · R⁻¹ for a rotor R.
-    For a frame element e, the sandwich e · v · e implements a reflection. -/
-def rotorSandwich (e v : Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
-  fun i => mul (mul (e i) (v i)) (e i)
 
 /-- Frame lifting to spin group: given a 3-XOR-orthogonal frame {e₀, e₁, e₂},
     we construct a rotor R = (1 + e₀)(1 + e₁)(1 + e₂) that lies in Spin(3).
@@ -504,19 +676,6 @@ def spinLift (frame : Fin 3 → Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
     -- Product: r0 * r1 * r2 (component-wise)
     mul (mul r0 r1) r2
 
-/-- Simultaneous carrier lifting: given three 3-XOR-orthogonal frames
-    with carriers c₀, c₁, c₂, construct the simultaneous spin lift.
-    
-    The carriers are embedded into the spin group via the norm map,
-    and the resulting rotor acts simultaneously on all three frames. -/
-def simultaneousSpinLift (frames : Fin 3 → Fin 3 → Fin 4 → Fin 4) : Fin 4 → Fin 4 :=
-  -- Apply the spin lift to each frame and combine
-  let r0 := spinLift (fun i => frames 0 i)
-  let r1 := spinLift (fun i => frames 1 i)
-  let r2 := spinLift (fun i => frames 2 i)
-  -- Combine: R = R₀ · R₁ · R₂ (component-wise)
-  fun i => mul (mul (r0 i) (r1 i)) (r2 i)
-
 /-- Verify that the spin lift preserves 3 XOR orthogonality.
     If the frame is 3-XOR-orthogonal, the lifted rotor preserves the
     pairwise orthogonality under the extended multiplication. -/
@@ -529,28 +688,6 @@ theorem spinLift_preserves_orthogonality (frame : Fin 3 → Fin 4 → Fin 4)
   unfold threeXorOrthogonalHyper spinLift
   -- This is a finite computation: we can check all 4^4 = 256 cases
   decide
-
-/-!
-## Spin Group Properties
-
-We prove that the spin lift constructs elements of the spin group Spin(3, GF(2,2)).
-
-### Spin Group Definition
-
-Spin(3, GF(2,2)) is the group of even elements R in the Clifford algebra Cl(3, GF(2,2))
-such that R v R⁻¹ = v for all vectors v (i.e., R normalizes the vector space).
-
-In characteristic 2, R⁻¹ = R, so the condition simplifies to R v R = v for all v.
-
-### Rotor Verification
-
-For a 3-XOR-orthogonal frame {e₀, e₁, e₂}, the rotor R = (1+e₀)(1+e₁)(1+e₂) satisfies:
-1. R = R⁻¹ (in characteristic 2)
-2. R v R = v for all vectors v in the span of {e₀, e₁, e₂}
-3. R is in the even subalgebra (spin group)
--/
-
-
 
 /-!
 ## Generalized Orthogonality Verification

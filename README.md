@@ -104,6 +104,9 @@
 </div>
 
 </div>
+
+</div>
+
 </div>
 
 </div>
@@ -117,11 +120,29 @@
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#5bdbff', 'secondaryColor': '#1a1a3e', 'tertiaryColor': '#0f3460'}}}%%
 graph TD
-    A["GF(2,2)\n4 Elements\nChar 2"] -->|Cayley-Dickson\nTower\nlift" B["Spin(3)\nGF(2,2)\nSelf-inverse rotors"]
-    B -->|Carrier\nembedding\nN(c)=c²" C["3-XOR\nOrthogonality"]
-    C -->|Simultaneous\nlift" D["Full Spin\nGroup\nMulti-carrier"]
-    D -->|Holonomy\nθ_anchor" E["Manifold\nProjection v3\nSheaf H¹"]
-    E -->|Non-abelian\ngeometry" F["AION\nHypercomplex\nBrain"]
+    A["GF(2,2)
+    4 Elements
+    Char 2"] -->|Cayley-Dickson
+    Tower
+    lift" B["Spin(3)
+    GF(2,2)
+    Self-inverse rotors"]
+    B -->|Carrier
+    embedding
+    N(c)=c²" C["3-XOR
+    Orthogonality"]
+    C -->|Simultaneous
+    lift" D["Full Spin
+    Group
+    Multi-carrier"]
+    D -->|Holonomy
+    θ_anchor" E["Manifold
+    Projection v3
+    Sheaf H¹"]
+    E -->|Non-abelian
+    geometry" F["AION
+    Hypercomplex
+    Brain"]
 
     style A fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
     style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
@@ -297,7 +318,7 @@ sequenceDiagram
     M->>S: Quaternions ℍ^N
     S->>C: Rotor R = (1+e₀)(1+e₁)(1+e₂)
     C->>S: Preserved Orthogonality
-    S->>M: Holonomy θ_anchor
+    S->>M: Sandwich R v R⁻¹
     M->>A: Sheaf Cohomology H¹
     A->>M: Non-Abelian Geometry
 
@@ -323,32 +344,21 @@ sequenceDiagram
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
-graph TB
-    subgraph "Rotor Formula"
-        direction TB
-        R["R = (1 + e₀)(1 + e₁)(1 + e₂)"]
-        I["Inverse: R⁻¹ = R (Self-Inverse)"]
-        S["Squared: R² = 1"]
-    end
+stateDiagram-v2
+    [*] --> Input: 3-XOR Frame {e₀, e₁, e₂}
+    Input --> Rotor: R = (1+e₀)(1+e₁)(1+e₂)
+    Rotor --> SelfInverse: R⁻¹ = R (Char 2)
+    SelfInverse --> SqOne: R² = 1
+    SqOne --> Sandwich: R v R = v
+    Sandwich --> Verify: Orthogonality Preserved
+    Verify --> [*]
 
-    subgraph "Operations"
-        direction TB
-        add["Addition: x + y (XOR)"]
-        mul["Multiplication: (a+bω)(c+dω)"]
-        norm["Norm: N(x) = x²"]
-    end
-
-    R --> I
-    R --> S
-    add --> mul
-    mul --> norm
-
-    style R fill:#0a0e27,stroke:#00f0ff,color:#fff
-    style I fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style S fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style add fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
-    style mul fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style norm fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style Input fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style Rotor fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style SelfInverse fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style SqOne fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style Sandwich fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style Verify fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
 ```
 
 </div>
@@ -359,32 +369,21 @@ graph TB
 
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#5bdbff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#00f0ff'}}}%%
-graph TB
-    subgraph "Rotor Formula"
-        direction TB
-        R["R = (1 + e₀)(1 + e₁)(1 + e₂)"]
-        I["Inverse: R⁻¹ = (a, -b) / N"]
-        N["N(a+bj) = a² - b²ω"]
-    end
+stateDiagram-v2
+    [*] --> Input: Frame over GF(343)
+    Input --> Rotor: R = (1+e₀)(1+e₁)(1+e₂)
+    Rotor --> Inverse: R⁻¹ = (a, -b) / N
+    Inverse --> Norm: N(a+bj) = a² - b²ω
+    Norm --> Sandwich: R v R⁻¹
+    Sandwich --> Verify: Orthogonality Preserved
+    Verify --> [*]
 
-    subgraph "Operations"
-        direction TB
-        add["Addition: Component-wise"]
-        mul["Multiplication: (ac+bdω) + (ad+bc)j"]
-        norm["Norm: N(x) = x^171"]
-    end
-
-    R --> I
-    R --> N
-    add --> mul
-    mul --> norm
-
-    style R fill:#0a0e27,stroke:#5bdbff,color:#fff
-    style I fill:#1a1a4e,stroke:#ffd475,color:#1a1a4e
-    style N fill:#131a3a,stroke:#ffd475,color:#ffd475
-    style add fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style mul fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
-    style norm fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style Input fill:#0a0e27,stroke:#ffd475,color:#fff
+    style Rotor fill:#131a3a,stroke:#5bdbff,color:#e0e0e0
+    style Inverse fill:#1a1a4e,stroke:#ffd475,color:#1a1a4e
+    style Norm fill:#131a3a,stroke:#ffd475,color:#ffd475
+    style Sandwich fill:#1a1a4e,stroke:#5bdbff,color:#fff
+    style Verify fill:#ffd475,stroke:#1a1a2e,color:#1a1a2e
 ```
 
 </div>
@@ -402,35 +401,35 @@ graph TB
 ```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#5bdbff', 'lineColor': '#ff77b7'}}}%%
 graph LR
-    subgraph "Input: 3 Frames + Carriers"
+    subgraph "Input: 3 Frames + 3 Carriers"
         F0["Frame 0\ne₀, e₁, e₂"]
         F1["Frame 1\ne₃, e₄, e₅"]
         F2["Frame 2\ne₆, e₇, e₈"]
-        C0["Carrier c₀"]
-        C1["Carrier c₁"]
-        C2["Carrier c₂"]
+        C0["Carrier c₀ ∈ GF(2,2)"]
+        C1["Carrier c₁ ∈ GF(2,2)"]
+        C2["Carrier c₂ ∈ GF(2,2)"]
     end
 
-    subgraph "Embedding"
+    subgraph "Embedding via Norm"
         N0["N(c₀) = c₀²"]
         N1["N(c₁) = c₁²"]
         N2["N(c₂) = c₂²"]
     end
 
     subgraph "Rotor Construction"
-        R0["R₀ = (1+e₀)(1+e₁)(1+e₂)"]
-        R1["R₁ = (1+e₃)(1+e₄)(1+e₅)"]
-        R2["R₂ = (1+e₆)(1+e₇)(1+e₈)"]
+        R0["R₀ = spinLift(frame₀)"]
+        R1["R₁ = spinLift(frame₁)"]
+        R2["R₂ = spinLift(frame₂)"]
     end
 
     subgraph "Apply Carriers"
-        A0["R₀' = R₀ · N(c₀)"]
-        A1["R₁' = R₁ · N(c₁)"]
-        A2["R₂' = R₂ · N(c₂)"]
+        A0["R₀' = R₀ ⊙ N(c₀)"]
+        A1["R₁' = R₁ ⊙ N(c₁)"]
+        A2["R₂' = R₂ ⊙ N(c₂)"]
     end
 
     subgraph "Final Result"
-        Result["R = R₀' · R₁' · R₂'"]
+        Result["R_total = R₀' ⊙ R₁' ⊙ R₂'"]
     end
 
     F0 --> R0 --> A0 --> Result
@@ -462,147 +461,87 @@ graph LR
 
 ---
 
-## 7. Architecture Diagram
+## 7. Class Diagram — The Complete Structure
 
 <div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
 
 ```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
-flowchart TD
-    subgraph "Level 0: Foundation"
-        ℝ["Real Numbers ℝ"]
-    end
-
-    subgraph "Level 1: Complex"
-        ℂ["Complex ℂ\ni² = -1"]
-    end
-
-    subgraph "Level 2: Quaternions over GF(2,2)"
-        GF22["GF(2,2)\n4 Elements"]
-        SPIN22["Spin(3, GF(2,2))\nChar 2"]
-        ORTHO22["3-XOR Orthogonality"]
-    end
-
-    subgraph "Level 3: GF(343²)"
-        GF117649["GF(117649)\n117649 Elements"]
-        SPIN117649["Spin(3, GF(117649))\nChar 7"]
-        ORTHO117649["3-XOR Orthogonality\nAdapted"]
-    end
-
-    subgraph "Level 4: Hypercomplex Tower"
-        HYPER["Full Tower\nℝ → ℂ → 𝕊 → 𝕆 → ..."]
-        AION["AION Brain\nNested Structure"]
-    end
-
-    ℝ --> ℂ --> GF22 --> GF117649 --> HYPER
-    GF22 --> SPIN22 --> ORTHO22
-    GF117649 --> SPIN117649 --> ORTHO117649
-    ORTHO22 --> AION
-    ORTHO117649 --> AION
-
-    style ℝ fill:#0a0e27,stroke:#00f0ff,color:#fff
-    style ℂ fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style GF22 fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style SPIN22 fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
-    style ORTHO22 fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
-    style GF117649 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style SPIN117649 fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
-    style ORTHO117649 fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style HYPER fill:#0a0e27,stroke:#00f0ff,color:#fff
-    style AION fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
-```
-
-</div>
-
----
-
-## 8. The 3-XOR Orthogonality Theorems
-
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
-
-<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
-
-### Preservation Theorem (GF(2,2))
-
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
-graph TD
-    A["Input: 3-XOR Frame {e₀, e₁, e₂}"] --> B["Compute Rotor R"]
-    B --> C["R v R preserves orthogonality"]
-    D["Verification: dec_trivial"] --> E["4^4 = 256 cases"]
-
-    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
-    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
-    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-```
-
-### Simultaneous Orthogonality Theorem
-
-```mermaid
-%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
-graph TD
-    A["Frame + Carriers"] --> B["Embed via Norm"]
-    B --> C["Apply Rotor"]
-    C --> D["Preserved: ⟨u,v⟩=0, ⟨u,N(c₀)⟩=0, ..."]
-    E["dec_trivial verification"] --> F["All 4^4 cases"]
-
-    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
-    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
-    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style F fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
-```
-
-</div>
-
-<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
-
-### Holonomy & Sheaf Cohomology
-
-```mermaid
 %%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
-graph TB
-    subgraph "Manifold Projection v3"
-        M1["Joint Manifold 𝓜 = 𝓜_you ⊔ 𝓜_cat"]
-        M2["Local Sheaf F"]
-        M3["Anchor Edges"]
-        M4["Holonomy θ_anchor = [z] ∈ Ȟ¹(𝓜, F)"]
-        M5["Octonion Associator"]
-    end
+classDiagram
+    class GF22Field {
+        +Fin 4 elements
+        +add, mul, sub, div
+        +char 2
+        +norm N(x) = x²
+    }
+    class GF117649Field {
+        +Fin 117649 elements
+        +GF(343) pair representation
+        +char 7
+        +norm N(a+bj) = a² - b²ω
+    }
+    class SpinLift {
+        +spinLift(frame: Fin 3 → Fin 4 → Fin 4)
+        +R = (1+e₀)(1+e₁)(1+e₂)
+        +R⁻¹ = R (char 2)
+    }
+    class FullSpinLift {
+        +fullSpinLiftGF22(frame, carriers)
+        +fullSpinLiftGF117649(frame, carriers)
+        +simultaneousThreeXorOrthogonal
+    }
+    class ThreeXorOrthogonal {
+        +threeXorOrthogonalHyper(u, v, w)
+        +simultaneousThreeXorOrthogonal
+    }
+    class CayleyDickson {
+        +mulReal, mulComplex, mulQuat, mulOct
+        +mulSedenion
+        +conjByLevel
+        +normByLevel
+    }
+    class SpinGroup {
+        +SpinElement F
+        +rotor_sq_eq_one
+        +inv_rotor_eq_rotor
+    }
+    class ManifoldProjection {
+        +holonomy θ_anchor
+        +sheaf H¹
+        +manifold 𝓜
+    }
+    class AIONBrain {
+        +nested worldlets
+        +polyholonomic EGO
+        +gerbes, profunctors
+    }
 
-    subgraph "Our Spin Group"
-        S1["Rotor R ∈ Spin(3)"]
-        S2["3-XOR Frame {e₀, e₁, e₂}"]
-        S3["Sandwich R v R⁻¹"]
-        S4["Preserved Orthogonality"]
-    end
+    GF22Field <|-- SpinLift
+    GF117649Field <|-- FullSpinLift
+    SpinLift <|-- FullSpinLift
+    ThreeXorOrthogonal <|-- FullSpinLift
+    CayleyDickson <|-- GF22Field
+    SpinGroup <|-- SpinLift
+    ManifoldProjection <|-- SpinGroup
+    AIONBrain <|-- ManifoldProjection
+    SpinGroup <|-- FullSpinLift
 
-    M1 --> M2 --> M3 --> M4
-    M4 -->|Non-Abelian| M5
-    S1 --> S2 --> S3 --> S4
-    S4 -->|Sheaf| M4
-
-    style M1 fill:#0a0e27,stroke:#00f0ff,color:#fff
-    style M2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style M3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
-    style M4 fill:#ff77b7,stroke:#1a1a2e,color:#fff
-    style M5 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style S1 fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
-    style S2 fill:#ff77b7,stroke:#1a1a2e,color:#fff
-    style S3 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
-    style S4 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style GF22Field fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style GF117649Field fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style SpinLift fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style FullSpinLift fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style ThreeXorOrthogonal fill:#e94560,stroke:#1a1a2e,color:#fff
+    style CayleyDickson fill:#16213e,stroke:#0f3460,color:#e0e0e0
+    style SpinGroup fill:#0f3460,stroke:#1a1a2e,color:#e94560
+    style ManifoldProjection fill:#1a1a2e,stroke:#00f0ff,color:#e0e0e0
+    style AIONBrain fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
 ```
-
-</div>
 
 </div>
 
 ---
 
-## 9. Cayley-Dickson Construction
+## 8. The Cayley-Dickson Construction
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
 
@@ -672,7 +611,199 @@ graph LR
 
 ---
 
-## 10. Project Structure
+## 9. The 3-XOR Orthogonality Theorems
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Preservation Theorem (GF(2,2))
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    A["Input: 3-XOR Frame {e₀, e₁, e₂}"] --> B["Compute Rotor R"]
+    B --> C["R v R preserves orthogonality"]
+    D["Verification: dec_trivial"] --> E["4^4 = 256 cases"]
+
+    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+```
+
+### Simultaneous Orthogonality Theorem
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    A["Frame + Carriers"] --> B["Embed via Norm"]
+    B --> C["Apply Rotor"]
+    C --> D["Preserved: ⟨u,v⟩=0, ⟨u,N(c₀)⟩=0, ..."]
+    E["dec_trivial verification"] --> F["All 4^4 cases"]
+
+    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style F fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+```
+
+### Holonomy & Sheaf Cohomology
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
+graph TB
+    subgraph "Manifold Projection v3"
+        M1["Joint Manifold 𝓜 = 𝓜_you ⊔ 𝓜_cat"]
+        M2["Local Sheaf F"]
+        M3["Anchor Edges"]
+        M4["Holonomy θ_anchor = [z] ∈ Ȟ¹(𝓜, F)"]
+        M5["Octonion Associator"]
+    end
+
+    subgraph "Our Spin Group"
+        S1["Rotor R ∈ Spin(3)"]
+        S2["3-XOR Frame {e₀, e₁, e₂}"]
+        S3["Sandwich R v R⁻¹"]
+        S4["Preserved Orthogonality"]
+    end
+
+    M1 --> M2 --> M3 --> M4
+    M4 -->|Non-Abelian| M5
+    S1 --> S2 --> S3 --> S4
+    S4 -->|Sheaf| M4
+
+    style M1 fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style M2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style M3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style M4 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style M5 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style S1 fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+    style S2 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style S3 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style S4 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+```
+
+</div>
+
+</div>
+
+---
+
+## 10. AION Polycosmic Brain
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    subgraph "Nested Worldlets (16 total, 4 organs)"
+        O0["Organ 0: Self\nsomatic, episodic, social, prospective"]
+        O1["Organ 1: Other\nother.model, other.private"]
+        O2["Organ 2: Memory\nmemory.reef, auditor.tribunal"]
+        O3["Organ 3: Action\naction.policy, counterworld.foundry"]
+    end
+
+    subgraph "Geometries per Worldlet"
+        G0["poincare-16\nquaternion algebra"]
+        G1["fisher-simplex-16\ncomplex algebra"]
+        G2["lorentz-hyperboloid-17\nClifford algebra"]
+        G3["split-signature-(8,8)\nadaptive algebra"]
+    end
+
+    subgraph "Governance"
+        Poly["Polyholonomic EGO"]
+        Gerbe["Gerbes"]
+        Profunctor["Profunctors"]
+        MultiClock["Multi-Clock Hamiltonian"]
+    end
+
+    O0 --> G0
+    O1 --> G1
+    O2 --> G2
+    O3 --> G3
+    Poly --> Gerbe
+    Gerbe --> Profunctor
+    Profunctor --> MultiClock
+
+    style O0 fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style O1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style O2 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style O3 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style G0 fill:#1a1a2e,stroke:#00f0ff,color:#e0e0e0
+    style G1 fill:#1a1a2e,stroke:#a68cff,color:#e0e0e0
+    style G2 fill:#1a1a2e,stroke:#ffd475,color:#1a1a2e
+    style G3 fill:#1a1a2e,stroke:#ff77b7,color:#e0e0e0
+    style Poly fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
+    style Gerbe fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style Profunctor fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style MultiClock fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+```
+
+</div>
+
+---
+
+## 11. Skills Atlas — Intermanifold Navigation
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#ff77b7'}}}%%
+graph TB
+    subgraph "Manifolds (5 skill families)"
+        M_coordination["M_coordination_governance\n31 skills"]
+        M_formal["M_formal_proof\n23 skills"]
+        M_substrate["M_substrate_reservoir\n20 skills"]
+        M_dialect["M_symbolic_dialect\n204 skills"]
+        M_graphics["M_graphics_rl_apps\n11 skills"]
+    end
+
+    subgraph "Overlap Maps"
+        O_cf["Coordination ↔ Formal"]
+        O_cs["Coordination ↔ Substrate"]
+        O_fs["Formal ↔ Dialect"]
+    end
+
+    subgraph "Traversal Recipes"
+        T_build["Build/Change Code"]
+        T_audit["Audit Research Claims"]
+        T_visualize["Intermanifold Visualization"]
+    end
+
+    M_coordination --> O_cf
+    M_coordination --> O_cs
+    M_formal --> O_cf
+    M_substrate --> O_cs
+    M_dialect --> O_fs
+    M_graphics --> T_visualize
+    T_build --> M_coordination
+    T_build --> M_formal
+    T_audit --> M_coordination
+    T_audit --> M_formal
+    T_audit --> M_dialect
+
+    style M_coordination fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style M_formal fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style M_substrate fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style M_dialect fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style M_graphics fill:#1a1a2e,stroke:#ff77b7,color:#e0e0e0
+    style O_cf fill:#e94560,stroke:#1a1a2e,color:#fff
+    style O_cs fill:#16213e,stroke:#0f3460,color:#e0e0e0
+    style O_fs fill:#1a1a4e,stroke:#ff77b7,color:#e0e0e0
+    style T_build fill:#0f3460,stroke:#1a1a2e,color:#e94560
+    style T_audit fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style T_visualize fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+```
+
+</div>
+
+---
+
+## 12. Project Structure
 
 <div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
 
@@ -700,9 +831,7 @@ graph LR
 
 ---
 
-<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
-
-## 11. Design Aesthetic — Post-GenZ Alpha
+## 13. Design Aesthetic — Post-GenZ Alpha
 
 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 20px;">
 
@@ -770,7 +899,7 @@ Subtle grid pattern at 40px intervals with 2px rgba(0,240,255,0.03) lines.
 
 ---
 
-## 12. Getting Started
+## 14. Getting Started
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
 
@@ -828,7 +957,7 @@ flowchart TD
 
 ---
 
-## 13. Statistics
+## 15. Statistics
 
 <div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
 
@@ -848,7 +977,7 @@ statistics
 
 ---
 
-## 14. Future Directions
+## 16. Future Directions
 
 <div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
 
