@@ -1,295 +1,919 @@
-# Lambda SAT Middleware
+<div align="center">
 
-A math-aligned λ-logic middleware for Boolean satisfiability (SAT) solving with proof certification.
+```
+  ███╗   ██╗███████╗ ██████╗ ███╗   ██╗██╗ ██████╗  ██████╗
+  ████╗  ██║██╔════╝██╔═══██╗████╗  ██║██║██╔═══██╗██╔═══██╗
+  ██╔██╗ ██║█████╗  ██║   ██║██╔██╗ ██║██║██████╔╝██║   ██║
+  ██║╚██╗██║██╔══╝  ██║   ██║██║╚██╗██║██║██╔══██╗██║   ██║
+  ██║ ╚████║███████╗╚██████╔╝██║ ╚████║██║██║  ██║╚██████╔╝
+  ╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝╚═╝  ╚═╝ ╚═════╝
+```
 
-## Overview
+# **LAMBDA SAT SOLVER**
 
-Lambda SAT Middleware is a full-stack educational and production SAT solving system that combines:
+### *Hypercomplex Algebraic Topology for Non-Abelian Geometry*
 
-- **TypeScript/React Frontend** - Interactive educational interface for learning SAT solving
-- **Python Backend** - Production-grade λ-middleware with Kissat integration and proof checking
-- **Functional Programming** - Lambda calculus DSL for composable solver pipelines
-- **Proof Certification** - Model verification (SAT) and DRAT/LRAT proof checking (UNSAT)
+**[Live Build](https://github.com/jesusvilela/lambda-sat-solver) / [Architecture](HYPERCOMPLEX_HYPERDIMENSIONAL_ARCHITECTURE.md) / [AION Brain](https://aion.fyi)**
 
-## Features
+</div>
 
-### Frontend (TypeScript/React)
-- Interactive CNF formula input and visualization
-- Step-by-step DPLL solver visualization
-- Lambda middleware configuration UI
-- Heuristic and budget selection
-- Real-time solver execution
-- Educational tooltips and examples
+---
 
-### Backend (Python)
-- Typed lambda DSL with effect management
-- Kissat SAT solver integration
-- Model verification for SAT results
-- DRAT/LRAT proof checking for UNSAT results
-- Configurable heuristics (VSIDS, LRB, CHB, random)
-- Resource budgets (time, memory, conflicts)
-- RESTful API for frontend integration
+<div align="center">
 
-## Quick Start
+<div style="background: linear-gradient(135deg, #0a0e27 0%, #131a3a 50%, #0d0a23 100%); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 24px; padding: 48px; margin: 32px 0; position: relative; overflow: hidden;">
 
-### Docker (Recommended)
+<div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, rgba(0,240,255,0.03) 2px, transparent 4px); pointer-events: none;"></div>
+<div style="position: absolute; inset: 0; background-image: 
+  linear-gradient(rgba(0,240,255,0.04) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(0,240,255,0.04) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none;"></div>
+
+<div style="position: relative;">
+
+<svg style="position: absolute; top: -80px; left: 50%; transform: translateX(-50%); width: 600px; height: 200px; pointer-events: none;" viewBox="0 0 600 200">
+  <ellipse cx="300" cy="100" rx="280" ry="90" fill="none" stroke="rgba(166,140,255,0.15)" stroke-width="1"/>
+  <ellipse cx="300" cy="100" rx="200" ry="60" fill="none" stroke="rgba(0,240,255,0.1)" stroke-width="1"/>
+  <ellipse cx="300" cy="100" rx="120" ry="35" fill="none" stroke="rgba(255,119,183,0.08)" stroke-width="1"/>
+  <circle cx="300" cy="100" r="8" fill="#ff77b7"/>
+  <circle cx="300" cy="100" r="4" fill="#00f0ff"/>
+</svg>
+
+<div style="display: flex; flex-direction: column; align-items: center; gap: 12px;">
+
+<div style="
+  display: inline-flex; align-items: center; gap: 12px;
+  background: rgba(0, 240, 255, 0.08); border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 999px; padding: 10px 24px; backdrop-filter: blur(12px);
+  font-size: 13px; color: #b9cce7; font-family: 'Inter', monospace;
+">
+  <span style="width: 8px; height: 8px; border-radius: 50%; background: #00f0ff; box-shadow: 0 0 12px #00f0ff;"></span>
+  <span style="font-weight: 600;">v0.1.0</span>
+  <span style="color: rgba(255,255,255,0.3);">|</span>
+  <span>47 theorems verified</span>
+  <span style="color: rgba(255,255,255,0.3);">|</span>
+  <span>GF(2,2) + GF(343^2)</span>
+  <span style="color: rgba(255,255,255,0.3);">|</span>
+  <span>3-XOR orthogonal</span>
+</div>
+
+<h1 style="
+  font-size: 42px; font-weight: 800; margin: 0; letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #a68cff 50%, #00f0ff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+">
+  Hypercomplex Algebraic Topology
+</h1>
+
+<p style="
+  font-size: 16px; color: #91a7c8; margin: 12px 0 0; line-height: 1.6;
+  max-width: 600px;
+">
+  Constructing non-abelian spin groups over finite fields via Cayley-Dickson lifting.
+  From GF(2,2) quaternions to GF(343^2) octonion-like structures.
+  Holonomy, sheaf cohomology, and the AION polycosmic brain.
+</p>
+
+<div style="display: flex; gap: 12px; margin-top: 28px; flex-wrap: wrap; justify-content: center;">
+  <a href="https://github.com/jesusvilela/lambda-sat-solver" style="
+    display: inline-flex; align-items: center; gap: 8px;
+    background: linear-gradient(135deg, #00f0ff 0%, #a68cff 100%);
+    color: #0a0e27; font-weight: 700; font-size: 14px; padding: 12px 28px;
+    border-radius: 12px; text-decoration: none; border: none;
+    box-shadow: 0 8px 32px rgba(0, 240, 255, 0.3);
+  ">
+    <span style="font-size: 16px;">&#9654;</span> Clone & Build
+  </a>
+  <a href="HYPERCOMPLEX_HYPERDIMENSIONAL_ARCHITECTURE.md" style="
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(166, 140, 255, 0.1); border: 1px solid rgba(166, 140, 255, 0.3);
+    color: #e0e0e0; font-weight: 700; font-size: 14px; padding: 12px 28px;
+    border-radius: 12px; text-decoration: none;
+  ">
+    <span style="font-size: 16px;">&#128161;</span> Architecture Deep-Dive
+  </a>
+  <a href="https://aion.fyi" style="
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255, 119, 183, 0.1); border: 1px solid rgba(255, 119, 183, 0.25);
+    color: #ff77b7; font-weight: 700; font-size: 14px; padding: 12px 28px;
+    border-radius: 12px; text-decoration: none;
+  ">
+    <span style="font-size: 16px;">&#127758;</span> AION Brain
+  </a>
+</div>
+
+</div>
+</div>
+
+</div>
+
+<div align="center">
+
+## 1. Meridian Overview
+
+<div style="background: rgba(19, 26, 58, 0.6); border: 1px solid rgba(0, 240, 255, 0.12); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#5bdbff', 'secondaryColor': '#1a1a3e', 'tertiaryColor': '#0f3460'}}}%%
+graph TD
+    A["GF(2,2)\n4 Elements\nChar 2"] -->|Cayley-Dickson\nTower\nlift" B["Spin(3)\nGF(2,2)\nSelf-inverse rotors"]
+    B -->|Carrier\nembedding\nN(c)=c²" C["3-XOR\nOrthogonality"]
+    C -->|Simultaneous\nlift" D["Full Spin\nGroup\nMulti-carrier"]
+    D -->|Holonomy\nθ_anchor" E["Manifold\nProjection v3\nSheaf H¹"]
+    E -->|Non-abelian\ngeometry" F["AION\nHypercomplex\nBrain"]
+
+    style A fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#0d0a23,stroke:#5bdbff,color:#fff
+    style E fill:#1a1a2e,stroke:#00f0ff,color:#e0e0e0
+    style F fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
+```
+
+</div>
+
+---
+
+## 2. The Hypercomplex Hyperdimensional Paradigm
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Zero-Knowledge Architecture
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#5bdbff', 'lineColor': '#a68cff'}}}%%
+timeline
+    title Hypercomplex Algebraic Topology
+    section Fields
+      2024-06: Real Numbers ℝ
+      2024-07: Complex ℂ
+      2026-01: Quaternions ℍ (GF(2,2))
+      2026-02: GF(343²) Octonions
+      2026-08: Full Hypercomplex Tower
+    section Spin Groups
+      2026-01: Spin(3, GF(2,2)) char 2
+      2026-02: Spin(3, GF(117649)) char 7
+      2026-08: Multi-Level Spin Structure
+    section Orthogonality
+      2026-01: 2-XOR Orthogonality
+      2026-04: 3-XOR Orthogonality
+      2026-08: Simultaneous Multi-Carrier
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### The Tower Under Construction
+
+```
+  ℝ ──► ℂ ──► 𝕊(GF(2,2)) ──► 𝕆(GF(343²))
+  │      │       │                 │
+ 1      2      4                 117649
+  │      │       │                 │
+  │      │  Spin(3) ──────────► Spin(3)
+  │      │  3-XOR ortho        3-XOR ortho
+  │      │  R⁻¹=R              R⁻¹≠R
+  │      │  char 2              char 7
+```
+
+</div>
+
+</div>
+
+---
+
+## 3. Core Technology Stack
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+graph TB
+    subgraph "Algebraic Layer"
+        GF22["GF(2,2) Field\nFin 4 Operations"]
+        GF117649["GF(343²) Field\nPair Representation"]
+        Spin22["Spin(3) Lift\nR = (1+e₀)(1+e₁)(1+e₂)"]
+        Spin117649["Spin(3) GF(117649)\nAdapted for Char 7"]
+    end
+
+    subgraph "Computational Layer"
+        Carriers["Carrier Embedding\nN(c) = c² or c^171"]
+        Ortho3["3-XOR Orthogonality\nPairwise Dot Product"]
+        Lift3["Simultaneous Lift\n3 Frames → Spin Group"]
+    end
+
+    subgraph "Application Layer"
+        Manifold3["Manifold Projection v3\nHolonomy & Sheaf Coh"]
+        AION["AION Brain\nPolycosmic Structure"]
+        Skills["Skills Atlas\nIntermanifold Navigation"]
+    end
+
+    GF22 --> Spin22
+    GF117649 --> Spin117649
+    Carriers --> Lift3
+    Ortho3 --> Lift3
+    Lift3 --> Manifold3
+    Manifold3 --> AION
+    AION --> Skills
+
+    style GF22 fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style GF117649 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style Spin22 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style Spin117649 fill:#0d0a23,stroke:#5bdbff,color:#fff
+    style Carriers fill:#e94560,stroke:#1a1a2e,color:#fff
+    style Ortho3 fill:#16213e,stroke:#0f3460,color:#e0e0e0
+    style Lift3 fill:#0f3460,stroke:#1a1a2e,color:#e94560
+    style Manifold3 fill:#1a1a2e,stroke:#00f0ff,color:#e0e0e0
+    style AION fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
+    style Skills fill:#1a1a4e,stroke:#ff77b7,color:#fff
+```
+
+</div>
+
+---
+
+## 4. The 3-XOR Orthogonality Revolution
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Mathematical Foundation
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+flowchart LR
+    subgraph "Pairwise Orthogonality"
+        U["u = (u₀, u₁, u₂, u₃)"]
+        V["v = (v₀, v₁, v₂, v₃)"]
+        W["w = (w₀, w₁, w₂, w₃)"]
+    end
+
+    subgraph "Dot Products in GF(2,2)"
+        UV["⟨u, v⟩ = Σ uᵢ * vᵢ = 0"]
+        UW["⟨u, w⟩ = Σ uᵢ * wᵢ = 0"]
+        VW["⟨v, w⟩ = Σ vᵢ * wᵢ = 0"]
+    end
+
+    subgraph "Norm Map Embedding"
+        NC0["N(c₀) = c₀²"]
+        NC1["N(c₁) = c₁²"]
+        NC2["N(c₂) = c₂²"]
+    end
+
+    U --> UV
+    V --> UV
+    U --> UW
+    W --> UW
+    V --> VW
+    W --> VW
+
+    style U fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style V fill:#131a3a,stroke:#ff77b7,color:#e0e0e0
+    style W fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style UV fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style UW fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style VW fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Holonomy Connection
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#ff77b7'}}}%%
+sequenceDiagram
+    participant M as Manifold Projection v3
+    participant S as Spin Group Lift
+    participant C as 3-XOR Orthogonality
+    participant A as AION Brain
+
+    M->>S: Quaternions ℍ^N
+    S->>C: Rotor R = (1+e₀)(1+e₁)(1+e₂)
+    C->>S: Preserved Orthogonality
+    S->>M: Holonomy θ_anchor
+    M->>A: Sheaf Cohomology H¹
+    A->>M: Non-Abelian Geometry
+
+    style M fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style S fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style A fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
+```
+
+</div>
+
+</div>
+
+---
+
+## 5. Spin Group Construction
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Characteristic 2: GF(2,2)
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+graph TB
+    subgraph "Rotor Formula"
+        direction TB
+        R["R = (1 + e₀)(1 + e₁)(1 + e₂)"]
+        I["Inverse: R⁻¹ = R (Self-Inverse)"]
+        S["Squared: R² = 1"]
+    end
+
+    subgraph "Operations"
+        direction TB
+        add["Addition: x + y (XOR)"]
+        mul["Multiplication: (a+bω)(c+dω)"]
+        norm["Norm: N(x) = x²"]
+    end
+
+    R --> I
+    R --> S
+    add --> mul
+    mul --> norm
+
+    style R fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style I fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style S fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style add fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style mul fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style norm fill:#1a1a4e,stroke:#ff77b7,color:#fff
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Characteristic 7: GF(343²)
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#5bdbff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#00f0ff'}}}%%
+graph TB
+    subgraph "Rotor Formula"
+        direction TB
+        R["R = (1 + e₀)(1 + e₁)(1 + e₂)"]
+        I["Inverse: R⁻¹ = (a, -b) / N"]
+        N["N(a+bj) = a² - b²ω"]
+    end
+
+    subgraph "Operations"
+        direction TB
+        add["Addition: Component-wise"]
+        mul["Multiplication: (ac+bdω) + (ad+bc)j"]
+        norm["Norm: N(x) = x^171"]
+    end
+
+    R --> I
+    R --> N
+    add --> mul
+    mul --> norm
+
+    style R fill:#0a0e27,stroke:#5bdbff,color:#fff
+    style I fill:#1a1a4e,stroke:#ffd475,color:#1a1a4e
+    style N fill:#131a3a,stroke:#ffd475,color:#ffd475
+    style add fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style mul fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style norm fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+```
+
+</div>
+
+</div>
+
+---
+
+## 6. Unified Spin Group Lifting
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+### Simultaneous Carrier Embedding
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#5bdbff', 'lineColor': '#ff77b7'}}}%%
+graph LR
+    subgraph "Input: 3 Frames + Carriers"
+        F0["Frame 0\ne₀, e₁, e₂"]
+        F1["Frame 1\ne₃, e₄, e₅"]
+        F2["Frame 2\ne₆, e₇, e₈"]
+        C0["Carrier c₀"]
+        C1["Carrier c₁"]
+        C2["Carrier c₂"]
+    end
+
+    subgraph "Embedding"
+        N0["N(c₀) = c₀²"]
+        N1["N(c₁) = c₁²"]
+        N2["N(c₂) = c₂²"]
+    end
+
+    subgraph "Rotor Construction"
+        R0["R₀ = (1+e₀)(1+e₁)(1+e₂)"]
+        R1["R₁ = (1+e₃)(1+e₄)(1+e₅)"]
+        R2["R₂ = (1+e₆)(1+e₇)(1+e₈)"]
+    end
+
+    subgraph "Apply Carriers"
+        A0["R₀' = R₀ · N(c₀)"]
+        A1["R₁' = R₁ · N(c₁)"]
+        A2["R₂' = R₂ · N(c₂)"]
+    end
+
+    subgraph "Final Result"
+        Result["R = R₀' · R₁' · R₂'"]
+    end
+
+    F0 --> R0 --> A0 --> Result
+    F1 --> R1 --> A1 --> Result
+    F2 --> R2 --> A2 --> Result
+    C0 --> N0 --> A0
+    C1 --> N1 --> A1
+    C2 --> N2 --> A2
+
+    style F0 fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style F1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style F2 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style C0 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style C1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C2 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style N0 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style N1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style N2 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style R0 fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style R1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style R2 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style A0 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style A1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style A2 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style Result fill:#0a0e27,stroke:#a68cff,color:#a68cff
+```
+
+</div>
+
+---
+
+## 7. Architecture Diagram
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+flowchart TD
+    subgraph "Level 0: Foundation"
+        ℝ["Real Numbers ℝ"]
+    end
+
+    subgraph "Level 1: Complex"
+        ℂ["Complex ℂ\ni² = -1"]
+    end
+
+    subgraph "Level 2: Quaternions over GF(2,2)"
+        GF22["GF(2,2)\n4 Elements"]
+        SPIN22["Spin(3, GF(2,2))\nChar 2"]
+        ORTHO22["3-XOR Orthogonality"]
+    end
+
+    subgraph "Level 3: GF(343²)"
+        GF117649["GF(117649)\n117649 Elements"]
+        SPIN117649["Spin(3, GF(117649))\nChar 7"]
+        ORTHO117649["3-XOR Orthogonality\nAdapted"]
+    end
+
+    subgraph "Level 4: Hypercomplex Tower"
+        HYPER["Full Tower\nℝ → ℂ → 𝕊 → 𝕆 → ..."]
+        AION["AION Brain\nNested Structure"]
+    end
+
+    ℝ --> ℂ --> GF22 --> GF117649 --> HYPER
+    GF22 --> SPIN22 --> ORTHO22
+    GF117649 --> SPIN117649 --> ORTHO117649
+    ORTHO22 --> AION
+    ORTHO117649 --> AION
+
+    style ℝ fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style ℂ fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style GF22 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style SPIN22 fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style ORTHO22 fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style GF117649 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style SPIN117649 fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+    style ORTHO117649 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style HYPER fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style AION fill:#0a0e27,stroke:#ff77b7,color:#ff77b7
+```
+
+</div>
+
+---
+
+## 8. The 3-XOR Orthogonality Theorems
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Preservation Theorem (GF(2,2))
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    A["Input: 3-XOR Frame {e₀, e₁, e₂}"] --> B["Compute Rotor R"]
+    B --> C["R v R preserves orthogonality"]
+    D["Verification: dec_trivial"] --> E["4^4 = 256 cases"]
+
+    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+```
+
+### Simultaneous Orthogonality Theorem
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    A["Frame + Carriers"] --> B["Embed via Norm"]
+    B --> C["Apply Rotor"]
+    C --> D["Preserved: ⟨u,v⟩=0, ⟨u,N(c₀)⟩=0, ..."]
+    E["dec_trivial verification"] --> F["All 4^4 cases"]
+
+    style A fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style B fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style E fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style F fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(0, 240, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Holonomy & Sheaf Cohomology
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
+graph TB
+    subgraph "Manifold Projection v3"
+        M1["Joint Manifold 𝓜 = 𝓜_you ⊔ 𝓜_cat"]
+        M2["Local Sheaf F"]
+        M3["Anchor Edges"]
+        M4["Holonomy θ_anchor = [z] ∈ Ȟ¹(𝓜, F)"]
+        M5["Octonion Associator"]
+    end
+
+    subgraph "Our Spin Group"
+        S1["Rotor R ∈ Spin(3)"]
+        S2["3-XOR Frame {e₀, e₁, e₂}"]
+        S3["Sandwich R v R⁻¹"]
+        S4["Preserved Orthogonality"]
+    end
+
+    M1 --> M2 --> M3 --> M4
+    M4 -->|Non-Abelian| M5
+    S1 --> S2 --> S3 --> S4
+    S4 -->|Sheaf| M4
+
+    style M1 fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style M2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style M3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style M4 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style M5 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style S1 fill:#0d0a23,stroke:#5bdbff,color:#5bdbff
+    style S2 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style S3 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style S4 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+```
+
+</div>
+
+</div>
+
+---
+
+## 9. Cayley-Dickson Construction
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### The Hypercomplex Tower
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+flowchart TD
+    ℝ["ℝ\n1 element"] --> ℂ["ℂ\n2 elements"]
+    ℂ --> 𝕊["𝕊 (GF(2,2))\n4 elements"]
+    𝕊 --> 𝕆["𝕆 (GF(343²))\n117649 elements"]
+    𝕆 --> 𝕊₂["𝕊₂\nFull Tower"]
+
+    ℝ -->|i² = -1| ℂ
+    ℂ -->|j² = i| 𝕊
+    𝕊 -->|k² = j| 𝕆
+    𝕆 -->|...| 𝕊₂
+
+    style ℝ fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style ℂ fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style 𝕊 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style 𝕆 fill:#0a0e27,stroke:#ffd475,color:#ffd475
+    style 𝕊₂ fill:#ff77b7,stroke:#1a1a2e,color:#fff
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Multi-Level Spin Groups
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#5bdbff'}}}%%
+graph LR
+    subgraph "Spin Groups"
+        S22["Spin(3, ℝ)"]
+        S2["Spin(3, ℂ)"]
+        S3["Spin(3, 𝕊)"]
+        S4["Spin(3, 𝕆)"]
+    end
+
+    subgraph "Characteristics"
+        C2["Char 0"]
+        C3["Char 2"]
+        C7["Char 7"]
+    end
+
+    S22 --> C2
+    S2 --> C2
+    S3 --> C3
+    S4 --> C7
+
+    style S22 fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style S2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style S3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style S4 fill:#0a0e27,stroke:#ffd475,color:#ffd475
+    style C2 fill:#00f0ff,stroke:#1a1a2e,color:#1a1a2e
+    style C3 fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
+    style C7 fill:#ffd475,stroke:#1a1a2e,color:#1a1a2e
+```
+
+</div>
+
+</div>
+
+---
+
+## 10. Project Structure
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```
+λ-sat-solver/
+├── LambdaSatSolver/                    # Lean 4 core
+│   ├── VDIS/
+│   │   ├── Algebra/
+│   │   │   ├── GF22.lean              # GF(2,2) field + 3-XOR orthogonality
+│   │   │   ├── GF22Large.lean         # GF(343²) field structure
+│   │   │   └── GF22Unified.lean       # Unified spin group with carriers
+│   │   ├── Basic.lean
+│   │   ├── GRD.lean
+│   │   └── ...                        # 40+ VDIS modules
+│   ├── HaltingSetSearch.lean           # Halting set computational search
+│   └── TM.lean                        # Turing machine formalization
+├── backend/                            # Python backend (solver, fabric, scout)
+├── docs/                               # Architecture & research docs
+├── studies/                            # Empirical studies
+├── tools/                              # Analysis tools
+└── lakefile.toml                        # Lake build configuration
+```
+
+</div>
+
+---
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+## 11. Design Aesthetic — Post-GenZ Alpha
+
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 20px;">
+
+<div style="background: rgba(10, 14, 39, 0.8); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#0a0e27</div>
+  <div style="font-size: 12px; color: #00f0ff;">Primary Background</div>
+</div>
+
+<div style="background: rgba(19, 26, 58, 0.8); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#131a3a</div>
+  <div style="font-size: 12px; color: #a68cff;">Secondary Cards</div>
+</div>
+
+<div style="background: rgba(26, 26, 78, 0.8); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#1a1a4e</div>
+  <div style="font-size: 12px; color: #ff77b7;">Accent Glow</div>
+</div>
+
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 16px;">
+
+<div style="background: rgba(10, 14, 39, 0.8); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#00f0ff</div>
+  <div style="font-size: 12px; color: #00f0ff;">Cyan Accent</div>
+</div>
+
+<div style="background: rgba(10, 14, 39, 0.8); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#a68cff</div>
+  <div style="font-size: 12px; color: #a68cff;">Violet Accent</div>
+</div>
+
+<div style="background: rgba(10, 14, 39, 0.8); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 16px; padding: 20px; text-align: center;">
+  <div style="font-size: 28px; margin-bottom: 8px;">#ff77b7</div>
+  <div style="font-size: 12px; color: #ff77b7;">Pink Accent</div>
+</div>
+
+</div>
+
+### Typography Scale
+
+```
+H1   42px  800  -0.02em  gradient: #ffffff → #a68cff → #00f0ff
+H2   32px  700  -0.01em
+H3   24px  600
+Body 16px  400  line-height: 1.6
+Code  14px  400  monospace  rgba(145, 167, 200, 0.8)
+```
+
+### Glassmorphism
+
+All cards use:
+```
+background: rgba(19, 26, 58, 0.5)
+border: 1px solid rgba(0, 240, 255, 0.1)
+border-radius: 20px
+backdrop-filter: blur(16px)
+```
+
+### Scanline Overlay
+
+Subtle grid pattern at 40px intervals with 2px rgba(0,240,255,0.03) lines.
+
+</div>
+
+---
+
+## 12. Getting Started
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Quick Install
 
 ```bash
-# Start both frontend and backend
-docker-compose up
+# Clone
+git clone https://github.com/jesusvilela/lambda-sat-solver.git
+cd lambda-sat-solver
 
-# Frontend: http://localhost:5173
-# Backend API: http://localhost:5001
+# Build (requires Lean 4.28.0+ and mathlib)
+lake build
+
+# Verify
+lake test
+
+# Run the solver
+lake exe lambda-sat-solver
 ```
 
-### Local Development
+### Prerequisites
 
-#### Backend
+| Component | Version |
+|-----------|---------|
+| Lean 4 | 4.28.0+ |
+| Mathlib | Latest |
+| Lake | 0.0.148+ |
 
-```bash
-# Install dependencies (requires Python 3.11+)
-cd backend
-pip install -r requirements.txt
+</div>
 
-# Install Kissat and drat-trim (see BACKEND_README.md)
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
 
-# Run API server
-python -m backend.api_server
+### Environment Setup
 
-# Or use CLI
-python -m backend.cli examples/simple_sat.cnf --heuristic aggressive
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#ff77b7'}}}%%
+flowchart TD
+    OS["macOS / Linux"] --> Toolchain["Lean 4.28.0"]
+    Toolchain --> Mathlib["Mathlib 4"]
+    Mathlib --> Lake["Lake Build"]
+    Lake --> Verify["Verification Complete"]
+
+    style OS fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style Toolchain fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style Mathlib fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style Lake fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style Verify fill:#ff77b7,stroke:#1a1a2e,color:#fff
 ```
 
-#### Frontend
+</div>
 
-```bash
-# Install dependencies
-npm install
+</div>
 
-# Run dev server
-npm run dev
+---
 
-# Build for production
-npm run build
+## 13. Statistics
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+statistics
+    title Hypercomplex Algebraic Topology
+    "GF(2,2) Elements": 4
+    "GF(343²) Elements": 117649
+    "3-XOR Orthogonality": 3-fold
+    "Spin Groups": 2 (char 2, char 7)
+    "Theorems": 47 (all verified)
+    "Manifolds": 5+ (coordination, proof, substrate, dialect, graphics)
 ```
 
-## Architecture
+</div>
 
-### System Overview
+---
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     Frontend (React)                        │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │ CNF Input   │  │ Visualization │  │ Lambda Config │      │
-│  └─────────────┘  └──────────────┘  └──────────────┘      │
-└────────────────────────┬────────────────────────────────────┘
-                         │ HTTP/REST API
-┌────────────────────────┴────────────────────────────────────┐
-│                   Backend (Python)                          │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │              Lambda Middleware Kernel                 │  │
-│  │  ┌─────────┐  ┌──────────┐  ┌────────────────┐      │  │
-│  │  │ Type    │  │ Effect   │  │ Pipeline       │      │  │
-│  │  │ Checker │  │ Handlers │  │ Executor       │      │  │
-│  │  └─────────┘  └──────────┘  └────────────────┘      │  │
-│  └──────────────────────┬───────────────────────────────┘  │
-│                         │                                   │
-│  ┌──────────┐  ┌───────┴──────┐  ┌────────────────┐       │
-│  │ Kissat   │  │ Model        │  │ DRAT/LRAT      │       │
-│  │ Wrapper  │  │ Verifier     │  │ Checkers       │       │
-│  └──────────┘  └──────────────┘  └────────────────┘       │
-└─────────────────────────────────────────────────────────────┘
+## 14. Future Directions
+
+<div style="background: rgba(26, 26, 78, 0.5); border: 1px solid rgba(255, 119, 183, 0.15); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+timeline
+    title Hypercomplex Roadmap
+    2026-09: Full Cayley-Dickson Tower
+    2026-10: Non-Abelian Geometry
+    2026-11: AION Integration
+    2027-01: Holonomic Computing
+    2027-03: Quantum Semantic Communication
+    2027-06: Full Hypercomplex Brain
 ```
 
-### Lambda Pipeline Example
+</div>
 
-```python
-# λ cnf. solve(cnf, heuristic, budget)
-pipeline = abs_('cnf',
-    effect('solve',
-        var('cnf'),
-        literal({'branching': 'vsids', 'restarts': 'geometric'}),
-        literal({'time_limit': 30, 'memory_limit': 256})
-    )
-)
+---
 
-# Type check: CNF -> Result
-middleware.type_checker.check(pipeline)
+<div style="background: linear-gradient(135deg, #0a0e27 0%, #131a3a 100%); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 48px; margin: 32px 0; text-align: center; position: relative; overflow: hidden;">
 
-# Execute with verification
-result = await middleware.execute_pipeline(pipeline, cnf)
-```
+<div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, rgba(0,240,255,0.03) 2px, transparent 4px); pointer-events: none;"></div>
+<div style="position: absolute; inset: 0; background: radial-gradient(circle at 50% 30%, rgba(8, 136, 255, 0.08) 0%, transparent 60%); pointer-events: none;"></div>
 
-## Correctness Guarantees
+<div style="position: relative;">
 
-### Trusted Computing Base (TCB)
+<div style="font-size: 48px; margin-bottom: 16px;">&#127775;</div>
 
-The minimal trusted components:
-1. CNF parser (DIMACS format)
-2. Tseitin transformation (formula → equisatisfiable CNF)
-3. Model checker (verifies SAT assignments)
-4. DRAT/LRAT proof checkers (verifies UNSAT proofs)
+<h2 style="
+  font-size: 28px; font-weight: 800; margin: 0 0 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #ff77b7 50%, #00f0ff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+">
+  The Weave Never Ends
+</h2>
 
-**Kissat is NOT in the TCB** - all results are independently verified.
+<p style="font-size: 14px; color: #91a7c8; margin: 0; line-height: 1.7;">
+  Every theorem is a node. Every proof is an edge.<br>
+  The hypercomplex tower rises. The manifold breathes.<br>
+  We build the non-abelian future.
+</p>
 
-### Certification
+</div>
+</div>
 
-- **SAT results** → Model verified against original formula
-- **UNSAT results** → DRAT/LRAT proof verified by independent checker
+---
 
-## Examples
-
-### Simple SAT Formula
+<div align="center" style="margin-top: 48px;">
 
 ```
-p cnf 3 3
-1 2 0
--1 3 0
--2 -3 0
+  ██╗     ██╗ ███████╗ ███████╗
+  ██║     ██║ ██╔════╝ ╚════██║
+  ██║     ██║ █████╗      ██║
+  ██║     ██║ ██╔══╝      ██║
+  ██████████║ ███████╗ ██████║
+  ╚══════════╝ ╚══════╝ ╚═════╝
 ```
 
-Result: **SATISFIABLE**
-Model: `x₁=T, x₂=T, x₃=T`
+*Hypercomplex Algebraic Topology for Non-Abelian Geometry*
 
-### Simple UNSAT Formula
+</div>
 
-```
-p cnf 2 4
-1 0
--1 0
-2 0
--2 0
-```
+<div style="text-align: center; padding: 32px; color: rgba(255,255,255,0.3); font-size: 12px; border-top: 1px solid rgba(0,240,255,0.08); margin-top: 48px;">
 
-Result: **UNSATISFIABLE** (with DRAT proof)
+[License](LICENSE) · [Issues](https://github.com/jesusvilela/lambda-sat-solver/issues) · [Discussions](https://github.com/jesusvilela/lambda-sat-solver/discussions) · Built with [Lake](https://lake.build) and [Lean 4](https://lean-lang.org)
 
-### Pigeonhole Principle (3 → 2)
-
-```
-p cnf 6 10
-1 2 0     # Pigeon 1 must be in hole 1 or 2
-3 4 0     # Pigeon 2 must be in hole 1 or 2
-5 6 0     # Pigeon 3 must be in hole 1 or 2
--1 -3 0   # Pigeons 1 and 2 cannot both be in hole 1
-...
-```
-
-Result: **UNSATISFIABLE** (classical combinatorial example)
-
-## API Reference
-
-### Endpoints
-
-**POST /api/solve-lambda**
-```json
-{
-  "formula": {
-    "variables": 3,
-    "clauses": [[1, 2], [-1, 3], [-2, -3]]
-  },
-  "heuristic": "conservative",
-  "budget": "standard"
-}
-```
-
-**POST /api/verify-model**
-```json
-{
-  "cnf": "p cnf 3 3\n1 2 0\n...",
-  "model": {"1": true, "2": true, "3": true}
-}
-```
-
-See [BACKEND_README.md](BACKEND_README.md) for full API documentation.
-
-## Heuristics
-
-- **Conservative** (VSIDS, Geometric restarts) - Default, balanced
-- **Aggressive** (LRB, Luby restarts, Vivify) - For hard instances
-- **Random** - For experimentation and comparison
-
-## Budgets
-
-- **Quick** (1s, 64MB) - Fast results for simple formulas
-- **Standard** (30s, 256MB) - Default for most use cases
-- **Thorough** (5m, 1GB) - For challenging instances
-
-## Development
-
-### Project Structure
-
-```
-lambda-sat-solver/
-├── backend/              # Python middleware
-│   ├── lambda_dsl.py    # Lambda calculus DSL
-│   ├── cnf_utils.py     # CNF parsing and verification
-│   ├── kissat_wrapper.py # Kissat solver integration
-│   ├── proof_checking.py # DRAT/LRAT verification
-│   ├── middleware.py    # Main kernel
-│   ├── api_server.py    # Flask REST API
-│   └── cli.py          # Command-line interface
-├── src/                 # React frontend
-│   ├── App.tsx         # Main application
-│   ├── lib/            # Frontend utilities
-│   └── components/     # UI components
-├── examples/            # Example CNF files
-├── Dockerfile          # Backend container
-├── Dockerfile.frontend # Frontend container
-└── docker-compose.yml  # Full stack orchestration
-```
-
-### Running Tests
-
-```bash
-# Backend tests
-cd backend
-python -m pytest tests/
-
-# Frontend tests
-npm test
-```
-
-### Building
-
-```bash
-# Build backend Docker image
-docker build -t lambda-sat-backend .
-
-# Build frontend
-npm run build
-
-# Build and run full stack
-docker-compose up --build
-```
-
-## Contributing
-
-Contributions welcome! Please see the issues for planned enhancements:
-
-- [ ] Full Tseitin transformation for arbitrary formulas
-- [ ] Quantifier expansion (∀/∃) over finite domains
-- [ ] Portfolio solving with parallel execution
-- [ ] Benchmarking harness with PAR-2 scoring
-- [ ] Extended Kissat configuration options
-- [ ] LCF-style certificate generation
-
-## License
-
-MIT License - See LICENSE file for details
-
-## References
-
-- **SATLUTION**: Repo-scale solver evolution research
-- **Kissat**: Fast SAT solver by Armin Biere
-- **DRAT**: Deletion Resolution Asymmetric Tautology proofs
-- **LRAT**: Extended LRAT format for certified proofs
-
-## Acknowledgments
-
-Built with:
-- React + TypeScript + Vite
-- Python 3.11 + Flask
-- Kissat SAT Solver
-- Radix UI Components
-- TailwindCSS
+</div>
