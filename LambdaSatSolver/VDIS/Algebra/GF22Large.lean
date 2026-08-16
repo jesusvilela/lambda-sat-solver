@@ -261,20 +261,29 @@ def inv343 (x : GF343) : GF343 :=
   if h : x = zero343 then
     zero343
   else
-    -- x³⁴¹ mod 343
-    -- Using repeated squaring for efficiency
-    -- For now, use native_decide for finite verification
-    -- x⁻¹ = x^341
-    x  -- Placeholder: need to compute x^341
+    -- Compute x^341 mod 343 using repeated squaring
+    -- 341 = 256 + 64 + 16 + 4 + 1 = 101010101₂
+    let x2 := mul343 x x
+    let x4 := mul343 x2 x2
+    let x8 := mul343 x4 x4
+    let x16 := mul343 x8 x8
+    let x32 := mul343 x16 x16
+    let x64 := mul343 x32 x32
+    let x128 := mul343 x64 x64
+    let x256 := mul343 x128 x128
+    -- x^341 = x^256 * x^64 * x^16 * x^4 * x
+    let r := mul343 (mul343 (mul343 x256 x64) x16) (mul343 x4 x)
+    r
 
 instance : Field GF343 where
   __ := (inferInstance : CommRing GF343)
   inv := inv343
   mul_inv_cancel := by
+    -- native_decide verifies the finite statement ∀ x ≠ 0, x * x⁻¹ = 1
+    have h : ∀ x : GF343, x ≠ zero343 → mul343 x (inv343 x) = one343 := by
+      native_decide
     intro x hx
-    -- Need to prove x * x⁻¹ = 1
-    -- This requires implementing x^341 properly
-    sorry
+    exact h x hx
   inv_zero := by
     dsimp [inv343]
     simp
