@@ -752,6 +752,120 @@ flowchart LR
 
 ---
 
+## 8.6 Cayley-Dickson Hypercomplex Tower
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+### The Tower Under Construction
+
+The Cayley-Dickson construction builds a tower of algebras by repeated doubling:
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+flowchart TD
+    subgraph "The Hypercomplex Tower"
+        L0["ℝ\n1 element"] -->|×2| L1["ℂ\n2 elements"]
+        L1 -->|×2| L2["ℍ\n4 elements"]
+        L2 -->|×2| L3["𝕆\n8 elements"]
+        L3 -->|×2| L4["Sedenions\n16 elements"]
+    end
+
+    subgraph "Finite Field Versions"
+        GF0["GF(2,2)\n4 elements"] -->|×4| GF1["GF(GF(2,2), GF(2,2))\n16 elements"]
+    end
+
+    subgraph "Our Implementation"
+        OUR["GF22.lean\nGF22Multiknob.lean\nCD.lean"]
+    end
+
+    L0 --> GF0
+    GF0 --> GF1
+    OUR --> L0
+    OUR --> GF0
+
+    style L0 fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style L1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style L2 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style L3 fill:#0d0a23,stroke:#ffd475,color:#ffd475
+    style L4 fill:#1a1a2e,stroke:#5bdbff,color:#00f0ff
+    style GF0 fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style GF1 fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style OUR fill:#1a1a4e,stroke:#a68cff,color:#e0e0e0
+```
+
+### Associator as Holonomy Witness
+
+For octonionic or higher Cayley-Dickson lifts, direct multiplication becomes nonassociative. The associator (a,b,c) = (ab)c - a(bc) witnesses this failure:
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+graph TD
+    A["Associative\nLevels 0-2"] -->|Associator = 0| B["Deterministic\nHalting decidable"]
+    C["Non-Associative\nLevel ≥ 3"] -->|Associator ≠ 0| D["Undecidability\nBranching"]
+    E["Cayley-Dickson\nConstruction"] --> A
+    E --> C
+
+    style A fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style B fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style C fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style D fill:#0d0a23,stroke:#ffd475,color:#ffd475
+    style E fill:#1a1a2e,stroke:#a68cff,color:#e0e0e0
+```
+
+### Safe Implementation Strategy
+
+A safe implementation may retain an associative base operator algebra while representing hypercomplex multiplication through real linear operators and carrying associator witnesses separately. This prevents ordinary matrix-product identities from being silently applied in a nonassociative fiber.
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#ff77b7'}}}%%
+graph TB
+    subgraph "Safe Representation"
+        SAFE["Linear Operators\nMatrix multiplication"]
+        WITNESS["Associator Witnesses\n(A,B,C) = (AB)C - A(BC)"]
+    end
+
+    subgraph "Avoids"
+        AVOID["False associativity\nSilent identity application"]
+    end
+
+    SAFE --> WITNESS
+    WITNESS -->|Prevents| AVOID
+
+    style SAFE fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style WITNESS fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style AVOID fill:#1a1a4e,stroke:#ff77b7,color:#fff
+```
+
+### The Profinite Tower
+
+An infinite cable is a compatible tower of finite cable regimes. The hypercomplex fiber retains noncommuting and nonassociative history.
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#5bdbff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+graph TB
+    subgraph "Profinite Tower"
+        P0["Level 0\nFinite transport"] --> P1["Level 1\nExtended transport"]
+        P1 --> P2["Level 2\nCompatible residue"]
+    end
+
+    subgraph "Compatible Finite Return"
+        CFR["Residue at each level"]
+    end
+
+    P0 --> CFR
+    P1 --> CFR
+    P2 --> CFR
+
+    style P0 fill:#0a0e27,stroke:#5bdbff,color:#fff
+    style P1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style P2 fill:#1a1a4e,stroke:#ffd475,color:#ffd475
+    style CFR fill:#0d0a23,stroke:#a68cff,color:#e0e0e0
+```
+
+</div>
+
+---
+
 ## 9. The 3-XOR Orthogonality Theorems
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
@@ -1113,6 +1227,8 @@ statistics
     "3-XOR Orthogonality": 3-fold
     "Spin Groups": 2 (char 2, char 7)
     "Theorems": 54+ (all verified)
+    "Sections": 16 (with mermaid diagrams)
+    "Mermaid diagrams": 16+
     "Manifolds": 5+ (coordination, proof, substrate, dialect, graphics)
 ```
 
