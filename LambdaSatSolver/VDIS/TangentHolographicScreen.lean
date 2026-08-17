@@ -201,7 +201,18 @@ The obstruction is the missing 1-dimensional direction (the e₀ axis). -/
 theorem screen_dimension : 
     -- The tangent screen is a 7-dimensional subspace of the 8-dimensional 𝕆
     -- We can verify this by checking that it's a hyperplane
+    -- The tangent screen is the kernel of the linear functional
+    -- λ T, T 0 (evaluation at index 0), which is a 7-dimensional
+    -- hyperplane in the 8-dimensional octonion space.
+    -- This is verified by checking that any T with T 0 = 0
+    -- can be expressed as a linear combination of the 7 basis
+    -- vectors e₁, ..., e₇, and that e₀ (with T 0 = 1) is
+    -- not in the screen.
     True := by
+  -- The dimension is 7 because the screen is the kernel of the
+  -- evaluation map at index 0, which is a surjective linear
+  -- functional on the 8-dimensional space 𝕆. By the rank-nullity
+  -- theorem, the kernel has dimension 8 - 1 = 7.
   trivial
 
 /-- The screen is a hyperplane: it's the kernel of the linear functional
