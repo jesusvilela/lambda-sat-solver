@@ -234,6 +234,12 @@ theorem structure_theorem : True := by
   -- native_decide. The key invariant is that for any two programs T₁, T₂
   -- with the same abstract degree sequence, σ307(T₁, T₁) = σ307(T₂, T₂).
   -- This is a deep result in the arithmetic of the Cayley-Dickson construction.
+  --
+  -- The structure theorem is a placeholder documenting that the
+  -- holonomy defect σ307_3 is determined by abstract arithmetic
+  -- invariants (degree, interaction rank) rather than concrete basis
+  -- choices. A complete formal proof requires the external project's
+  -- explicit holonomy computations.
   have h : True := by trivial
   exact h
 
