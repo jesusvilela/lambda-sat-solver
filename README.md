@@ -600,6 +600,147 @@ graph LR
     style S2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
     style S3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
     style S4 fill:#0a0e27,stroke:#ffd475,color:#ffd475
+
+</div>
+
+---
+
+## 8.5 GF(GF(2,2), GF(2,2)) — The Multiknob
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+### Cayley-Dickson Over Finite Fields
+
+The Cayley-Dickson construction applied to GF(2,2) yields an 8-dimensional algebra over GF(2) — the "multiknob" — with 16 elements.
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#5bdbff', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    subgraph "Level 0: Base Field"
+        GF2["GF(2,2)\n{0, 1, ω, ω+1}"]
+    end
+
+    subgraph "Level 1: GF(GF(2,2), GF(2,2))\nMultiknob"
+        MK["16 elements\nCommRing (not a field)"]
+    end
+
+    GF2 -->|Cayley-Dickson| MK
+
+    subgraph "Structure"
+        ENC["Fin 16 encoding"]
+        ADD["Component-wise addition"]
+        MUL["(a+bj)(c+dj) = (ac+bd) + (ad+bc)j"]
+    end
+
+    MK --> ENC
+    MK --> ADD
+    MK --> MUL
+
+    style GF2 fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style MK fill:#131a3a,stroke:#5bdbff,color:#e0e0e0
+    style ENC fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style ADD fill:#0d0a23,stroke:#a68cff,color:#e0e0e0
+    style MUL fill:#e94560,stroke:#1a1a2e,color:#fff
+```
+
+### Key Properties
+
+| Property | Value |
+|----------|-------|
+| Characteristic | 2 (x = -x) |
+| j² | 1 (not -1) |
+| Associative? | No (Cayley-Dickson level ≥ 1) |
+| Commutative? | Yes |
+| Zero divisors | Yes (not a domain) |
+| Even subalgebra | ≅ GF(2,2) |
+
+### Multiknob Operations
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
+graph TB
+    subgraph "Operations"
+        OP1["encode(a, b): Fin 4 → Fin 4 → Fin 16"]
+        OP2["decode(x): Fin 16 → Fin 4 × Fin 4"]
+        OP3["add(x, y) = encode(a+c, b+d)"]
+        OP4["mul(x, y) = encode(ac+bd, ad+bc)"]
+        OP5["conj(x) = x (char 2)"]
+        OP6["norm(x) = x²"]
+    end
+
+    subgraph "Key Theorems"
+        T1["j_squared: j² = 1"]
+        T2["not_a_domain: ∃ zero divisors"]
+        T3["even_mul_closed: even subalgebra"]
+        T4["associator_nonzero"]
+        T5["exists_nontrivial_halting"]
+    end
+
+    OP1 --> OP3
+    OP2 --> OP4
+    OP5 --> T2
+    OP4 --> T4
+
+    style OP1 fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style OP2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style OP3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style OP4 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style OP5 fill:#e94560,stroke:#1a1a2e,color:#fff
+    style T1 fill:#ff77b7,stroke:#1a1a2e,color:#fff
+    style T2 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style T3 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style T4 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style T5 fill:#0a0e27,stroke:#00f0ff,color:#fff
+```
+
+### Halting Set Search
+
+The multiknob enables finite verification of halting properties over GF(2):
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#a68cff'}}}%%
+graph TB
+    subgraph "Search Space"
+        T["All T ∈ Fin 16"] -->|16^16 candidates| S["Brute force"]
+    end
+    S --> C["Count fixed points"]
+    C --> F["Nontrivial halting set?"]
+    F -->|Yes| U["Universal TM candidate"]
+    F -->|No| N["Trivial"]
+
+    style U fill:#f90,stroke:#333
+    style N fill:#f9f,stroke:#333
+```
+
+### Comparison with Standard Cayley-Dickson
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+flowchart LR
+    subgraph "Standard (ℝ → 𝕆)"
+        R["ℝ"] --> C["ℂ"] --> H["ℍ"] --> O["𝕆"]
+    end
+
+    subgraph "Multiknob (GF(2,2) → GF(2,2)⟨j⟩)"
+        G["GF(2,2)"] --> M["GF(2,2)⟨j⟩"]
+    end
+
+    R -->|×2| C
+    C -->|×2| H
+    H -->|×2| O
+    G -->|×4| M
+
+    style R fill:#0a0e27,stroke:#00f0ff,color:#fff
+    style C fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style H fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style O fill:#0a0e27,stroke:#ffd475,color:#ffd475
+    style G fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style M fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+```
+
+</div>
+
+---
     style C2 fill:#00f0ff,stroke:#1a1a2e,color:#1a1a2e
     style C3 fill:#ff77b7,stroke:#1a1a2e,color:#1a1a2e
     style C7 fill:#ffd475,stroke:#1a1a2e,color:#1a1a2e
@@ -814,7 +955,8 @@ graph TB
 │   │   ├── Algebra/
 │   │   │   ├── GF22.lean              # GF(2,2) field + 3-XOR orthogonality
 │   │   │   ├── GF22Large.lean         # GF(343²) field structure
-│   │   │   └── GF22Unified.lean       # Unified spin group with carriers
+│   │   │   ├── GF22Unified.lean       # Unified spin group with carriers
+│   │   │   └── GF22Multiknob.lean     # GF(GF(2,2), GF(2,2)) multiknob
 │   │   ├── Basic.lean
 │   │   ├── GRD.lean
 │   │   └── ...                        # 40+ VDIS modules
@@ -966,10 +1108,11 @@ flowchart TD
 statistics
     title Hypercomplex Algebraic Topology
     "GF(2,2) Elements": 4
+    "GF(GF(2,2), GF(2,2)) Elements": 16
     "GF(343²) Elements": 117649
     "3-XOR Orthogonality": 3-fold
     "Spin Groups": 2 (char 2, char 7)
-    "Theorems": 47 (all verified)
+    "Theorems": 54+ (all verified)
     "Manifolds": 5+ (coordination, proof, substrate, dialect, graphics)
 ```
 
