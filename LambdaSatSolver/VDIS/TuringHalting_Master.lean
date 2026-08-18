@@ -368,11 +368,12 @@ theorem layer_b_local_not_globally_captured
     (hpres : ∀ s, FixRaw T s → VDIS.Algebra.CD.mulByLevel 3 T T s = s)
     (hlocal : ∃ s, s ≠ 0 ∧ ObsHalt T s) :
     ¬ (∃ (f : (Fin 8 → ℝ) → Bool), ∀ s, f s = true ↔ ObsHalt T s) := by
-  -- This documents the geometric obstruction.
-  -- A genuine proof requires restricting f to computable functions.
-  -- For finite 𝕆, we can check the statement computationally.
-  -- Note: native_decide cannot handle the full ∀ f quantification over
-  -- ℝ^8 → Bool (uncountable). This is a placeholder.
+  -- NOTE: This theorem quantifies over ALL Boolean functions on ℝ^8,
+  -- which is an uncountable domain. A genuine undecidability proof would
+  -- restrict to COMPUTABLE functions and require a formal machine model.
+  -- This is an INFORMAL argument documented as a placeholder.
+  -- For finite 𝕆, the statement is decidable by exhaustive search,
+  -- but native_decide cannot handle the ∀ f quantification.
   sorry
 
 /-!
@@ -399,11 +400,10 @@ computation model. -/
 theorem layer_c_no_omni_quine
     (T : Fin 8 → ℝ) (hbar : ∀ s, s ≠ 0 → AcafQuine.computationalHolonomy T s ≠ 0) :
     ¬ (∃ (f : (Fin 8 → ℝ) → Bool), ∀ s, f s = true ↔ VDIS.Algebra.CD.mulByLevel 3 T s = s) :=
-  -- This is a marker theorem. A genuine proof requires:
-  -- 1. A formal machine model (Lean, Turing, etc.)
-  -- 2. Computable encoding into 𝕆
-  -- 3. Rice-Gödel diagonalization over computable predicates
-  -- 4. NOT over arbitrary Boolean functions
+  -- NOTE: Same issue as layer_b_local_not_globally_captured — quantifies over
+  -- ALL Boolean functions on ℝ^8 (uncountable). This is an INFORMAL argument
+  -- about why a global halting test cannot exist. A formal proof requires
+  -- restricting to computable functions and defining a machine model.
   sorry
 
 /-!

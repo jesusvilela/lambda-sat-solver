@@ -113,7 +113,9 @@ theorem associator_zero {n : ℕ} (a b c : Hypervector (Fin 4) n) :
       (VDIS.Algebra.GF22.mul (VDIS.Algebra.GF22.mul (a i) (b i)) (c i))
       (VDIS.Algebra.GF22.mul (a i) (VDIS.Algebra.GF22.mul (b i) (c i)))) = zero := by
   ext i
-  simp [VDIS.Algebra.GF22.add_assoc]
+  -- GF(2,2) multiplication is associative (field), so (a*b)*c = a*(b*c)
+  -- Then x + x = 0 in characteristic 2
+  simp [VDIS.Algebra.GF22.mul_assoc, VDIS.Algebra.GF22.add_self_eq_zero]
 
 /-!
 ## GF(16) HDC Operations
