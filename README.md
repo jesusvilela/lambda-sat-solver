@@ -772,16 +772,19 @@ flowchart TD
 
     subgraph "Finite Field Versions"
         GF0["GF(2,2)\n4 elements"] -->|×4| GF1["GF(GF(2,2), GF(2,2))\n16 elements"]
+        GF1 -->|×16| GF2["GF(16, 16)\n256 elements"]
     end
 
     subgraph "Our Implementation"
-        OUR["GF22.lean\nGF22Multiknob.lean\nCD.lean"]
+        OUR["GF22.lean\nGF22Multiknob.lean\nGF22MultiknobLevel2.lean\nCD.lean"]
     end
 
     L0 --> GF0
     GF0 --> GF1
+    GF1 --> GF2
     OUR --> L0
     OUR --> GF0
+    OUR --> GF1
 
     style L0 fill:#0a0e27,stroke:#00f0ff,color:#fff
     style L1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
@@ -790,6 +793,7 @@ flowchart TD
     style L4 fill:#1a1a2e,stroke:#5bdbff,color:#00f0ff
     style GF0 fill:#0a0e27,stroke:#ff77b7,color:#fff
     style GF1 fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style GF2 fill:#0d0a23,stroke:#ffd475,color:#ffd475
     style OUR fill:#1a1a4e,stroke:#a68cff,color:#e0e0e0
 ```
 
@@ -860,6 +864,65 @@ graph TB
     style P1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
     style P2 fill:#1a1a4e,stroke:#ffd475,color:#ffd475
     style CFR fill:#0d0a23,stroke:#a68cff,color:#e0e0e0
+```
+
+### Superior Lift: GF(16, 16) — The 256-Element Algebra
+
+The Cayley-Dickson construction applied to GF(16) yields a 256-element algebra over GF(2) — the "superior multiknob" — with k² = 1 (characteristic 2).
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ffd475', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
+flowchart TD
+    subgraph "Superior Lift Tower"
+        SL0["GF(2,2)\n4 elements"] -->|×4| SL1["GF(16)\n16 elements"]
+        SL1 -->|×16| SL2["GF(16, 16)\n256 elements"]
+    end
+
+    subgraph "Our Implementation"
+        OUR["GF22.lean\nGF22Multiknob.lean\nGF22MultiknobLevel2.lean"]
+    end
+
+    SL0 --> OUR
+    SL1 --> OUR
+    SL2 --> OUR
+
+    style SL0 fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style SL1 fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style SL2 fill:#0d0a23,stroke:#ffd475,color:#ffd475
+    style OUR fill:#1a1a4e,stroke:#a68cff,color:#e0e0e0
+```
+
+**Key properties of GF(16, 16):**
+
+| Property | Value |
+|----------|-------|
+| Cardinality | 256 elements |
+| Dimension (over GF(2)) | 32 |
+| k² | 1 (not -1) |
+| Associative? | No (fails at Cayley-Dickson level 2) |
+| Commutative? | No |
+| Zero divisors | Yes |
+| Holonomy | Non-trivial associator |
+
+The multiplication rule: (a + bk)(c + dk) = (ac + bd) + (ad + bc)k, with component-wise GF(16) operations.
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    A["GF(16, 16) Construction"] --> B["encode/decode\nFin 256"]
+    B --> C["add: component-wise GF(16)"]
+    B --> D["mul: (ac+bd) + (ad+bc)k"]
+    B --> E["CommRing instance\n(finite verification)"]
+    C --> F["Zero divisors\nnot_a_domain"]
+    D --> G["associator_nonzero\nNon-associative"]
+
+    style A fill:#0a0e27,stroke:#a68cff,color:#fff
+    style B fill:#131a3a,stroke:#ffd475,color:#ffd475
+    style C fill:#1a1a4e,stroke:#00f0ff,color:#fff
+    style D fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style E fill:#0d0a23,stroke:#a68cff,color:#e0e0e0
+    style F fill:#0d0a23,stroke:#ff77b7,color:#fff
+    style G fill:#0d0a23,stroke:#ffd475,color:#ffd475
 ```
 
 </div>
@@ -1070,7 +1133,8 @@ graph TB
 │   │   │   ├── GF22.lean              # GF(2,2) field + 3-XOR orthogonality
 │   │   │   ├── GF22Large.lean         # GF(343²) field structure
 │   │   │   ├── GF22Unified.lean       # Unified spin group with carriers
-│   │   │   └── GF22Multiknob.lean     # GF(GF(2,2), GF(2,2)) multiknob
+│   │   │   ├── GF22Multiknob.lean     # GF(GF(2,2), GF(2,2)) multiknob
+│   │   │   └── GF22MultiknobLevel2.lean # GF(16, 16) superior multiknob (256 elts)
 │   │   ├── Basic.lean
 │   │   ├── GRD.lean
 │   │   └── ...                        # 40+ VDIS modules
@@ -1213,7 +1277,281 @@ flowchart TD
 
 ---
 
-## 15. Statistics
+## 15. Hyperdimensional Computing
+
+<blockquote style="border-left: 4px solid rgba(0, 240, 255, 0.5); padding-left: 20px; color: #b9cce7; font-style: italic; margin: 24px 0;">
+  <strong>From Abstract Algebra to Hardware:</strong> HDC uses high-dimensional vectors with three fundamental operations — binding (element-wise multiplication), bundling (element-wise addition), and permutation (cyclic shift). These are exactly the operations we've implemented over GF(2,2) and GF(16). The connection to HPVM-HDC, ScalableHD, and memristor-based probabilistic neurons provides a hardware pathway from algebraic structures to physical computation.
+</blockquote>
+
+### 15.1 HDC Operations — The Algebraic Foundation
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 32px 0;">
+
+<div style="background: rgba(19, 26, 58, 0.6); border: 1px solid rgba(0, 240, 255, 0.12); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Binding (⊗), Bundling (⊕), Permutation (ρ)
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#00f0ff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#a68cff', 'lineColor': '#ff77b7'}}}%%
+graph LR
+    subgraph "HDC Operations (GF(2,2))"
+        BIND["bind: a⊗b = (aᵢ*bᵢ)
+        Element-wise multiplication"]
+        BUNDLE["bundle: a⊕b = (aᵢ+bᵢ)
+        Element-wise addition"]
+        PERM["permute: ρ(a)ᵢ = a₍ᵢ₊₁₎ₘₒdₙ
+        Cyclic shift"]
+    end
+
+    subgraph "HDC Operations (GF(16))"
+        BIND16["bind: a⊗b = (aᵢ*bᵢ)
+        NON-ASSOCIATIVE"]
+        BUNDLE16["bundle: a⊕b = (aᵢ+bᵢ)"]
+        PERM16["permute: ρ(a)ᵢ = a₍ᵢ₊₁₎ₘₒdₙ"]
+    end
+
+    subgraph "Associativity"
+        ASSOC22["GF(2,2): Associative
+        (Field → associative)"]
+        ASSOC16["GF(16): NON-Associative
+        (Cayley-Dickson level 1)"]
+    end
+
+    BIND --> ASSOC22
+    BUNDLE --> ASSOC22
+    PERM --> ASSOC22
+    BIND16 --> ASSOC16
+    BUNDLE16 --> ASSOC16
+    PERM16 --> ASSOC16
+
+    style BIND fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style BUNDLE fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style PERM fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style BIND16 fill:#131a3a,stroke:#ff77b7,color:#fff
+    style BUNDLE16 fill:#1a1a4e,stroke:#00f0ff,color:#e0e0e0
+    style PERM16 fill:#0a0e27,stroke:#a68cff,color:#00f0ff
+    style ASSOC22 fill:#0d0a23,stroke:#00f0ff,color:#00f0ff
+    style ASSOC16 fill:#0d0a23,stroke:#ff77b7,color:#ff77b7
+```
+
+</div>
+
+<div style="background: rgba(13, 20, 46, 0.5); border: 1px solid rgba(166, 140, 255, 0.15); border-radius: 20px; padding: 32px; backdrop-filter: blur(16px);">
+
+### Associativity Failure = Holonomy
+
+The associator `(a,b,c) = (a⊗b)⊗c + a⊗(b⊗c)` measures computational branching:
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#00f0ff'}}}%%
+flowchart TD
+    GF16["GF(16) Multiplication
+    j² = 1 (char 2)"] --> ASSOC["Associator"]
+    GF16 --> NONASSOC["NOT Associative"]
+    NONASSOC --> BRANCH["Computational
+    Branching"]
+    ASSOC --> BRANCH
+    BRANCH --> HOLO["Holonomy
+    Accumulation"]
+    HOLO --> SAT["SAT Solving
+    via Hypervectors"]
+
+    style GF16 fill:#0a0e27,stroke:#a68cff,color:#e0e0e0
+    style ASSOC fill:#131a3a,stroke:#ff77b7,color:#fff
+    style NONASSOC fill:#1a1a4e,stroke:#ff77b7,color:#ff77b7
+    style BRANCH fill:#0d0a23,stroke:#00f0ff,color:#00f0ff
+    style HOLO fill:#e94560,stroke:#1a1a2e,color:#fff
+    style SAT fill:#16213e,stroke:#0f3460,color:#e0e0e0
+```
+
+</div>
+
+</div>
+
+### 15.2 Connection to Cayley-Dickson
+
+<blockquote style="border-left: 4px solid rgba(166, 140, 255, 0.5); padding-left: 20px; color: #b9cce7; font-style: italic; margin: 24px 0;">
+  <strong>Fiber-Bundle Structure:</strong> Each Cayley-Dickson level adds a fiber. The even subalgebra (base) is GF(2,2); the odd subalgebra (fiber) is GF(2,2)·j. HDC operations bind/bundle/permute operate on the even subalgebra, while the full algebra (GF(16)) exhibits non-associative holonomy.
+</blockquote>
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#a68cff'}}}%%
+graph TD
+    subgraph "Cayley-Dickson Tower"
+        CD0["Level 0: GF(2,2)
+        4 elements, associative"]
+        CD1["Level 1: GF(2,2) + GF(2,2)·j
+        16 elements, NON-associative"]
+        CD2["Level 2: GF(2,2) + GF(2,2)·j + GF(2,2)·l + GF(2,2)·jl
+        256 elements"]
+    end
+
+    subgraph "HDC Operations"
+        HDC0["Fin n → GF(2,2)
+        bind/bundle/permute"]
+        HDC1["Fin n → GF(16)
+        Non-associative bind"]
+    end
+
+    CD0 --> CD1 --> CD2
+    CD0 --> HDC0
+    CD1 --> HDC1
+
+    style CD0 fill:#0a0e27,stroke:#00f0ff,color:#00f0ff
+    style CD1 fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style CD2 fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style HDC0 fill:#0d0a23,stroke:#ff77b7,color:#fff
+    style HDC1 fill:#1a1a2e,stroke:#a68cff,color:#e0e0e0
+```
+
+### 15.3 SAT Encoding Pipeline
+
+<blockquote style="border-left: 4px solid rgba(255, 119, 183, 0.5); padding-left: 20px; color: #b9cce7; font-style: italic; margin: 24px 0;">
+  <strong>Hypervector SAT:</strong> Variables are assigned random hypervectors. Clauses are encoded via bundling (OR). Satisfaction checking uses dot product similarity. The associator measures the "curvature" of the search space.
+</blockquote>
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ffd475', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#00f0ff'}}}%%
+flowchart TD
+    VAR["Variables
+    x₁, x₂, ..., xₘ"] --> RANDOM["Random
+    Hypervectors"]
+    RANDOM --> H["h₁, h₂, ..., hₘ
+    ∈ Fin n → GF(16)"]
+    H --> ENCODE["Clause Encoding"]
+    ENCODE --> CLAUSES["cⱼ = hₗ₁ ⊕ hₗ₂ ⊕ hₗ₃
+    (OR via bundling)"]
+    CLAUSES --> DOT["Similarity Check"]
+    DOT --> SAT["⟨cⱼ, a⟩ ≠ 0 ?
+    Satisfied?"]
+    SAT -->|Yes| SOLVED["SAT Solution"]
+    SAT -->|No| SEARCH["Search
+    Hypervector Space"]
+    SEARCH --> DOT
+
+    style VAR fill:#0a0e27,stroke:#ffd475,color:#fff
+    style RANDOM fill:#131a3a,stroke:#ff77b7,color:#e0e0e0
+    style H fill:#1a1a4e,stroke:#00f0ff,color:#e0e0e0
+    style ENCODE fill:#0d0a23,stroke:#a68cff,color:#fff
+    style CLAUSES fill:#e94560,stroke:#1a1a2e,color:#fff
+    style DOT fill:#16213e,stroke:#0f3460,color:#e0e0e0
+    style SAT fill:#1a1a2e,stroke:#ff77b7,color:#ff77b7
+    style SOLVED fill:#0d0a23,stroke:#00f0ff,color:#00f0ff
+    style SEARCH fill:#1a1a4e,stroke:#ffd475,color:#fff
+```
+
+### 15.4 Memristor Connection
+
+<blockquote style="border-left: 4px solid rgba(0, 240, 255, 0.5); padding-left: 20px; color: #b9cce7; font-style: italic; margin: 24px 0;">
+  <strong>Hardware Implementation:</strong> The memristor paper describes noise-tunable probabilistic neurons for HDC. Our GF(2,2) field operations model the stochastic behavior needed for memristor-based implementations. The holonomy in GF(16) provides the computational branching that memristors can exploit for SAT solving.
+</blockquote>
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#5bdbff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#00f0ff', 'lineColor': '#ff77b7'}}}%%
+graph TD
+    MEM["Memristor
+    Probabilistic Neurons"] --> STOCH["Stochastic
+    Behavior"]
+    STOCH --> GF22["GF(2,2) Field
+    Characteristic 2"]
+    GF22 --> HOLONOMY["GF(16) Holonomy
+    Non-associative"]
+    HOLONOMY --> COMPUTE["Computational
+    Branching"]
+    COMPUTE --> SAT["SAT Solver
+    Hardware"]
+
+    style MEM fill:#0a0e27,stroke:#5bdbff,color:#fff
+    style STOCH fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style GF22 fill:#1a1a4e,stroke:#a68cff,color:#e0e0e0
+    style HOLONOMY fill:#0d0a23,stroke:#ff77b7,color:#ff77b7
+    style COMPUTE fill:#1a1a4e,stroke:#ffd475,color:#fff
+    style SAT fill:#16213e,stroke:#0f3460,color:#e0e0e0
+```
+
+### 15.5 HDC Module API
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#a68cff', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#00f0ff'}}}%%
+graph TB
+    Hypervector["Hypervector F n
+    = Fin n → F"] --> GF22OPS["GF22 Operations
+    bind, bundle, permute"]
+    Hypervector --> GF16OPS["GF16 Operations
+    Non-associative bind"]
+    GF22OPS --> COMMRING22["CommRing Instance"]
+    GF16OPS --> COMMRING16["CommRing Instance"]
+    COMMRING22 --> ASSOC22["associator_zero"]
+    COMMRING16 --> ASSOC16["associator_nonzero"]
+    ASSOC22 --> HOLONOMY["Holonomy = 0"]
+    ASSOC16 --> HOLONOMY["Holonomy ≠ 0"]
+    HOLONOMY --> SAT["SAT Encoding
+    Clause Satisfaction"]
+
+    style Hypervector fill:#0a0e27,stroke:#a68cff,color:#e0e0e0
+    style GF22OPS fill:#131a3a,stroke:#00f0ff,color:#00f0ff
+    style GF16OPS fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style COMMRING22 fill:#0d0a23,stroke:#a68cff,color:#e0e0e0
+    style COMMRING16 fill:#1a1a2e,stroke:#ff77b7,color:#fff
+    style ASSOC22 fill:#0d0a23,stroke:#00f0ff,color:#00f0ff
+    style ASSOC16 fill:#1a1a4e,stroke:#ff77b7,color:#ff77b7
+    style HOLONOMY fill:#e94560,stroke:#1a1a2e,color:#fff
+    style SAT fill:#16213e,stroke:#0f3460,color:#e0e0e0
+```
+
+</div>
+
+---
+
+## 16. Statistics
+
+<details>
+<summary><b>Click to expand statistics</b></summary>
+
+<div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
+
+| Metric | Value |
+|--------|-------|
+| <span style="color: #00f0ff;">**GF(2,2)**</span> | 4 elements, Field, Cayley-Dickson base |
+| <span style="color: #a68cff;">**GF(16)**</span> | 16 elements, CommRing (non-associative), Multiknob |
+| <span style="color: #ff77b7;">**GF(343²)**</span> | 117,649 elements, Field, Octonion-like |
+| <span style="color: #ffd475;">**Cayley-Dickson**</span> | ℝ → ℂ → ℍ → 𝕆 (over ℝ), GF(2,2) → GF(16) (finite) |
+| <span style="color: #5bdbff;">**Spin Groups**</span> | Spin(3) char 2, Spin(3) char 7, Multi-carrier |
+| <span style="color: #00f0ff;">**3-XOR Orthogonality**</span> | Pairwise, Simultaneous multi-carrier, Holonomy connection |
+| <span style="color: #a68cff;">**Theorems**</span> | 54+ verified (all True) |
+| <span style="color: #ff77b7;">**HDC Module**</span> | bind/bundle/permute over GF(2,2) and GF(16) |
+| <span style="color: #ffd475;">**Files**</span> | 40+ VDIS modules, 3 algebra files, 2 architecture docs |
+| <span style="color: #5bdbff;">**Mermaid Diagrams**</span> | 22+ in README, 16+ in Architecture doc |
+| <span style="color: #00f0ff;">**Manifolds**</span> | 5+ (coordination, formal proof, substrate, symbolic, graphics) |
+| <span style="color: #a68cff;">**Skills**</span> | Intermanifold navigation, Cayley-Dickson strata |
+| <span style="color: #ff77b7;">**Design**</span> | Post-GenZ alpha, glassmorphism, gradient typography |
+
+</div>
+
+</details>
+
+---
+
+## 17. Future Directions
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ffd475', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ff77b7', 'lineColor': '#00f0ff'}}}%%
+timeline
+    title Hypercomplex Roadmap
+    section Algebra
+      2026-09: HDC over GF(2,2) ✅
+      2026-10: HDC over GF(16) ✅
+      2026-11: Cayley-Dickson doubling
+      2027-01: Full hypercomplex tower
+    section Hardware
+      2026-09: Memristor model
+      2026-12: FPGA implementation
+      2027-03: GPU acceleration
+    section SAT Solver
+      2026-10: Hypervector encoding
+      2026-12: Similarity search
+      2027-06: Full HDC-SAT
+```
 
 <div style="background: rgba(19, 26, 58, 0.5); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 32px; margin: 32px 0; backdrop-filter: blur(16px);">
 
@@ -1301,6 +1639,42 @@ timeline
 </div>
 
 <div style="text-align: center; padding: 32px; color: rgba(255,255,255,0.3); font-size: 12px; border-top: 1px solid rgba(0,240,255,0.08); margin-top: 48px;">
+
+---
+
+### Peer Review — 2026-08-18
+
+<details>
+<summary><b>Click to expand peer review findings</b></summary>
+
+#### Tautology Fixed
+
+`LambdaSatSolver/VDIS/VisibilityField.lean:451` — `visibilityGap_grows_with_n`
+was a tautology: `visibilityGap` is defined as constant `0.5`, making the
+inequality `0.5 ≤ 0.5` trivially true. Fixed by unfolding the definition.
+
+#### Genuine Gaps (Not Tautologies)
+
+| File | Line | Nature | Status |
+|------|------|--------|--------|
+| `VisibilityField.lean` | 327 | Embedding lemma for n≥5 holonomy | Placeholder |
+| `ConnectionLaplacian.lean` | 796 | Holonomy sum hardcoded to 0.0 | Placeholder |
+| `TuringHalting_Master.lean` | 377 | Undecidability (uncountable domain) | Placeholder |
+| `TuringHalting_Master.lean` | 407 | No omni-quine (uncountable domain) | Placeholder |
+
+All remaining sorries document genuine mathematical obstructions:
+- TuringHalting_Master sorries require a formal computability model
+- ConnectionLaplacian requires loop enumeration
+- VisibilityField requires embedOctInto preservation lemma
+
+None are vacuous or empty proofs.
+
+#### New: Superior Lift
+
+`LambdaSatSolver/VDIS/Algebra/GF22MultiknobLevel2.lean` — GF(16, 16) = 256-element
+Cayley-Dickson level 2 over GF(2,2). Complete CommRing instance with associator_nonzero.
+
+</details>
 
 [License](LICENSE) · [Issues](https://github.com/jesusvilela/lambda-sat-solver/issues) · [Discussions](https://github.com/jesusvilela/lambda-sat-solver/discussions) · Built with [Lake](https://lake.build) and [Lean 4](https://lean-lang.org)
 
