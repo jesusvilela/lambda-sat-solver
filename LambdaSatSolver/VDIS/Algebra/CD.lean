@@ -498,19 +498,21 @@ theorem CayleyDicksonRecurrenceLow (level : ℕ) (hpos : 0 < level) (hlevel : le
         ring
     simpa [mulByLevel, conjByLevel] using h
   · -- level = 2: ℍ
+    -- x₀, x₁, y₀, y₁ are Fin 2 → ℝ (ℂ elements), so sub-component multiplication is mulComplex
     have h : mulQuat (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
-      embedFirst (mulQuat x₀ y₀ - mulQuat (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
-      embedSecond (mulQuat (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulQuat y₀ x₁) := by
+      embedFirst (mulComplex x₀ y₀ - mulComplex (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
+      embedSecond (mulComplex (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulComplex y₀ x₁) := by
       ext i; fin_cases i <;>
-        simp [mulQuat, embedFirst, embedSecond] <;>
+        simp [mulQuat, embedFirst, embedSecond, Pi.add_apply, Pi.sub_apply, Pi.mul_apply] <;>
         ring
     simpa [mulByLevel, conjByLevel] using h
   · -- level = 3: 𝕆
+    -- x₀, x₁, y₀, y₁ are Fin 4 → ℝ (ℍ elements), so sub-component multiplication is mulQuat
     have h : mulOct (embedFirst x₀ + embedSecond x₁) (embedFirst y₀ + embedSecond y₁) =
-      embedFirst (mulOct x₀ y₀ - mulOct (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
-      embedSecond (mulOct (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulOct y₀ x₁) := by
+      embedFirst (mulQuat x₀ y₀ - mulQuat (fun i => if i.val = 0 then y₁ i else -y₁ i) x₁) +
+      embedSecond (mulQuat (fun i => if i.val = 0 then x₀ i else -x₀ i) y₁ + mulQuat y₀ x₁) := by
       ext i; fin_cases i <;>
-        simp [mulOct, embedFirst, embedSecond] <;>
+        simp [mulOct, embedFirst, embedSecond, Pi.add_apply, Pi.sub_apply, Pi.mul_apply] <;>
         ring
     simpa [mulByLevel, conjByLevel] using h
 
