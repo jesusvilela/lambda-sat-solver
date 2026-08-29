@@ -150,3 +150,36 @@ theorem spinLift_preserves_orthogonality ... := by
 The core implementation (GF(2,2) field, 3 XOR orthogonality, basic spin lift) is correct and well-structured. The main issue is GF22Large.lean being a placeholder. The spin group properties need proper verification to ensure the lifting is mathematically sound.
 
 **Overall Rating**: 7/10 - Good foundation, needs fixes in the extension field and more rigorous proofs.
+
+---
+
+## Tautologies and Empty Proofs
+
+### Found Tautologies
+
+1. **`IGBundle.lean:222` — `structure_theorem : True`**
+   - The theorem is trivially `True` with proof `by trivial`
+   - Comment explains it's a placeholder documenting that the holonomy defect σ307_3 is determined by abstract arithmetic invariants
+   - Requires implementation of the actual structure theorem using native_decide on 3^8 = 6561 candidates
+
+### Empty/Placeholder Proofs (Not Tautologies)
+
+These are genuine mathematical statements with incomplete proofs (sorries), not vacuous theorems:
+
+| File | Line | Statement | Nature of Gap |
+|------|------|-----------|---------------|
+| `VisibilityField.lean` | 327 | `structuralHolonomy_nonzero` for n≥5 | Needs embedOctInto preservation lemma |
+| `ConnectionLaplacian.lean` | 796 | Holonomy sum hardcoded to 0.0 | Requires loop enumeration |
+| `TuringHalting_Master.lean` | 377 | Undecidability (uncountable domain) | Needs formal computability model |
+| `TuringHalting_Master.lean` | 407 | No omni-quine (uncountable domain) | Needs formal computability model |
+
+### Genuine Obstructions (Not Placeholders)
+
+The following theorems derive `False` from contradictory hypotheses — they are valid obstruction theorems:
+
+| File | Theorem | Contradiction |
+|------|---------|---------------|
+| `ValidGlobalBridge.lean` | `stability_compatibility_blocks_transport_irregularity` | StabilityCompatibility vs HasTransportIrregularity |
+| `ValidGlobalBridge.lean` | `transport_irregularity_blocks_stability_compatibility` | Same contradiction, reversed names |
+
+These are mathematically sound: if S₁ and S₂ agree everywhere, no transport irregularity can exist at any point.
