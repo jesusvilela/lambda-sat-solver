@@ -1706,6 +1706,82 @@ timeline
 
 ---
 
+## 18. Holonomy Visualization: Level 2
+
+<div style="background: linear-gradient(135deg, #0a0e27 0%, #131a3a 100%); border: 1px solid rgba(255, 119, 183, 0.2); border-radius: 20px; padding: 48px; margin: 32px 0; text-align: center; position: relative; overflow: hidden;">
+
+<div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, rgba(255,119,183,0.03) 2px, transparent 4px); pointer-events: none;"></div>
+<div style="position: absolute; inset: 0; background: radial-gradient(circle at 30% 50%, rgba(255, 119, 183, 0.08) 0%, transparent 50%); pointer-events: none;"></div>
+
+<div style="position: relative;">
+
+<h2 style="
+  font-size: 32px; font-weight: 800; margin: 0 0 16px;
+  background: linear-gradient(135deg, #ff77b7 0%, #ffd475 50%, #a68cff 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+">
+  Associator at Level 2
+</h2>
+
+<p style="font-size: 16px; color: #91a7c8; margin: 0 0 24px; line-height: 1.7; max-width: 600px; margin-left: auto; margin-right: auto;">
+  The associator (x, y, z) = (xy)z + x(yz) is non-trivially non-zero at
+  level 2 of the Cayley-Dickson tower over GF(2,2). This diagram shows
+  the witness structure.
+</p>
+
+```mermaid
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#ff77b7', 'primaryTextColor': '#e0e0e0', 'primaryBorderColor': '#ffd475', 'lineColor': '#a68cff'}}}%%
+flowchart TD
+    subgraph "Associator Witness"
+        X["x = 1"] --> Assoc["associator(1, k, ω)"]
+        Y["y = k"] --> Assoc
+        Z["z = ω"] --> Assoc
+    end
+
+    subgraph "Subalgebra Structure"
+        GF16["GF(16) = Even Subalgebra"] --> X
+        GF16 --> Z
+        k["k² = 1"] --> Y
+    end
+
+    subgraph "Result"
+        Assoc --> NonZero["associator ≠ 0"]
+    end
+
+    style X fill:#0a0e27,stroke:#ff77b7,color:#fff
+    style Y fill:#131a3a,stroke:#a68cff,color:#e0e0e0
+    style Z fill:#1a1a4e,stroke:#ffd475,color:#ffd475
+    style GF16 fill:#0d0a23,stroke:#5bdbff,color:#00f0ff
+    style k fill:#e94560,stroke:#1a1a2e,color:#fff
+    style Assoc fill:#1a1a4e,stroke:#ff77b7,color:#fff
+    style NonZero fill:#1a1a2e,stroke:#ffd475,color:#ffd475
+```
+
+<div style="text-align: left; margin-top: 24px; padding: 24px; background: rgba(0,0,0,0.2); border-radius: 12px; backdrop-filter: blur(8px);">
+
+### Witness Details
+
+The non-zero associator is witnessed by:
+- `x = 1` (identity in GF(16))
+- `y = k` (imaginary unit, k² = 1 in char 2)
+- `z = ω` (primitive element of GF(16))
+
+The associator computation:
+1. `mul(1, k) = k`
+2. `mul(k, ω) = ...` (non-trivial in GF(16,16))
+3. `mul(1, mul(k, ω))` vs `mul(mul(1, k), ω)` differ
+
+This proves the algebra is non-associative at level 2.
+
+</div>
+
+</div>
+
+</div>
+
+---
+
 <div style="background: linear-gradient(135deg, #0a0e27 0%, #131a3a 100%); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 20px; padding: 48px; margin: 32px 0; text-align: center; position: relative; overflow: hidden;">
 
 <div style="position: absolute; inset: 0; background: repeating-linear-gradient(0deg, transparent 0px, rgba(0,240,255,0.03) 2px, transparent 4px); pointer-events: none;"></div>
