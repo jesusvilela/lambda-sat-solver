@@ -260,3 +260,118 @@ The lambda-sat-solver project can be hardened by applying:
 
 Apply the "DOUBT → MEASURE → TEST → REVERT → REPEAT" cycle to every theorem,
 and the project will become increasingly robust against false claims.
+
+---
+
+## 6. Additional Falsification Conditions
+
+### GF(2,2) Algebra (GF22.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `mul_invariant` | If x ≠ 0, there exists y such that x*y = 1. Counterexample: check if any non-zero element lacks an inverse. |
+| `add_self_eq_zero` | x + x = 0 for all x. Counterexample: find any x where x + x ≠ 0. In char 2, this should always hold. |
+| `sub_eq_add` | x - y = x + y. Counterexample: find any x, y where x - y ≠ x + y. In char 2, this should always hold. |
+| `frobenius_add` | (x + y)² = x² + y². Counterexample: find any x, y where (x + y)² ≠ x² + y². In char 2, Frobenius should hold. |
+| `omega_sq` | ω² = ω + 1. Counterexample: compute ω² and check if it equals ω + 1. |
+| `omega_cube` | ω³ = 1. Counterexample: compute ω³ and check if it equals 1. |
+
+### GF(16) Multiknob (GF22Multiknob.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `j_squared` | k² = 1. Counterexample: compute mul(encode zero one, encode zero one) and check if it equals one. |
+| `not_a_domain` | There exist non-zero x, y such that x*y = 0. Counterexample: find any pair of non-zero elements whose product is zero. |
+| `associator_nonzero` | There exist x, y, z such that (xy)z ≠ x(yz). Counterexample: try basis elements 1, j, ω. |
+| `exists_nontrivial_halting` | There exists T with >1 fixed point. Counterexample: find any T with exactly 1 fixed point. |
+| `every_element_is_a_plus_bj` | Every element can be written as a + bj. Counterexample: find any element that cannot be decomposed. |
+
+### GF(16,16) Superior Lift (GF22MultiknobLevel2.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `k_squared` | k² = 1. Counterexample: compute mul(encode zero one, encode zero one) and check if it equals one. |
+| `not_a_domain` | There exist non-zero x, y such that x*y = 0. Counterexample: find any pair of non-zero elements whose product is zero. |
+| `even_mul_closed` | Even elements are closed under multiplication. Counterexample: find even elements whose product is odd. |
+| `associator_nonzero` | There exist x, y, z such that (xy)z ≠ x(yz). Counterexample: try basis elements 1, k, ω from GF(16). |
+| `exists_nontrivial_halting` | There exists T with >1 fixed point. Counterexample: find any T with exactly 1 fixed point. |
+| `every_element_is_a_plus_bk` | Every element can be written as a + bk. Counterexample: find any element that cannot be decomposed. |
+
+### Turing/Halting (TuringHalting_LeanLake.lean, AcafQuine.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `haltingSet_e1_eq_zero` | The halting set of e₁ is {0}. Counterexample: find any non-zero element in the halting set. |
+| `trivial_quine` | 0 is a quine. Counterexample: check if 0*0 = 0 (it should, but verify). |
+| `hybrid_not_idempotent` | hybridProgram * hybridProgram ≠ hybridProgram. Counterexample: find if it is idempotent. |
+| `hybrid_nontrivial_halting` | hybridProgram has nontrivial halting set. Counterexample: find if it has only 1 fixed point. |
+| `hybrid_not_subalgebra` | The halting set is not a subalgebra. Counterexample: find two fixed points whose product is not fixed. |
+| `hybrid_nonassoc` | The associator of hybridProgram is non-zero. Counterexample: compute associator(hybrid, hybrid, hybrid) and check if it's zero. |
+| `hybrid_is_acaf_quine` | hybridProgram is an ACAF quine. Counterexample: show it doesn't satisfy the ACAF quine conditions. |
+| `hybrid_actor_gap_nonzero` | actorGap(hybridProgram) ≠ 0. Counterexample: compute actorGap and check if it's zero. |
+
+### Quine Family (QuineFamily.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `family_in_tangent_screen` | Each family member is in the tangent screen. Counterexample: find a k where familyMember k ∉ tangentScreen. |
+| `family_not_idempotent` | Each family member is not idempotent. Counterexample: find a k where familyMember k * familyMember k = familyMember k. |
+| `family_nontrivial_halting` | Each family member has nontrivial halting. Counterexample: find a k with only 1 fixed point. |
+| `family_not_subalgebra` | Each family member's halting set is not a subalgebra. Counterexample: find a k where the halting set is closed under multiplication. |
+| `family_nonassoc` | Each family member has non-zero associator. Counterexample: find a k where associator(familyMember k, familyMember k, familyMember k) = 0. |
+| `family_is_acaf_quine` | Each family member is an ACAF quine. Counterexample: show any family member doesn't satisfy ACAF quine conditions. |
+| `family_card` | There are exactly 7 family members. Counterexample: find any duplicate or missing member. |
+| `family_members_distinct` | All 7 family members are distinct. Counterexample: find k ≠ ℓ where familyMember k = familyMember ℓ. |
+
+### Hypercomplex Mind Games (HypercomplexMindGames.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `ij_eq_k` | qi * qj = qk. Counterexample: compute qi * qj and check if it equals qk. |
+| `ji_eq_negk` | qj * qi = -qk. Counterexample: compute qj * qi and check if it equals -qk. |
+| `order_holonomy` | qi * qj ≠ qj * qi. Counterexample: find if they commute (they shouldn't). |
+
+### Visibility Field (VisibilityField.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `backbone_card` | The structural backbone has cardinality 3. Counterexample: count the elements and show it's not 3. |
+| `visibilityFieldCD_zero` | visibilityFieldCD n r = 0.0 for n ≥ 3. Counterexample: find any n ≥ 3, r where it's not zero. |
+
+### IG Bundle (IGBundle.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `σ307_nonneg` | σ307 T1 T2 ≥ 0 for all T1, T2. Counterexample: find any T1, T2 where σ307 < 0. |
+| `transfer_invariant` | σ307 T T = σ307 (hyperbolicSwap T) (hyperbolicSwap T). Counterexample: find any T where this fails. |
+
+### Tangent Holographic Screen (TangentHolographicScreen.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `family_in_screen` | All family members are in the tangent screen. Counterexample: find any k where familyMember k ∉ tangentHolographicScreen. |
+| `screen_is_translate` | tangentHolographicScreen = {v | v 0 = 0.0} + {fun _ => 1.0}. Counterexample: find any vector in the screen that doesn't match this form. |
+| `screen_is_hyperplane` | Same as screen_is_translate. Counterexample: find any vector in the screen that doesn't match this form. |
+
+### Dirac (Dirac.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `inner_symm` | inner x y = inner y x. Counterexample: find any x, y where this fails (it should always hold). |
+
+### Turing Halting Master (TuringHalting_Master.lean)
+
+| Theorem | Falsification Condition |
+|---------|------------------------|
+| `bool_not_fixed_point_of_not` | !b ≠ b for all b. Counterexample: find any b where !b = b (this should never happen). |
+
+### General Hardening Checklist
+
+For every theorem in the project, apply:
+
+- [ ] Can I compute a concrete counterexample?
+- [ ] Does the proof use `native_decide` on finite types? (If so, it's verifiable)
+- [ ] Does the proof use `sorry`? (If so, it's a placeholder)
+- [ ] Does the proof use circular reasoning? (Check that hypotheses aren't derived from the conclusion)
+- [ ] Is the theorem falsifiable? (Can I state what would make it false?)
+- [ ] Is there independent evidence? (Not just the proof itself)
