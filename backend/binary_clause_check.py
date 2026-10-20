@@ -25,8 +25,12 @@ same SCC, the formula forces that variable to be both true and false:
 proof of UNSAT from the binary clauses alone, independent of Kissat,
 independent of DRAT/proof-checker availability.
 
-Scope: this only inspects 2-literal clauses. A formula can be
-consistent on its binary clauses but still UNSAT overall (the
+Unit clauses (a) are folded in as (a OR a), i.e. the single edge
+not(a) -> a, so chains like x1, x1->x2->...->xn, not(xn) are refuted
+too; an empty clause is reported inconsistent outright.
+
+Scope: this only inspects clauses of at most 2 literals. A formula can be
+consistent on those clauses but still UNSAT overall (the
 contradiction may only emerge from longer clauses) - in that case this
 reports "consistent" and simply doesn't apply. It is a sound partial
 certificate for UNSAT, not a full decision procedure.
@@ -46,8 +50,11 @@ class BinaryClauseCheckResult:
 
     consistent: bool
     num_binary_clauses: int
-    #: 1-indexed variable forced to be both true and false; set iff not consistent
+    #: 1-indexed variable forced to be both true and false; set when not
+    #: consistent, except when the conflict is an empty clause (then None)
     conflicting_variable: Optional[int] = None
+    #: number of unit clauses folded into the implication graph
+    num_unit_clauses: int = 0
 
 
 def _literal_node(lit: int) -> int:
@@ -108,10 +115,10 @@ def _kosaraju_scc(graph: List[List[int]], num_nodes: int) -> List[int]:
 
 
 def check_binary_clauses(formula: CNFFormula) -> BinaryClauseCheckResult:
-    """Check whether the formula's 2-literal clauses are jointly consistent.
+    """Check whether the formula's clauses of <= 2 literals are jointly consistent.
 
     Args:
-        formula: CNF formula (only its binary clauses are inspected)
+        formula: CNF formula (only its empty, unit and binary clauses are inspected)
 
     Returns:
         BinaryClauseCheckResult; `consistent=False` is a sound proof that
@@ -119,9 +126,19 @@ def check_binary_clauses(formula: CNFFormula) -> BinaryClauseCheckResult:
         fails), independent of Kissat or proof checking.
     """
     binary_clauses = [c for c in formula.clauses if len(c) == 2]
+    unit_clauses = [c for c in formula.clauses if len(c) == 1]
     num_nodes = 2 * formula.num_vars
 
+    if any(len(c) == 0 for c in formula.clauses):
+        return BinaryClauseCheckResult(
+            consistent=False,
+            num_binary_clauses=len(binary_clauses),
+            num_unit_clauses=len(unit_clauses),
+        )
+
     graph: List[List[int]] = [[] for _ in range(num_nodes)]
+    for (a,) in unit_clauses:                       # (a) == (a OR a): not(a) -> a
+        graph[_negate_node(_literal_node(a))].append(_literal_node(a))
     for clause in binary_clauses:
         a, b = clause
         na = _negate_node(_literal_node(a))
@@ -137,9 +154,11 @@ def check_binary_clauses(formula: CNFFormula) -> BinaryClauseCheckResult:
                 consistent=False,
                 num_binary_clauses=len(binary_clauses),
                 conflicting_variable=v,
+                num_unit_clauses=len(unit_clauses),
             )
 
     return BinaryClauseCheckResult(
         consistent=True,
         num_binary_clauses=len(binary_clauses),
+        num_unit_clauses=len(unit_clauses),
     )

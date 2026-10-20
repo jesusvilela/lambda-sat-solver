@@ -322,31 +322,46 @@ def frame_solve_coupled(formula: CNFFormula, max_rounds: int = 64) -> CoupledRes
 # tunnel at ~3.3x speedup. The Charter way: the cheaper detector wins, measured.
 # --------------------------------------------------------------------------
 def _no_exploitable_structure(formula: CNFFormula, xr: XORExtractionResult) -> bool:
-    """Cheap sufficient condition for TUNNEL: no XOR groups AND no pigeonhole-shaped
-    counting structure (an all-positive ALO clause together with a negative-binary
-    AMO clause). When both are absent, neither the parity nor the counting frame can
-    bite, and with the 2-SAT frame already consistent the coupling cannot either --
-    so the coupled router would punt to CDCL anyway, only after wasted work."""
+    """Cheap sufficient condition for TUNNEL: none of the coupled router's moves can
+    bite. Requires ALL of:
+
+    - no XOR groups (the parity frame and parity propagation are empty);
+    - no unit clauses (with no units, unit propagation over the <=2-literal
+      clauses pins nothing, so the coupling has no entailed literals to exchange
+      -- a unit chain like x1, x1->...->xn, not(xn) is decided by that BCP);
+    - at least one all-positive clause (otherwise the coupling's all-False
+      completion already satisfies the formula and it would return SAT);
+    - no pigeonhole-shaped counting structure (an all-positive ALO clause together
+      with a negative-binary AMO clause).
+
+    When all hold, and the 2-SAT frame is already consistent, frame_solve_coupled
+    would punt to CDCL anyway, only after wasted work."""
     if xr.xors:
         return False
-    has_alo = any(c and all(l > 0 for l in c) for c in formula.clauses)
+    if any(len(c) <= 1 for c in formula.clauses):
+        return False
+    has_alo = any(all(l > 0 for l in c) for c in formula.clauses)
+    if not has_alo:
+        return False
     has_amo = any(len(c) == 2 and c[0] < 0 and c[1] < 0 for c in formula.clauses)
-    return not (has_alo and has_amo)
+    return not has_amo
 
 
 def frame_solve_scouted(formula: CNFFormula, use_scout: bool = True) -> CoupledResult:
     """Structure-gated coupled router. Same certified SAT/UNSAT verdicts as
-    `frame_solve_coupled`, but on a cheap TUNNEL signal (no XOR and no counting
-    structure) it skips the algebraic pre-pass and reports CDCL_NEEDED immediately
-    -- removing the wasted parity/coupling work on structureless instances
-    (measured ~3.3x faster on random-3SAT).
+    `frame_solve_coupled`, but on a cheap TUNNEL signal (no XOR, no unit clauses,
+    an all-positive clause, and no counting structure) it skips the algebraic
+    pre-pass and reports CDCL_NEEDED immediately -- removing the wasted
+    parity/coupling work on structureless instances (measured ~3.3x faster on
+    random-3SAT).
 
     Soundness: the gate only ever short-circuits the CDCL_NEEDED *punt* (which
     frame_solve_coupled also returns on these instances, just after more work); it
     never turns a frame SAT/UNSAT into a punt. The 2-SAT frame (near-free, sound) is
-    always taken first, and any XOR- or counting-shaped instance fails the gate and
-    gets the full coupling. Differential-tested against frame_solve_coupled
-    (0 verdict mismatches, 0 frame-wins lost) in tests/test_frame_solver.py."""
+    always taken first, and any XOR-, unit- or counting-shaped instance (or one the
+    all-False completion satisfies) fails the gate and gets the full coupling.
+    Differential-tested against frame_solve_coupled (0 verdict mismatches, 0
+    frame-wins lost) in tests/test_frame_solver.py."""
     if not check_binary_clauses(formula).consistent:
         return CoupledResult('UNSAT', '2sat', True, None, 0, 0)
     if use_scout and _no_exploitable_structure(formula, extract_xors(formula)):

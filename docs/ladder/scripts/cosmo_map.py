@@ -71,7 +71,7 @@ from backend.xor_extraction import extract_xors  # noqa: E402
 
 def _twosat_contradiction(k: int) -> CNFFormula:
     """Pure-BINARY 2-SAT contradiction (check_binary_clauses inspects only
-    2-literal clauses, so the certificate must live there). The core forces
+    clauses of <= 2 literals, so the certificate must live there). The core forces
     a <-> ¬a: a->b->¬a and ¬a->¬b->a put a and ¬a in one SCC. Extra variables
     are chained strongly-connected to grow the size axis without changing the
     verdict."""
