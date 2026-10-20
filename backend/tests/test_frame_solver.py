@@ -340,6 +340,28 @@ class TestScoutedGate:
         assert frame_solve_scouted(_tseitin_k4()).status == "UNSAT"
         assert frame_solve_scouted(pigeonhole(6)[0]).status == "UNSAT"
 
+    def test_gate_keeps_unit_chain_refutation(self):
+        # x1, x1 -> ... -> xn, ¬xn: must be refuted, never punted to CDCL
+        for n in (2, 5, 30):
+            clauses = [[1]] + [[-i, i + 1] for i in range(1, n)] + [[-n]]
+            f = CNFFormula(num_vars=n, clauses=clauses)
+            assert frame_solve_coupled(f).status == "UNSAT"
+            assert frame_solve_scouted(f).status == "UNSAT"
+
+    def test_gate_keeps_unit_driven_wide_clause_refutation(self):
+        # units pin x1..x3 false, falsifying the wide clause (x1 v x2 v x3):
+        # 2-SAT is consistent, but the coupling's BCP + simplify refutes it
+        f = CNFFormula(num_vars=3, clauses=[[-1], [-2], [-3], [1, 2, 3]])
+        assert frame_solve_coupled(f).status == "UNSAT"
+        assert frame_solve_scouted(f).status == "UNSAT"
+
+    def test_gate_keeps_all_false_sat(self):
+        # every clause has a negative literal: the all-False completion is a model
+        f = CNFFormula(num_vars=4, clauses=[[1, 2, -3], [-1, 3, 4], [2, -4, 3]])
+        assert frame_solve_coupled(f).status == "SAT"
+        sc = frame_solve_scouted(f)
+        assert sc.status == "SAT" and verify_model(f, sc.model)
+
 
 def _has_model(f: CNFFormula) -> bool:
     """Brute-force satisfiability check for small formulas (test oracle)."""

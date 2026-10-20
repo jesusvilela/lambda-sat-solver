@@ -79,3 +79,29 @@ class TestBinaryClauseCheck:
         result = check_binary_clauses(cnf)
         assert result.consistent is False
         assert result.conflicting_variable == 1
+
+    def test_unit_clauses_refute_implication_chain(self):
+        # x1, x1 -> x2 -> ... -> x5, ¬x5: units folded in as ¬a -> a edges
+        n = 5
+        clauses = [[1]] + [[-i, i + 1] for i in range(1, n)] + [[-n]]
+        result = check_binary_clauses(CNFFormula(num_vars=n, clauses=clauses))
+        assert result.consistent is False
+        assert result.conflicting_variable is not None
+        assert result.num_unit_clauses == 2
+        assert result.num_binary_clauses == n - 1
+
+    def test_contradictory_units(self):
+        result = check_binary_clauses(CNFFormula(num_vars=1, clauses=[[1], [-1]]))
+        assert result.consistent is False
+        assert result.conflicting_variable == 1
+
+    def test_consistent_units(self):
+        cnf = CNFFormula(num_vars=3, clauses=[[1], [-1, 2], [-3]])
+        result = check_binary_clauses(cnf)
+        assert result.consistent is True
+        assert result.num_unit_clauses == 2
+
+    def test_empty_clause_is_inconsistent(self):
+        result = check_binary_clauses(CNFFormula(num_vars=2, clauses=[[1, 2], []]))
+        assert result.consistent is False
+        assert result.conflicting_variable is None
