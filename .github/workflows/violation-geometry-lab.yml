@@ -32,7 +32,8 @@ jobs:
             backend/tests/test_violation_spectral_null.py \
             backend/tests/test_violation_cross_instance.py \
             backend/tests/test_violation_connection.py \
-            backend/tests/test_violation_orbit.py
+            backend/tests/test_violation_orbit.py \
+            backend/tests/test_violation_laplacian.py
       - name: Reproduce assignment-held-out controls
         run: |
           mkdir -p evidence
@@ -43,6 +44,9 @@ jobs:
           python docs/ladder/scripts/violation_orbit_probe.py \
             --seeds 12 --orbits 8 --null-swaps 32 --offsets 3 \
             --json > evidence/orbit_connection.json
+          python docs/ladder/scripts/violation_orbit_probe.py \
+            --seeds 32 --orbits 8 --null-swaps 32 --offsets 10 \
+            --json > evidence/orbit_connection_192.json
           python - <<'PY'
           import json
           import math
@@ -54,6 +58,10 @@ jobs:
               report = json.load(f)
           assert report["total_formulas"] == 72
           assert len(report["replicates"]) == 3
+          with open("evidence/orbit_connection_192.json", encoding="utf-8") as f:
+              large = json.load(f)
+          assert large["total_formulas"] == 192
+          assert len(large["replicates"]) == 10
           assert 0 <= report["mean_fraction_nulls_with_switches"] <= 1
           for target, predictors in report["averages"].items():
               assert target in ("overall_raw_mae", "overall_orbit_mae")
