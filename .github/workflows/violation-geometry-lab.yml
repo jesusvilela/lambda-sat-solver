@@ -33,7 +33,8 @@ jobs:
             backend/tests/test_violation_cross_instance.py \
             backend/tests/test_violation_connection.py \
             backend/tests/test_violation_orbit.py \
-            backend/tests/test_violation_laplacian.py
+            backend/tests/test_violation_laplacian.py \
+            backend/tests/test_violation_tseitin_boundary.py
       - name: Reproduce assignment-held-out controls
         run: |
           mkdir -p evidence
