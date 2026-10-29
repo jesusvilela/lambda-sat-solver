@@ -423,6 +423,7 @@ class TopologyReport:
     median_signed_increment_ms: float
     median_cdcl_ms: float
     evidence: str="M: budget-capped external CDCL stats; not a SAT certificate"
+    seed_start: int=0
 
 
 def _fold(label: str,train: Sequence[TopologyRecord],
@@ -436,17 +437,18 @@ def _fold(label: str,train: Sequence[TopologyRecord],
         _eval_fold(train,test,"capped_log_decisions"))
 
 
-def topology_benchmark(*,seeds: int=4,sizes: Sequence[int]=(48,72),
-                       orbits: int=3,budget: int=2000,swaps: int=160,
+def topology_benchmark(*,seeds: int=4,seed_start: int=0,
+                       sizes: Sequence[int]=(48,72),orbits: int=3,
+                       budget: int=2000,swaps: int=160,
                        solver_factory: Callable | None=None) -> TopologyReport:
-    if not 2<=seeds<=16 or not sizes or len(set(sizes))!=len(sizes):
+    if not 2<=seeds<=16 or not 0<=seed_start<=1000000 or not sizes or len(set(sizes))!=len(sizes):
         raise ValueError("invalid seed count or size list")
     if any(n<12 or n>144 or n%3 for n in sizes):
         raise ValueError("size must be multiple of 3 between 12 and 144")
     dataset=[]
     for family in FAMILIES:
         for n in sizes:
-            for seed in range(seeds):
+            for seed in range(seed_start,seed_start+seeds):
                 formula=generate_formula(family,n,seed)
                 dataset.append(measure_formula(formula,family,n,seed,
                     orbits=orbits,budget=budget,swaps=swaps,
@@ -473,4 +475,4 @@ def topology_benchmark(*,seeds: int=4,sizes: Sequence[int]=(48,72),
         sum(r.null_switches>0 for r in dataset)/len(dataset),
         median(r.baseline_ms for r in dataset),
         median(r.signed_plus_null_ms for r in dataset),
-        median(r.median_cdcl_wall_ms for r in dataset))
+        median(r.median_cdcl_wall_ms for r in dataset),seed_start=seed_start)
