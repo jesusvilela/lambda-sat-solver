@@ -122,6 +122,22 @@ def _loss(train: list[AugmentedRecord],
 
 
 @dataclass(frozen=True)
+class GF2Case:
+    family: str
+    size: int
+    seed: int
+    digest: str
+    frame_status: str
+    extracted_constraints: int
+    rank: int
+    features: tuple[float,...]
+    gf2_ms: float
+    capped_log_conflicts: float
+    call_statuses: tuple[str,...]
+    censored_calls: int
+
+
+@dataclass(frozen=True)
 class GF2Fold:
     heldout: str
     count: int
@@ -139,6 +155,7 @@ class GF2Report:
     family_holdouts: tuple[GF2Fold,...]
     largest_size_holdout: GF2Fold | None
     aggregate_mae: dict[str,float]
+    cases: tuple[GF2Case,...]
     median_gf2_ms: float
     median_cdcl_ms: float
     censored_call_fraction: float
@@ -179,8 +196,13 @@ def parity_holdout(*,seeds: int=6,seed_start: int=100,
     counts={name:sum(r.gf2.frame_status==name for r in dataset)
             for name in ("SAT","UNSAT","INCONCLUSIVE")}
     pure=sum(r.gf2.frame_status in ("SAT","UNSAT") for r in dataset)
+    cases=tuple(GF2Case(r.base.family,r.base.size,r.base.seed,r.base.digest,
+        r.gf2.frame_status,r.gf2.extracted_constraints,r.gf2.rank,
+        r.gf2.features,r.gf2.elapsed_ms,r.base.capped_log_conflicts,
+        tuple(call.status for call in r.base.calls),r.base.censored_calls)
+        for r in dataset)
     return GF2Report(len(dataset),seed_start,seeds,tuple(sizes),
         counts,pure,tuple(groups),sizefold,
-        {name:value/len(dataset) for name,value in totals.items()},
+        {name:value/len(dataset) for name,value in totals.items()},cases,
         median(r.gf2.elapsed_ms for r in dataset),
         original.median_cdcl_ms,original.censored_call_fraction,0)
