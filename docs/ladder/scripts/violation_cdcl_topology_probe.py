@@ -26,6 +26,7 @@ from backend.violation_cdcl_topology import PREDICTORS, topology_benchmark
 def main() -> None:
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument("--seeds",type=int,default=4,help="2..16 independent formula seeds")
+    p.add_argument("--seed-start",type=int,default=0,help="first formula seed; use disjoint starts for new corpora")
     p.add_argument("--sizes",type=int,nargs="+",default=[48,72,96],
                    help="declared variable counts, each divisible by 3")
     p.add_argument("--orbits",type=int,default=3,help="1..8 signed relabelings per CNF")
@@ -33,7 +34,8 @@ def main() -> None:
     p.add_argument("--swaps",type=int,default=160,help="support-rewiring null attempts")
     p.add_argument("--json",action="store_true")
     args=p.parse_args()
-    report=topology_benchmark(seeds=args.seeds,sizes=args.sizes,orbits=args.orbits,
+    report=topology_benchmark(seeds=args.seeds,seed_start=args.seed_start,
+                              sizes=args.sizes,orbits=args.orbits,
                               budget=args.budget,swaps=args.swaps)
     try:
         pysat_version=version("python-sat")
