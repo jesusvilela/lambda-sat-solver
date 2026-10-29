@@ -6,6 +6,8 @@
 
 Headless. No web UI. No *trust-me*.
 
+> **Experimental development branch — ETH × Kakeya incidence:** the [finite cross-instance report](docs/ladder/VIOLATION_CROSS_INSTANCE_REPORT.md) keeps a **negative** result visible: after holding out entire small CNF families, learned overlap and signed-cycle statistics do not outperform classical structural predictors of a reference DPLL's search nodes. Mathematical invariants are not algorithmic speedups. The [initial bridge](docs/ladder/ETH_KAKEYA_VIOLATION_GEOMETRY.md) is preserved, not rewritten to hide its limitations. No production solver decisions are changed.
+
 A λ-logic middleware for Boolean satisfiability that **verifies every verdict it emits** —
 SAT by model replay, UNSAT by an independent DRAT proof or a sound algebraic frame. On top
 of the solver sits a research program on the *intrinsic shape of SAT hardness*: three sound
