@@ -6,7 +6,7 @@
 
 Headless. No web UI. No *trust-me*.
 
-> **Experimental development branch — ETH × Kakeya incidence:** the [finite cross-instance report](docs/ladder/VIOLATION_CROSS_INSTANCE_REPORT.md) keeps a **negative** result visible: after holding out entire small CNF families, learned overlap and signed-cycle statistics do not outperform classical structural predictors of a reference DPLL's search nodes. Mathematical invariants are not algorithmic speedups. The [initial bridge](docs/ladder/ETH_KAKEYA_VIOLATION_GEOMETRY.md) is preserved, not rewritten to hide its limitations. No production solver decisions are changed.
+> **Experimental development branch — ETH × Kakeya incidence:** the [initial bridge](docs/ladder/ETH_KAKEYA_VIOLATION_GEOMETRY.md) and its [cross-instance negative result](docs/ladder/VIOLATION_CROSS_INSTANCE_REPORT.md) remain in the record. Our latest [signed-connection and observer-orbit audit](docs/ladder/VIOLATION_SIGNED_CONNECTION_ORBIT_REPORT.md) distinguishes two things: a finite, gauge-invariant graph Laplacian identity that can be proved, and a proposed SAT-hardness predictor that still loses to classical structure on held-out small formulas. A moving frame should not mistake the observer's variable ordering for the formula's intrinsic difficulty. These are research instruments, **not** new solver certificates or asymptotic hardness results; no production decision path is changed.
 
 A λ-logic middleware for Boolean satisfiability that **verifies every verdict it emits** —
 SAT by model replay, UNSAT by an independent DRAT proof or a sound algebraic frame. On top
