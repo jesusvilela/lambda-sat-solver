@@ -45,6 +45,6 @@ This requires neither Kissat nor drat-trim. All random sources are local and see
 
 These are toy cases. One family **ties** the random null. Twelve additional local assignment-split seeds show K4 beats the four-null mean on 6 splits and loses on 6, so there is no stable K4 advantage yet. Learned checks use labelled training assignments—unavailable to a scalable solver without equivalent work—so better hold-out rejection than random checks does not establish useful solver performance.
 
-## Next bridge, not yet built
+## Cross-instance continuation and correction (2026-10-29)
 
-Explore whether a pre-solve cheaply sampled violation proxy and normalized incidence spectrum improves ACAF's independent routing decisions. Evaluate on **new formulas** rather than merely new assignments of training formulas; hold out entire generators, match structural controls and CPU time, and record failure. Only after that investigate typed connection-Laplacian/curvature or Fourier-analytic transport. Do not promote conceptual correspondence to a theorem.
+The above proposed bridge has now been implemented and tested, including sampling, leave-one-generator-family-out ridge prediction, centered incidence, a signed triangle statistic and matched random controls. The result is **negative for the proposed hardness predictor in this bounded regime**: see [VIOLATION_CROSS_INSTANCE_REPORT.md](VIOLATION_CROSS_INSTANCE_REPORT.md) for full numbers, seed repetitions and Canary provenance. The finite parity and gauge identities survive; predictive advantage and scalability have not been established. Do not promote the earlier five-instance pilot into a solver result.
