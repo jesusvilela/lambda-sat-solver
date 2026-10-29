@@ -1,0 +1,45 @@
+name: violation-geometry-lab
+
+on:
+  push:
+    branches: ["dev/kakeya-violation-frame"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/violation_*.py"
+      - "backend/tests/test_violation_*.py"
+      - "docs/ladder/scripts/violation_*"
+      - "docs/ladder/*VIOLATION*"
+      - ".github/workflows/violation-geometry-lab.yml"
+
+jobs:
+  finite-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded probe dependencies
+        run: python -m pip install "numpy>=1.24" "pytest>=7.4"
+      - name: Run mathematical, sampling and isolation tests
+        run: |
+          python -m pytest -q \
+            backend/tests/test_violation_geometry.py \
+            backend/tests/test_violation_spectral_null.py \
+            backend/tests/test_violation_cross_instance.py
+      - name: Reproduce leave-one-family-out results and null controls
+        run: |
+          python docs/ladder/scripts/violation_cross_instance_probe.py --seed-count 12 --replicates 2 --json > /tmp/violation_geometry_report.json
+          python - <<'PY'
+          import json, math
+          with open("/tmp/violation_geometry_report.json", encoding="utf-8") as fh:
+              report = json.load(fh)
+          assert report["instances_per_replicate"] == 72
+          assert len(report["families"]) == 6
+          assert len(report["runs"]) == 2
+          for name, stats in report["aggregate"].items():
+              assert math.isfinite(stats["mean_mae_log2_nodes"]), name
+              assert stats["mean_mae_log2_nodes"] >= 0, name
+          print("Bounded hold-out report and controls are well formed; no solver speed claim.")
+          PY
