@@ -91,7 +91,7 @@ jobs:
           python -m pip install "numpy>=1.24" "pytest>=7.4" "networkx>=3.1" "python-sat>=1.8.dev10"
       - name: Verify genuinely distinct graphs and margin-preserving nulls
         run: |
-          python -m pytest -q backend/tests/test_violation_cdcl_topology.py
+          python -m pytest -q backend/tests/test_violation_cdcl_topology.py backend/tests/test_violation_cdcl_parity.py
       - name: Run conflict-capped Glucose4 topology transfer pilot
         run: |
           mkdir -p evidence
@@ -123,9 +123,46 @@ jobs:
           print("Censored fraction:",x["censored_call_fraction"])
           print("LOFO MAE:",x["aggregate_family_mae"])
           PY
+      - name: Disjoint-seed confirmation instrument and post-pilot GF2 control
+        run: |
+          python docs/ladder/scripts/violation_cdcl_topology_probe.py \
+            --seeds 6 --seed-start 100 --sizes 48 72 96 \
+            --orbits 3 --budget 5000 --swaps 160 --json \
+            > evidence/cdcl_disjoint.json
+          python docs/ladder/scripts/violation_cdcl_parity_probe.py \
+            --seeds 6 --seed-start 100 --sizes 48 72 96 \
+            --orbits 3 --budget 5000 --swaps 160 --json \
+            > evidence/cdcl_parity_disjoint.json
+          python - <<'PY'
+          import json, math
+          with open("evidence/cdcl_disjoint.json",encoding="utf-8") as fp:
+              original=json.load(fp)["report"]
+          with open("evidence/cdcl_parity_disjoint.json",encoding="utf-8") as fp:
+              parity=json.load(fp)["report"]
+          assert original["total_formulas"]==108
+          assert original["unique_labeled_formulas"]==108
+          assert parity["formulas"]==108
+          assert parity["status_counts"]["SAT"]==18
+          assert parity["status_counts"]["UNSAT"]==18
+          assert parity["status_counts"]["INCONCLUSIVE"]==72
+          assert parity["match_error_count"]==0
+          ref={(r["family"],r["size"],r["seed"]):r for r in original["records"]}
+          for case in parity["cases"]:
+              key=case["family"],case["size"],case["seed"]
+              assert case["digest"]==ref[key]["digest"]
+              assert case["capped_log_conflicts"]==ref[key]["capped_log_conflicts"]
+              assert case["call_statuses"]==[c["status"] for c in ref[key]["calls"]]
+          for name,value in parity["aggregate_mae"].items():
+              assert math.isfinite(value) and value>=0,name
+          print("Disjoint-seed CDCL and GF2 gate samples independently cross-checked.")
+          print("disjoint coverage:",original["censored_call_fraction"])
+          print("disjoint baseline:",original["aggregate_family_mae"])
+          print("post-pilot GF2 controls:",parity["aggregate_mae"])
+          print("median GF2 ms:",parity["median_gf2_ms"])
+          PY
       - name: Preserve CDCL evidence, including unsuccessful hypotheses
         uses: actions/upload-artifact@v4
         with:
           name: violation-cdcl-topology-evidence
-          path: evidence/cdcl_topology.json
+          path: evidence/*.json
           retention-days: 30
