@@ -25,6 +25,7 @@ class SignedConnection:
     negative_square_fraction: float
     square_density: float
     tautological_clauses: int
+    balanced_components: int
 
 
 def _rows(formula: CNFFormula) -> list[dict[int, int]]:
@@ -69,6 +70,7 @@ def signed_connection(formula: CNFFormula, *, max_wedges: int = 250000) -> Signe
             edge_count += 1
     components = 0
     balanced = True
+    balanced_components = 0
     spins = [0] * (n + m)
     for root in range(n + m):
         if spins[root]:
@@ -76,6 +78,7 @@ def signed_connection(formula: CNFFormula, *, max_wedges: int = 250000) -> Signe
         components += 1
         spins[root] = 1
         stack = [root]
+        component_balanced = True
         while stack:
             node = stack.pop()
             for neighbor, sign in adj[node]:
@@ -85,6 +88,8 @@ def signed_connection(formula: CNFFormula, *, max_wedges: int = 250000) -> Signe
                     stack.append(neighbor)
                 elif spins[neighbor] != expected:
                     balanced = False
+                    component_balanced = False
+        balanced_components += int(component_balanced)
     wedges = sum(len(v)*(len(v)-1)//2 for v in by_var)
     if wedges > max_wedges:
         raise ValueError('signed square wedge budget exceeded')
@@ -107,7 +112,7 @@ def signed_connection(formula: CNFFormula, *, max_wedges: int = 250000) -> Signe
                             balanced, four, neg_four,
                             neg_four / four if four else 0.0,
                             four / possible if possible else 0.0,
-                            taut_count)
+                            taut_count, balanced_components)
 
 
 def connection_features(sig: SignedConnection) -> tuple[float, ...]:
