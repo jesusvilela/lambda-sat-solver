@@ -78,3 +78,13 @@ def test_no_formula_labels_are_used_in_feature_extraction(monkeypatch):
     monkeypatch.setattr(mod, "_dpll_search_nodes", no_oracle)
     with pytest.raises(RuntimeError, match="target requested"):
         mod.record_formula(f, "random-3SAT", 0, budget=24, candidate_budget=96)
+
+
+def test_canary_low_degree_variance_is_not_a_symmetry_proof():
+    # Every variable has degree 3 and each clause has length 3.
+    # The canary's flavor threshold would call this Z2_x_Z2, but it has
+    # no complete XOR sign-pattern group at all.
+    f = CNFFormula(4, [[1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4]])
+    features = structural_features(f)
+    assert features[6] == 0.0  # degree coefficient of variation
+    assert features[8] == 0.0  # fraction of complete XOR clause patterns
