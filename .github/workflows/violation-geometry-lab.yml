@@ -76,3 +76,56 @@ jobs:
           name: violation-geometry-evidence
           path: evidence/*.json
           retention-days: 30
+
+
+  cdcl-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded research-only CDCL instrument
+        run: |
+          python -m pip install "numpy>=1.24" "pytest>=7.4" "networkx>=3.1" "python-sat>=1.8.dev10"
+      - name: Verify genuinely distinct graphs and margin-preserving nulls
+        run: |
+          python -m pytest -q backend/tests/test_violation_cdcl_topology.py
+      - name: Run conflict-capped Glucose4 topology transfer pilot
+        run: |
+          mkdir -p evidence
+          python docs/ladder/scripts/violation_cdcl_topology_probe.py \
+            --seeds 3 --sizes 48 72 --orbits 2 --budget 2000 --swaps 64 --json \
+            > evidence/cdcl_topology.json
+          python - <<'PY'
+          import json, math
+          with open("evidence/cdcl_topology.json",encoding="utf-8") as fp:
+              payload=json.load(fp)
+          x=payload["report"]
+          assert x["total_formulas"] == 36
+          assert x["unique_labeled_formulas"] == 36
+          assert len(x["family_holdouts"]) == 6
+          assert 0 <= x["censored_call_fraction"] <= 1
+          assert 0 <= x["null_nontrivial_fraction"] <= 1
+          for rec in x["records"]:
+              assert len(rec["calls"]) == 2
+              assert rec["null_switches"] >= 0
+              for call in rec["calls"]:
+                  assert call["status"] in ("SAT","UNSAT","UNKNOWN")
+                  if call["status"]=="SAT":
+                      assert call["valid_sat_model"] is True
+                  else:
+                      assert call["valid_sat_model"] is None
+          for name,value in x["aggregate_family_mae"].items():
+              assert math.isfinite(value) and value >= 0,name
+          print("External CDCL pilot complete, all models independently replayed.")
+          print("Censored fraction:",x["censored_call_fraction"])
+          print("LOFO MAE:",x["aggregate_family_mae"])
+          PY
+      - name: Preserve CDCL evidence, including unsuccessful hypotheses
+        uses: actions/upload-artifact@v4
+        with:
+          name: violation-cdcl-topology-evidence
+          path: evidence/cdcl_topology.json
+          retention-days: 30
