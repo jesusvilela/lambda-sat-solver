@@ -5,9 +5,12 @@ swarm); the easy tunnel goes to a SINGLE arm (no launch swarm); the hard tunnel 
 to a cores-sized diversified portfolio. Every verdict certified and agreeing with truth.
 """
 
+import shutil
 import sys
 from itertools import combinations, product
 from pathlib import Path
+
+import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "docs/ladder/scripts"))
 
@@ -18,6 +21,11 @@ from backend.acaf import (  # noqa: E402
 )
 from backend.cnf_utils import CNFFormula  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
+
+requires_kissat = pytest.mark.skipif(
+    shutil.which("kissat") is None,
+    reason="Kissat binary not available",
+)
 
 
 def _tseitin_k4():
@@ -116,11 +124,13 @@ class TestActorStages:
             assert r.status == "UNSAT" and r.certified
             assert r.stage == "frame" and r.winner == frame and r.breadth == 0
 
+    @requires_kissat
     def test_easy_tunnel_uses_a_single_arm_not_a_swarm(self):
         r = acaf_solve(random_3sat(140, round(4.26 * 140), 0), timeout_s=20)
         assert r.status in ("SAT", "UNSAT") and r.certified
         assert r.stage == "single" and r.breadth == 1        # no swarm overhead
 
+    @requires_kissat
     def test_hard_tunnel_escalates_to_cores_sized_portfolio(self):
         import os
         r = acaf_solve(random_3sat(280, round(4.26 * 280), 0), timeout_s=30)
