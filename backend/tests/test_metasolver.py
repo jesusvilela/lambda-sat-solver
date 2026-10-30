@@ -7,6 +7,7 @@ is certified and agrees with ground truth -- including the counting fragment whe
 CMS is exponential (the axis on which the metasolver beats it).
 """
 
+import shutil
 import sys
 from itertools import combinations, product
 from pathlib import Path
@@ -22,6 +23,11 @@ from backend.cnf_utils import CNFFormula, verify_model  # noqa: E402
 from backend.dynamics import describe  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.metasolver import metasolve  # noqa: E402
+
+requires_cdcl = pytest.mark.skipif(
+    not all(shutil.which(binary) for binary in ("kissat", "drat-trim")),
+    reason="Kissat and drat-trim are required for CDCL tests",
+)
 
 
 def _tseitin_k4():
@@ -91,12 +97,14 @@ class TestMetasolver:
         assert r.status == "UNSAT" and r.strategy == "counting" and r.certified
         assert r.seconds < 1.0
 
+    @requires_cdcl
     def test_tunnel_falls_to_certified_cdcl(self):
         r = metasolve(random_3sat(120, round(4.26 * 120), 0))
         assert r.status in ("SAT", "UNSAT")
         assert r.strategy in ("kissat", "cadical")
         assert r.certified                  # DRAT (UNSAT) or model replay (SAT)
 
+    @requires_cdcl
     def test_sat_verdicts_carry_verified_models(self):
         r = metasolve(random_3sat(40, 120, 3))
         if r.status == "SAT" and r.model is not None:

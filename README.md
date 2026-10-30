@@ -6,6 +6,8 @@
 
 Headless. No web UI. No *trust-me*.
 
+> **Experimental λSAT/ETH × Kakeya research branch:** the [initial violation-space hypothesis](docs/ladder/ETH_KAKEYA_VIOLATION_GEOMETRY.md), [negative DPLL cross-family results](docs/ladder/VIOLATION_CROSS_INSTANCE_REPORT.md), and [signed-orbit audit](docs/ladder/VIOLATION_SIGNED_CONNECTION_ORBIT_REPORT.md) remain visible. Our [Glucose4/GF(2) follow-up](docs/ladder/VIOLATION_CDCL_PARITY_ADDENDUM.md) holds out 108 new formulas: classical structural MAE 2.230, existing GF(2) rank/consistency MAE 1.312, and GF(2) plus signed connection MAE 1.262 (post-hoc exploratory; no routing speedup). The [constructive graph-boundary theorem and witness](docs/ladder/VIOLATION_TSEITIN_BOUNDARY_THEOREM.md) explain the actual global XOR obstruction, distinct from the real signed Laplacian or Euclidean Kakeya. All experiments are isolated from certified solver decisions; the [CI evidence](.github/workflows/violation-geometry-lab.yml) retains raw JSON and negative controls. No production paths or asymptotic complexity claims change.
+
 A λ-logic middleware for Boolean satisfiability that **verifies every verdict it emits** —
 SAT by model replay, UNSAT by an independent DRAT proof or a sound algebraic frame. On top
 of the solver sits a research program on the *intrinsic shape of SAT hardness*: three sound

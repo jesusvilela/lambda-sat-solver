@@ -1,0 +1,169 @@
+name: violation-geometry-lab
+
+on:
+  push:
+    branches: ["dev/kakeya-violation-frame"]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "backend/violation_*.py"
+      - "backend/tests/test_violation_*.py"
+      - "docs/ladder/scripts/violation_*"
+      - "docs/ladder/*VIOLATION*"
+      - ".github/workflows/violation-geometry-lab.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  finite-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded probe dependencies
+        run: python -m pip install "numpy>=1.24" "pytest>=7.4"
+      - name: Test mathematical invariants and observer isolation
+        run: |
+          python -m pytest -q \
+            backend/tests/test_violation_geometry.py \
+            backend/tests/test_violation_spectral_null.py \
+            backend/tests/test_violation_cross_instance.py \
+            backend/tests/test_violation_connection.py \
+            backend/tests/test_violation_orbit.py \
+            backend/tests/test_violation_laplacian.py \
+            backend/tests/test_violation_tseitin_boundary.py
+      - name: Reproduce assignment-held-out controls
+        run: |
+          mkdir -p evidence
+          python docs/ladder/scripts/violation_cross_instance_probe.py \
+            --seed-count 12 --replicates 2 --json > evidence/assignment_heldout.json
+      - name: Reproduce family-held-out signed-connection and orbit controls
+        run: |
+          python docs/ladder/scripts/violation_orbit_probe.py \
+            --seeds 12 --orbits 8 --null-swaps 32 --offsets 3 \
+            --json > evidence/orbit_connection.json
+          python docs/ladder/scripts/violation_orbit_probe.py \
+            --seeds 32 --orbits 8 --null-swaps 32 --offsets 10 \
+            --json > evidence/orbit_connection_192.json
+          python - <<'PY'
+          import json
+          import math
+          with open("evidence/assignment_heldout.json", encoding="utf-8") as f:
+              old = json.load(f)
+          assert old["instances_per_replicate"] == 72
+          assert len(old["families"]) == 6
+          with open("evidence/orbit_connection.json", encoding="utf-8") as f:
+              report = json.load(f)
+          assert report["total_formulas"] == 72
+          assert len(report["replicates"]) == 3
+          with open("evidence/orbit_connection_192.json", encoding="utf-8") as f:
+              large = json.load(f)
+          assert large["total_formulas"] == 192
+          assert len(large["replicates"]) == 10
+          assert 0 <= report["mean_fraction_nulls_with_switches"] <= 1
+          for target, predictors in report["averages"].items():
+              assert target in ("overall_raw_mae", "overall_orbit_mae")
+              for name, stats in predictors.items():
+                  assert math.isfinite(stats["mean_mae"]), name
+                  assert stats["mean_mae"] >= 0, name
+          print("Finite evidence and controls valid; no predictive-win condition imposed.")
+          PY
+      - name: Retain raw evidence including negative results
+        uses: actions/upload-artifact@v4
+        with:
+          name: violation-geometry-evidence
+          path: evidence/*.json
+          retention-days: 30
+
+
+  cdcl-topology:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install bounded research-only CDCL instrument
+        run: |
+          python -m pip install "numpy>=1.24" "pytest>=7.4" "networkx>=3.1" "python-sat>=1.8.dev10"
+      - name: Verify genuinely distinct graphs and margin-preserving nulls
+        run: |
+          python -m pytest -q backend/tests/test_violation_cdcl_topology.py backend/tests/test_violation_cdcl_parity.py
+      - name: Run conflict-capped Glucose4 topology transfer pilot
+        run: |
+          mkdir -p evidence
+          python docs/ladder/scripts/violation_cdcl_topology_probe.py \
+            --seeds 3 --sizes 48 72 --orbits 2 --budget 2000 --swaps 64 --json \
+            > evidence/cdcl_topology.json
+          python - <<'PY'
+          import json, math
+          with open("evidence/cdcl_topology.json",encoding="utf-8") as fp:
+              payload=json.load(fp)
+          x=payload["report"]
+          assert x["total_formulas"] == 36
+          assert x["unique_labeled_formulas"] == 36
+          assert len(x["family_holdouts"]) == 6
+          assert 0 <= x["censored_call_fraction"] <= 1
+          assert 0 <= x["null_nontrivial_fraction"] <= 1
+          for rec in x["records"]:
+              assert len(rec["calls"]) == 2
+              assert rec["null_switches"] >= 0
+              for call in rec["calls"]:
+                  assert call["status"] in ("SAT","UNSAT","UNKNOWN")
+                  if call["status"]=="SAT":
+                      assert call["valid_sat_model"] is True
+                  else:
+                      assert call["valid_sat_model"] is None
+          for name,value in x["aggregate_family_mae"].items():
+              assert math.isfinite(value) and value >= 0,name
+          print("External CDCL pilot complete, all models independently replayed.")
+          print("Censored fraction:",x["censored_call_fraction"])
+          print("LOFO MAE:",x["aggregate_family_mae"])
+          PY
+      - name: Disjoint-seed confirmation instrument and post-pilot GF2 control
+        run: |
+          python docs/ladder/scripts/violation_cdcl_topology_probe.py \
+            --seeds 6 --seed-start 100 --sizes 48 72 96 \
+            --orbits 3 --budget 5000 --swaps 160 --json \
+            > evidence/cdcl_disjoint.json
+          python docs/ladder/scripts/violation_cdcl_parity_probe.py \
+            --seeds 6 --seed-start 100 --sizes 48 72 96 \
+            --orbits 3 --budget 5000 --swaps 160 --json \
+            > evidence/cdcl_parity_disjoint.json
+          python - <<'PY'
+          import json, math
+          with open("evidence/cdcl_disjoint.json",encoding="utf-8") as fp:
+              original=json.load(fp)["report"]
+          with open("evidence/cdcl_parity_disjoint.json",encoding="utf-8") as fp:
+              parity=json.load(fp)["report"]
+          assert original["total_formulas"]==108
+          assert original["unique_labeled_formulas"]==108
+          assert parity["formulas"]==108
+          assert parity["status_counts"]["SAT"]==18
+          assert parity["status_counts"]["UNSAT"]==18
+          assert parity["status_counts"]["INCONCLUSIVE"]==72
+          assert parity["match_error_count"]==0
+          ref={(r["family"],r["size"],r["seed"]):r for r in original["records"]}
+          for case in parity["cases"]:
+              key=case["family"],case["size"],case["seed"]
+              assert case["digest"]==ref[key]["digest"]
+              assert case["capped_log_conflicts"]==ref[key]["capped_log_conflicts"]
+              assert case["call_statuses"]==[c["status"] for c in ref[key]["calls"]]
+          for name,value in parity["aggregate_mae"].items():
+              assert math.isfinite(value) and value>=0,name
+          print("Disjoint-seed CDCL and GF2 gate samples independently cross-checked.")
+          print("disjoint coverage:",original["censored_call_fraction"])
+          print("disjoint baseline:",original["aggregate_family_mae"])
+          print("post-pilot GF2 controls:",parity["aggregate_mae"])
+          print("median GF2 ms:",parity["median_gf2_ms"])
+          PY
+      - name: Preserve CDCL evidence, including unsuccessful hypotheses
+        uses: actions/upload-artifact@v4
+        with:
+          name: violation-cdcl-topology-evidence
+          path: evidence/*.json
+          retention-days: 30
