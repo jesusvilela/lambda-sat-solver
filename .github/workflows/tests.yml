@@ -62,26 +62,12 @@ jobs:
           pip install -r backend/requirements.txt
           pip install -e ".[dev]"
 
-      # Mandatory, NOT best-effort: no "|| true". If these are unavailable the lane
-      # must fail rather than silently skip the certification it is guarding.
-      - name: Install Kissat + drat-trim (mandatory)
-        run: sudo apt-get update && sudo apt-get install -y kissat drat-trim
-
-      - name: Assert the external tools are present
-        run: |
-          command -v kissat
-          command -v drat-trim
-
-      - name: Certification smoke (real DRAT UNSAT + model-replay SAT)
-        run: python .github/scripts/certification_smoke.py
-
-      - name: Certification-relevant tests must run (not skip)
-        run: python -m pytest backend/tests/test_integration.py backend/tests/test_kissat_wrapper.py -q
-
-      - name: Build SAT/proof tools
+      # Mandatory, NOT best-effort: build from source because Ubuntu 24.04 does not
+      # provide Kissat or drat-trim packages.
+      - name: Install CaDiCaL and build Kissat + drat-trim (mandatory)
         run: |
           sudo apt-get update
-          sudo apt-get install -y build-essential git
+          sudo apt-get install -y build-essential git cadical
           git clone --depth 1 https://github.com/arminbiere/kissat.git /tmp/kissat
           cd /tmp/kissat
           ./configure
@@ -90,8 +76,18 @@ jobs:
           git clone --depth 1 https://github.com/marijnheule/drat-trim.git /tmp/drat-trim
           make -C /tmp/drat-trim -j2
           sudo cp /tmp/drat-trim/drat-trim /usr/local/bin/drat-trim
+
+      - name: Assert the external tools are present
+        run: |
           command -v kissat
           command -v drat-trim
+          command -v cadical
+
+      - name: Certification smoke (real DRAT UNSAT + model-replay SAT)
+        run: python .github/scripts/certification_smoke.py
+
+      - name: Certification-relevant tests must run (not skip)
+        run: python -m pytest backend/tests/test_integration.py backend/tests/test_kissat_wrapper.py -q
 
       - name: Run strict certification smoke tests
         run: |
