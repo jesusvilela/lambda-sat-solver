@@ -22,9 +22,9 @@ from backend.metametasolver import (  # noqa: E402
     default_arms, metametasolve,
 )
 
-requires_kissat = pytest.mark.skipif(
-    shutil.which("kissat") is None,
-    reason="Kissat binary not available",
+requires_cdcl = pytest.mark.skipif(
+    not all(shutil.which(binary) for binary in ("kissat", "cadical", "drat-trim")),
+    reason="Kissat, CaDiCaL, and drat-trim are required for CDCL tests",
 )
 
 
@@ -51,7 +51,7 @@ class TestFrameArm:
 
 
 class TestTunnelPortfolio:
-    @requires_kissat
+    @requires_cdcl
     def test_tunnel_decided_by_certified_cdcl_arm(self):
         f = random_3sat(120, round(4.26 * 120), 0)
         r = metametasolve(f, breadth=4, timeout_s=25)
@@ -60,14 +60,14 @@ class TestTunnelPortfolio:
         assert r.winner.startswith(("kissat", "cadical"))
         assert r.arms >= 4                                  # the portfolio actually raced
 
-    @requires_kissat
+    @requires_cdcl
     def test_sat_winner_carries_a_verified_model(self):
         f = random_3sat(90, 300, 5)
         r = metametasolve(f, breadth=4, timeout_s=25)
         if r.status == "SAT":
             assert r.model is not None and verify_model(f, r.model)
 
-    @requires_kissat
+    @requires_cdcl
     def test_portfolio_agrees_with_ground_truth(self):
         # cross-check the portfolio verdict against a single certified solve
         from backend.metasolver import metasolve

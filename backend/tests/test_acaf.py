@@ -22,9 +22,9 @@ from backend.acaf import (  # noqa: E402
 from backend.cnf_utils import CNFFormula  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
 
-requires_kissat = pytest.mark.skipif(
-    shutil.which("kissat") is None,
-    reason="Kissat binary not available",
+requires_cdcl = pytest.mark.skipif(
+    not all(shutil.which(binary) for binary in ("kissat", "cadical", "drat-trim")),
+    reason="Kissat, CaDiCaL, and drat-trim are required for CDCL tests",
 )
 
 
@@ -124,13 +124,13 @@ class TestActorStages:
             assert r.status == "UNSAT" and r.certified
             assert r.stage == "frame" and r.winner == frame and r.breadth == 0
 
-    @requires_kissat
+    @requires_cdcl
     def test_easy_tunnel_uses_a_single_arm_not_a_swarm(self):
         r = acaf_solve(random_3sat(140, round(4.26 * 140), 0), timeout_s=20)
         assert r.status in ("SAT", "UNSAT") and r.certified
         assert r.stage == "single" and r.breadth == 1        # no swarm overhead
 
-    @requires_kissat
+    @requires_cdcl
     def test_hard_tunnel_escalates_to_cores_sized_portfolio(self):
         import os
         r = acaf_solve(random_3sat(280, round(4.26 * 280), 0), timeout_s=30)
