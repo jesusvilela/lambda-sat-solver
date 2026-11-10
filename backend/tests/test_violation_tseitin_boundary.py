@@ -107,3 +107,29 @@ def test_invalid_boundary_inputs():
     with pytest.raises(ValueError):solve_boundary(2,(),(0,))
     with pytest.raises(ValueError):solve_boundary(2,(),(2,0))
     with pytest.raises(ValueError):edge_boundary(2,((0,1),),(2,))
+
+def test_exhaustive_all_simple_graphs_through_four_vertices():
+    """Independent exact image/rank check for every simple graph on <=4 nodes."""
+    from itertools import combinations
+
+    for vertices in range(5):
+        possible = tuple(combinations(range(vertices), 2))
+        for mask in range(1 << len(possible)):
+            edges = tuple(edge for bit, edge in enumerate(possible) if (mask >> bit) & 1)
+            reachable = {
+                edge_boundary(vertices, edges, bits)
+                for bits in product((0, 1), repeat=len(edges))
+            }
+            # Connected components are read from the returned certificate;
+            # enumerate every possible charge vector independently.
+            for charges in product((0, 1), repeat=vertices):
+                result = solve_boundary(vertices, edges, charges)
+                assert result.consistent == (charges in reachable)
+                assert result.rank == vertices - len(result.components)
+                assert len(reachable) == (1 << result.rank)
+                if result.consistent:
+                    assert edge_boundary(vertices, edges, result.edge_bits) == charges
+                else:
+                    assert all(result.charges_per_component[i] == 1
+                               for i in result.odd_component_indices)
+
