@@ -5,6 +5,7 @@ tunnel, race a seed-diversified CDCL portfolio and return a CERTIFIED verdict th
 matches ground truth; never leak losing processes; and never trust an unchecked arm.
 """
 
+import shutil
 import sys
 from itertools import combinations, product
 from pathlib import Path
@@ -19,6 +20,11 @@ from backend.cnf_utils import CNFFormula, verify_model  # noqa: E402
 from backend.eval.generators import pigeonhole  # noqa: E402
 from backend.metametasolver import (  # noqa: E402
     default_arms, metametasolve,
+)
+
+requires_cdcl = pytest.mark.skipif(
+    not all(shutil.which(binary) for binary in ("kissat", "cadical", "drat-trim")),
+    reason="Kissat, CaDiCaL, and drat-trim are required for CDCL tests",
 )
 
 
@@ -45,6 +51,7 @@ class TestFrameArm:
 
 
 class TestTunnelPortfolio:
+    @requires_cdcl
     def test_tunnel_decided_by_certified_cdcl_arm(self):
         f = random_3sat(120, round(4.26 * 120), 0)
         r = metametasolve(f, breadth=4, timeout_s=25)
@@ -53,12 +60,14 @@ class TestTunnelPortfolio:
         assert r.winner.startswith(("kissat", "cadical"))
         assert r.arms >= 4                                  # the portfolio actually raced
 
+    @requires_cdcl
     def test_sat_winner_carries_a_verified_model(self):
         f = random_3sat(90, 300, 5)
         r = metametasolve(f, breadth=4, timeout_s=25)
         if r.status == "SAT":
             assert r.model is not None and verify_model(f, r.model)
 
+    @requires_cdcl
     def test_portfolio_agrees_with_ground_truth(self):
         # cross-check the portfolio verdict against a single certified solve
         from backend.metasolver import metasolve
