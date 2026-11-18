@@ -27,6 +27,15 @@ class TestAcafPrologContract(unittest.TestCase):
         self.assertEqual(r["role"], "provenance_only")
         self.assertEqual(r["lambda"]["status"], "NOT_APPLICABLE")
 
+    def test_actual_false_lambda_parity_ghost_is_not_a_cnf_equivalence(self):
+        from backend.lambda_sat import lambda_sat, BConst
+        source = lambda_sat(BConst(False))
+        self.assertEqual(source.status, "UNSAT")
+        self.assertEqual(source.cnf.clauses, [])  # provenance-only shadow
+        record = export_case(source.cnf, "ghost-false", role="provenance_only")
+        self.assertEqual(record["lambda"]["status"], "NOT_APPLICABLE")
+        self.assertEqual(record["role"], "provenance_only")
+
     def test_empty_clause_preserved(self):
         r = export_case(CNFFormula(1, [[]]), "empty")
         self.assertEqual(r["cnf"]["clauses"], [[]])
