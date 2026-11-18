@@ -7,7 +7,7 @@ from backend.cnf_utils import CNFFormula
 
 class TestAcafPrologContract(unittest.TestCase):
     def test_sat_witness_replayed(self):
-        r = export_case(CNFFormula(2, [[1], [1, 2]]), "sat")
+        r = export_case(CNFFormula(2, [[1, 2], [-1, -2]]), "sat")
         self.assertEqual(r["lambda"]["status"], "SAT")
         self.assertEqual(r["lambda"]["certification"], "model_replay")
         self.assertTrue(r["lambda"]["model"])
