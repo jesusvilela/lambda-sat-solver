@@ -32,8 +32,9 @@ jobs:
       # integration tests run too. If a package is unavailable the tests skip
       # gracefully (shutil.which -> None), so this lane stays green either way.
       - name: Install SAT solvers (best effort)
-        run: sudo apt-get update && sudo apt-get install -y kissat drat-trim cadical || true
-          pip install -e .[dev]
+        run: |
+          sudo apt-get update && sudo apt-get install -y kissat drat-trim cadical || true
+          python -m pip install -e '.[dev]'
 
       - name: Run test suite
         run: python -m pytest backend/tests/ -q
@@ -75,7 +76,6 @@ jobs:
 
       - name: Certification-relevant tests must run (not skip)
         run: python -m pytest backend/tests/test_integration.py backend/tests/test_kissat_wrapper.py -q
-          pip install -e .[dev]
 
       - name: Build SAT/proof tools
         run: |
