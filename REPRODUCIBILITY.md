@@ -140,3 +140,7 @@ Before citing or announcing a result, check `PUBLIC_RESEARCH_CLAIMS.md` and `doc
 ## Corrected CMS/PHP inference (18 November 2026)
 
 The test previously required CryptoMiniSat to TIMEOUT on PHP(10,9) within three seconds. Current GitHub CI observed UNSAT instead: that is a **valid performance counter-observation**, not a soundness defect. The unit test now accepts either correct UNSAT or TIMEOUT and does not classify the CMS UNSAT result as independently DRAT-certified. Earlier fixed-suite benchmark measurements remain historical measurements, not universally reproducible timeouts; regenerate them for new solver builds and hardware. The certified frame path and the unsolved worst-case complexity question remain unchanged.
+
+## Portfolio bounded-time abstention (18 November 2026)
+
+On the current GitHub Actions runner, the n=280 random 3-SAT test sometimes produces ACAFResult(status=TIMEOUT, seconds≈30, breadth=4, certified=False). This is a **valid bounded-budget abstention** and an adverse result for any informal claim that the configured portfolio must always solve that instance in 30 seconds. The test now checks the policy invariant (it really escalates to the configured portfolio) and separately verifies that TIMEOUT is not labelled certified; SAT/UNSAT still require certification. This does not assert a runtime bound, and the benchmark table should never be read as one.

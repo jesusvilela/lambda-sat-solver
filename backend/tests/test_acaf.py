@@ -124,6 +124,11 @@ class TestActorStages:
     def test_hard_tunnel_escalates_to_cores_sized_portfolio(self):
         import os
         r = acaf_solve(random_3sat(280, round(4.26 * 280), 0), timeout_s=30)
-        assert r.status in ("SAT", "UNSAT") and r.certified
+        # The policy MUST escalate, but a finite wall-clock budget may end
+        # before any arm returns. Never promote TIMEOUT to a certified answer.
         assert r.stage == "portfolio"
         assert 2 <= r.breadth <= max(2, os.cpu_count() or 1)  # sized to the cores
+        if r.status == "TIMEOUT":
+            assert not r.certified and r.model is None
+        else:
+            assert r.status in ("SAT", "UNSAT") and r.certified
