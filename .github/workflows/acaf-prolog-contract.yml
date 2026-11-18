@@ -1,0 +1,17 @@
+name: ACAF-Prolog contract
+
+on:
+  push:
+    branches: [main, acaf-prolog-interop]
+  pull_request:
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test typed LambdaSAT contract without external solvers
+        run: python -m unittest backend.tests.test_acaf_interop -v
