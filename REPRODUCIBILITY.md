@@ -136,3 +136,7 @@ Before citing or announcing a result, check `PUBLIC_RESEARCH_CLAIMS.md` and `doc
 - **proven** means theorem-backed or sound-by-construction;
 - **measured** means benchmarked under stated scope;
 - **speculative** means a lens or research direction and is not load-bearing.
+
+## Corrected CMS/PHP inference (18 November 2026)
+
+The test previously required CryptoMiniSat to TIMEOUT on PHP(10,9) within three seconds. Current GitHub CI observed UNSAT instead: that is a **valid performance counter-observation**, not a soundness defect. The unit test now accepts either correct UNSAT or TIMEOUT and does not classify the CMS UNSAT result as independently DRAT-certified. Earlier fixed-suite benchmark measurements remain historical measurements, not universally reproducible timeouts; regenerate them for new solver builds and hardware. The certified frame path and the unsolved worst-case complexity question remain unchanged.

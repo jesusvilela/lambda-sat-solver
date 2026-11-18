@@ -93,3 +93,7 @@ therefore depends on those external proof tools being installed** (the middlewar
 enforces this at startup for Kissat + DRAT; LRAT is optional). Without them, the
 frame verdicts remain sound on their own, but the CDCL-fallback certification
 degrades to best-effort — see `README.md` and `backend/proof_checking.py`.
+
+## ACAF CI research correction (18 November 2026)
+
+An earlier unit test asserted that CryptoMiniSat *must* time out on PHP(10,9) in a three-second budget. A current external runner solved it as UNSAT, falsifying that unconditional test assumption. We have retained that counter-observation and made the test verify the only sound invariant (UNSAT or a timeout, never SAT on known-unsatisfiable PHP), while preserving the distinction that the CMS wrapper's UNSAT does not carry a DRAT certificate. The older benchmark table is a scoped historical measurement, not an upper/lower-bound theorem or a promise for a new build. λSAT's strict workflow now requires CaDiCaL as well as Kissat and drat-trim because its full tests exercise all three executors.

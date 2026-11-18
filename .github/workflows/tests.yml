@@ -63,13 +63,14 @@ jobs:
 
       # Mandatory, NOT best-effort: no "|| true". If these are unavailable the lane
       # must fail rather than silently skip the certification it is guarding.
-      - name: Install Kissat + drat-trim (mandatory)
-        run: sudo apt-get update && sudo apt-get install -y kissat drat-trim
+      - name: Install Kissat + drat-trim + CaDiCaL (mandatory)
+        run: sudo apt-get update && sudo apt-get install -y kissat drat-trim cadical
 
       - name: Assert the external tools are present
         run: |
           command -v kissat
           command -v drat-trim
+          command -v cadical
 
       - name: Certification smoke (real DRAT UNSAT + model-replay SAT)
         run: python .github/scripts/certification_smoke.py
